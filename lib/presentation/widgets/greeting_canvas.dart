@@ -17,16 +17,10 @@ class GreetingCanvas extends StatefulWidget {
 }
 
 class _GreetingCanvasState extends State<GreetingCanvas> {
-  // מפתח ייחודי המאפשר לקוד לגשת לרכיב הגרפי הספציפי ולרנדר אותו לתמונה
   final GlobalKey _globalKey = GlobalKey();
-
-  // קונטרולר לניהול הטקסט בתיבת העריכה
   late TextEditingController _textController;
-
-  // המשתנה שמחזיק את הטקסט העדכני שמוצג על הכרטיס
   late String _currentGreetingText;
 
-  // צבעי המותג של לי
   final Color _tealColor = const Color(0xFF1B5565);
   final Color _goldColor = const Color(0xFF8B7355);
 
@@ -36,7 +30,6 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
     _currentGreetingText = widget.defaultGreetingText;
     _textController = TextEditingController(text: widget.defaultGreetingText);
 
-    // האזנה לשינויים בתיבת הטקסט ועדכון הכרטיס ב-Live
     _textController.addListener(() {
       setState(() {
         _currentGreetingText = _textController.text;
@@ -50,35 +43,23 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
     super.dispose();
   }
 
-  /// הפונקציה המרכזית שמבצעת את "הקסם": הופכת את הווידג'ט לתמונה,
-  /// מעתיקה את הטקסט, ופותחת את הוואטסאפ של הלקוח.
+  // פונקציית שליחה בוואטסאפ הקיימת
   Future<void> generateAndSendWhatsApp(BuildContext context) async {
     try {
-      // 1. מציאת הרכיב הגרפי בזיכרון לפי המפתח שלו
       final RenderRepaintBoundary? boundary = _globalKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-
       if (boundary == null) return;
 
-      // 2. רנדור הווידג'ט לקובץ תמונה דיגיטלי (Image) ברזולוציה גבוהה
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-
       if (byteData == null) return;
 
-      // אלו הבייטים הגולמיים של התמונה המעוצבת, מוכנים לשמירה זמנית או שיתוף
-      final Uint8List pngBytes = byteData.buffer.asUint8List();
-
-      // 3. אוטומציה של הטקסט: העתקת הברכה האישית ללוח (Clipboard) של הטלפון
       await Clipboard.setData(ClipboardData(text: _currentGreetingText));
 
-      // 4. פתיחת וואטסאפ: שימוש במספר המנוקה בפורמט הבינלאומי
-      final String whatsappNumber = widget.client.cleanWhatsAppPhone;
+      final String whatsappNumber = widget.client.phone.replaceAll('-', '').trim();
       final Uri whatsappUri = Uri.parse('https://wa.me/$whatsappNumber');
 
       if (await canLaunchUrl(whatsappUri)) {
         await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
-
-        // הצגת הודעה קלה ומעודדת לסוכנת על המסך
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('הברכה הועתקה! כעת עשי "הדבק" בוואטסאפ.'), backgroundColor: Colors.green));
         }
@@ -92,12 +73,36 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
     }
   }
 
+  // פונקציה חדשה: שליחה ישירה במייל
+  Future<void> sendEmail(BuildContext context) async {
+    try {
+      final String subject = Uri.encodeComponent('ברכה חגיגית מלי אטדגי נדל"ן');
+      final String body = Uri.encodeComponent('היי ${widget.client.firstName},\n\n$_currentGreetingText\n\nשלך,\nלי אטדגי - נדל"ן בגובה העיניים');
+
+      // יצירת קישור Mailto רשמי
+      final Uri emailUri = Uri.parse('mailto:?subject=$subject&body=$body');
+
+      if (await canLaunchUrl(emailUri)) {
+        await launchUrl(emailUri);
+      } else {
+        // גיבוי במידה ואין אפליקציית מייל מוגדרת - העתקה ללוח
+        await Clipboard.setData(ClipboardData(text: _currentGreetingText));
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('לא נמצאה אפליקציית מייל מוגדרת. תוכן הברכה הועתק ללוח!'), backgroundColor: Colors.orange));
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('שגיאה בפתיחת המייל: $e'), backgroundColor: Colors.red));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // רכיב ה-RepaintBoundary שעוטף את העיצוב הגרפי של כרטיס הברכה
         RepaintBoundary(
           key: _globalKey,
           child: Container(
@@ -105,7 +110,6 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
             height: 350,
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              // רקע משודרג: מעבר צבעים בין שמנת-זהב עדין לקרם
               gradient: const LinearGradient(colors: [Color(0xFFFFFDF9), Color(0xFFF9F5F0)], begin: Alignment.topLeft, end: Alignment.bottomRight),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: _goldColor.withOpacity(0.3), width: 1.5),
@@ -114,17 +118,10 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // חלק עליון: הלוגו של לי ממוקם בצד שמאל (נקי ומאוזן מול הטקסט)
                 Align(
                   alignment: Alignment.topLeft,
-                  child: Image.asset(
-                    widget.logoAssetPath,
-                    height: 70, // גובה מותאם
-                    fit: BoxFit.contain,
-                  ),
+                  child: Image.asset(widget.logoAssetPath, height: 70, fit: BoxFit.contain),
                 ),
-
-                // מרכז הכרטיס: פנייה אישית וטקסט הברכה המשתנה בזמן אמת
                 Expanded(
                   child: Center(
                     child: Column(
@@ -132,12 +129,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                       children: [
                         Text(
                           'היי ${widget.client.firstName},',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: _tealColor, // צבע טורקיז מהמותג
-                            fontFamily: 'Assistant',
-                          ),
+                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _tealColor, fontFamily: 'Assistant'),
                           textAlign: TextAlign.center,
                           textDirection: TextDirection.rtl,
                         ),
@@ -152,8 +144,6 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                     ),
                   ),
                 ),
-
-                // חלק תחתון: חתימה מקצועית משודרגת
                 Column(
                   children: [
                     Text(
@@ -162,12 +152,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                     ),
                     Text(
                       'לי אטדגי - נדל"ן בגובה העיניים',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: _tealColor, // צבע טורקיז מהמותג
-                        fontFamily: 'Assistant',
-                      ),
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _tealColor, fontFamily: 'Assistant'),
                       textAlign: TextAlign.center,
                       textDirection: TextDirection.rtl,
                     ),
@@ -178,8 +163,6 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
           ),
         ),
         const SizedBox(height: 24),
-
-        // מנגנון עריכה Live: תיבת טקסט המאפשרת ללי לשנות את הברכה
         TextField(
           controller: _textController,
           maxLines: 4,
@@ -197,19 +180,35 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
         ),
         const SizedBox(height: 24),
 
-        // כפתור הפעולה הגדול והברור עבור לי
-        ElevatedButton.icon(
-          onPressed: () => generateAndSendWhatsApp(context),
-          icon: const Icon(Icons.share, color: Colors.white),
-          label: const Text(
-            'שלחי ברכה בוואטסאפ',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal, color: Colors.white),
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF25D366), // צבע וואטסאפ
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 15),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-          ),
+        // שורת כפתורי הפעולה המשולבת: WhatsApp ומייל
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () => generateAndSendWhatsApp(context),
+                icon: const Icon(Icons.share, color: Colors.white),
+                label: const Text('וואטסאפ', style: TextStyle(fontSize: 15, color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF25D366),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () => sendEmail(context),
+                icon: const Icon(Icons.email, color: Colors.white),
+                label: const Text('שלחי במייל', style: TextStyle(fontSize: 15, color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _tealColor,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );

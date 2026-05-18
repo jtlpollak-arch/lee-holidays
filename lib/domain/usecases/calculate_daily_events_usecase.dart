@@ -11,7 +11,7 @@ class DailyEventResult {
   DailyEventResult({required this.client, required this.event, required this.isEarlyReminder, required this.displayMessage});
 }
 
-/// Use Case האחראי על פילוח וחישוב האירועים שיש להציג היום למשתמשת
+/// Use Caseק האחראי על פילוח וחישוב האירועים שיש להציג היום למשתמשת
 class CalculateDailyEventsUseCase {
   /// הפונקציה המרכזית שמקבלת את כל המידע ומחזירה רק את מה שרלוונטי להיום
   List<DailyEventResult> execute({required List<ClientModel> allClients, required List<EventModel> allEvents, required DateTime today}) {
@@ -29,23 +29,30 @@ class CalculateDailyEventsUseCase {
       final ClientModel? client = clientMap[event.clientId];
       if (client == null) continue; // אם הלקוח לא קיים במערכת, נדלג על האירוע
 
-      // נרמול תאריך האירוע ללא שעות (כדי להשוות רק יום וחודש, ללא תלות בשנת הלידה)
-      final DateTime eventDateNormalized = DateTime(dateToday.year, event.date.month, event.date.day);
+      // קביעת תאריך היעד להשוואה:
+      // אם זה יום הולדת - נשווה רק לפי יום וחודש (מחזורי בכל שנה).
+      // אם זה אירוע נדל"ן (קנייה/מכירה) - נתחשב גם בשנה המקורית (חד-פעמי).
+      DateTime eventDateToCheck;
+      if (event.eventType == 'יום הולדת') {
+        eventDateToCheck = DateTime(dateToday.year, event.date.month, event.date.day);
+      } else {
+        eventDateToCheck = DateTime(event.date.year, event.date.month, event.date.day);
+      }
 
       // 1. בדיקה האם האירוע חל ממש היום
-      if (eventDateNormalized == dateToday) {
+      if (eventDateToCheck == dateToday) {
         results.add(DailyEventResult(client: client, event: event, isEarlyReminder: false, displayMessage: 'אירוע של היום'));
       }
       // 2. מנגנון הקדמת שבת חכם:
-      // אם מחר יום שישי (והאירוע חל מחר), או מחר יום שבת (והאירוע חל מחר) - נקדים אותו להיום
-      else if (eventDateNormalized == dateTomorrow) {
+      // אם מחר יום שישי או שבת (והאירוע חל מחר) - נקדים אותו להיום
+      else if (eventDateToCheck == dateTomorrow) {
         if (dateTomorrow.weekday == DateTime.friday || dateTomorrow.weekday == DateTime.saturday) {
           final String dayName = dateTomorrow.weekday == DateTime.friday ? 'שישי' : 'שבת';
           results.add(DailyEventResult(client: client, event: event, isEarlyReminder: true, displayMessage: 'חל מחר ביום $dayName - שליחה מוקדמת'));
         }
       }
       // אם מחרתיים יום שבת (והאירוע חל מחרתיים) והיום יום חמישי - נקדים אותו להיום (חמישי)
-      else if (eventDateNormalized == dateDayAfterTomorrow) {
+      else if (eventDateToCheck == dateDayAfterTomorrow) {
         if (dateDayAfterTomorrow.weekday == DateTime.saturday && dateToday.weekday == DateTime.thursday) {
           results.add(DailyEventResult(client: client, event: event, isEarlyReminder: true, displayMessage: 'חל בשבת - שליחה מוקדמת מראש'));
         }

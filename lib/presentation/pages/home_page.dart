@@ -178,16 +178,21 @@ class _HomePageState extends State<HomePage> {
         return Padding(
           padding: MediaQuery.of(context).viewInsets,
           child: SingleChildScrollView(
-            child: AddClientSheet(
-              spreadsheetId: _activeSpreadsheetId!,
-              clientRepository: widget.clientRepository, // מועבר כעת ישירות מווידג'ט האב
-              eventRepository: widget.eventRepository, // מועבר כעת ישירות מווידג'ט האב
-              homeCubit: widget.cubit,
-            ),
+            child: AddClientSheet(spreadsheetId: _activeSpreadsheetId!, clientRepository: widget.clientRepository, eventRepository: widget.eventRepository, homeCubit: widget.cubit),
           ),
         );
       },
     );
+  }
+
+  Map<String, dynamic> _getEventTheme(String eventType) {
+    if (eventType == 'יום הולדת') {
+      return {'icon': Icons.cake_rounded, 'color': const Color(0xFF8B7355), 'bgColor': const Color(0xFF8B7355).withOpacity(0.1)};
+    } else if (eventType == 'קניית דירה') {
+      return {'icon': Icons.vpn_key_rounded, 'color': const Color(0xFF1B5565), 'bgColor': const Color(0xFF1B5565).withOpacity(0.1)};
+    } else {
+      return {'icon': Icons.real_estate_agent_rounded, 'color': Colors.amber.shade800, 'bgColor': Colors.amber.shade50};
+    }
   }
 
   @override
@@ -277,11 +282,11 @@ class _HomePageState extends State<HomePage> {
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
           color: Colors.white,
-          child: const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start, // הוסר ה-const ותוקן המאפיין
             children: [
-              Text('היי לי, בוקר טוב!', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-              Text('הנה המשימות שלך להיום:', style: TextStyle(color: Colors.grey)),
+              const Text('היי לי, בוקר טוב!', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              const Text('הנה המשימות שלך להיום:', style: TextStyle(color: Colors.grey)),
             ],
           ),
         ),
@@ -299,7 +304,7 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start, // תוקן הסינטקס פה
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       'קובץ הנתונים בענן מחובר ומסונכרן',
@@ -341,18 +346,70 @@ class _HomePageState extends State<HomePage> {
         );
       }
       return ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         itemCount: events.length,
         itemBuilder: (context, index) {
           final e = events[index];
-          return Card(
-            child: ListTile(
-              title: Text(e.client.fullName, style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text('${e.event.eventType} | ${e.displayMessage}'),
-              trailing: ElevatedButton(
-                onPressed: () => _openGreetingSender(context, e),
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B5565)),
-                child: const Text('שלחי ברכה', style: TextStyle(color: Colors.white)),
+          final theme = _getEventTheme(e.event.eventType);
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
+              border: Border.all(color: Colors.grey.withOpacity(0.15)),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: ExpansionTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: theme['bgColor'], borderRadius: BorderRadius.circular(10)),
+                  child: Icon(theme['icon'], color: theme['color'], size: 24),
+                ),
+                title: Text(e.client.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                subtitle: Text('${e.event.eventType} | ${e.displayMessage}', style: TextStyle(fontSize: 13, color: e.isEarlyReminder ? Colors.orange.shade800 : Colors.grey.shade600)),
+                trailing: ElevatedButton(
+                  onPressed: () => _openGreetingSender(context, e),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1B5565),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    elevation: 0,
+                  ),
+                  child: const Text('ברכה', style: TextStyle(color: Colors.white, fontSize: 13)),
+                ),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Divider(),
+                        Row(
+                          children: [
+                            const Icon(Icons.phone, size: 16, color: Colors.grey),
+                            const SizedBox(width: 8),
+                            Text('טלפון: ${e.client.phone}', style: const TextStyle(fontSize: 14)),
+                          ],
+                        ),
+                        if (e.event.notes.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(Icons.speaker_notes, size: 16, color: Colors.grey),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text('הערות: ${e.event.notes}', style: const TextStyle(fontSize: 14, color: Colors.black87)),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           );
