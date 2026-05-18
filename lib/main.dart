@@ -18,7 +18,7 @@ void main() async {
 
   final LocalDbDataSource localDbDataSource = LocalDbDataSourceImpl(sharedPreferences);
   final GoogleSheetsDataSource googleSheetsDataSource = GoogleSheetsDataSourceImpl();
-  final GoogleCalendarApi googleCalendarApi = GoogleCalendarApiImpl(); // ללא קונסטרקטור קשיח
+  final GoogleCalendarApi googleCalendarApi = GoogleCalendarApiImpl();
 
   final ClientRepository clientRepository = ClientRepositoryImpl(googleSheetsDataSource: googleSheetsDataSource, localDbDataSource: localDbDataSource);
 
@@ -28,15 +28,17 @@ void main() async {
 
   final HomeCubit homeCubit = HomeCubit(clientRepository: clientRepository, eventRepository: eventRepository, calculateDailyEventsUseCase: calculateDailyEventsUseCase);
 
-  runApp(MainApp(homeCubit: homeCubit, googleSheetsDataSource: googleSheetsDataSource, googleCalendarApi: googleCalendarApi));
+  runApp(MainApp(homeCubit: homeCubit, googleSheetsDataSource: googleSheetsDataSource, googleCalendarApi: googleCalendarApi, clientRepository: clientRepository, eventRepository: eventRepository));
 }
 
 class MainApp extends StatelessWidget {
   final HomeCubit homeCubit;
   final GoogleSheetsDataSource googleSheetsDataSource;
   final GoogleCalendarApi googleCalendarApi;
+  final ClientRepository clientRepository;
+  final EventRepository eventRepository;
 
-  const MainApp({super.key, required this.homeCubit, required this.googleSheetsDataSource, required this.googleCalendarApi});
+  const MainApp({super.key, required this.homeCubit, required this.googleSheetsDataSource, required this.googleCalendarApi, required this.clientRepository, required this.eventRepository});
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +46,7 @@ class MainApp extends StatelessWidget {
       title: 'מערכת ברכות נדל"ן',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primaryColor: const Color(0xFF8B7355), scaffoldBackgroundColor: const Color(0xFFF8F9FA), fontFamily: 'Assistant'),
-      home: HomePage(cubit: homeCubit, googleSheetsDataSource: googleSheetsDataSource, googleCalendarApi: googleCalendarApi),
+      home: HomePage(cubit: homeCubit, googleSheetsDataSource: googleSheetsDataSource, googleCalendarApi: googleCalendarApi, clientRepository: clientRepository, eventRepository: eventRepository),
     );
   }
 }

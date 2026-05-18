@@ -5,16 +5,21 @@ import '../../core/services/spreadsheet_manager.dart';
 import '../../data/models/client_model.dart';
 import '../../data/datasources/google_sheets_data_source.dart';
 import '../../data/datasources/google_calendar_api.dart';
+import '../../data/repositories/client_repository.dart';
+import '../../data/repositories/event_repository.dart';
 import '../../domain/usecases/calculate_daily_events_usecase.dart';
 import '../bloc_or_provider/home_cubit.dart';
 import '../widgets/greeting_canvas.dart';
+import '../widgets/add_client_sheet.dart';
 
 class HomePage extends StatefulWidget {
   final HomeCubit cubit;
   final GoogleSheetsDataSource googleSheetsDataSource;
   final GoogleCalendarApi googleCalendarApi;
+  final ClientRepository clientRepository;
+  final EventRepository eventRepository;
 
-  const HomePage({super.key, required this.cubit, required this.googleSheetsDataSource, required this.googleCalendarApi});
+  const HomePage({super.key, required this.cubit, required this.googleSheetsDataSource, required this.googleCalendarApi, required this.clientRepository, required this.eventRepository});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -26,7 +31,7 @@ class _HomePageState extends State<HomePage> {
 
   GoogleSignInAccount? _googleUser;
   bool _isCheckingAuth = true;
-  bool _isSettingUpRealData = false; // משתנה הגנה למניעת יצירה כפולה של קבצים
+  bool _isSettingUpRealData = false;
   String? _activeSpreadsheetId;
   int _totalRecordsCount = 0;
 
@@ -72,7 +77,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _setupAndLoadRealData() async {
-    // אם כבר רץ תהליך איתור או יצירה ברגע זה, אנחנו חוסמים קריאות מקבילות
     if (_isSettingUpRealData) return;
 
     final authenticatedClient = await _authService.getAuthenticatedClient();
@@ -82,11 +86,9 @@ class _HomePageState extends State<HomePage> {
           _isSettingUpRealData = true;
         });
 
-        // הזרקת הצינור המאומת לשני מקורות ה-API של גוגל
         widget.googleSheetsDataSource.updateAuthenticatedClient(authenticatedClient);
         widget.googleCalendarApi.updateAuthenticatedClient(authenticatedClient);
 
-        // איתור או יצירה של הקובץ הפיזי ב-Google Drive האמיתי של המשתמש
         final id = await _spreadsheetManager.getOrCreateSpreadsheet(authenticatedClient);
 
         if (mounted) {
@@ -94,7 +96,6 @@ class _HomePageState extends State<HomePage> {
             _activeSpreadsheetId = id;
           });
 
-          // קריאה לטעינת המידע מהקובץ האמיתי
           widget.cubit.loadDailyOverview(spreadsheetId: id);
         }
       } catch (e) {
@@ -163,6 +164,32 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _openAddClientSheet(BuildContext context) {
+    if (_activeSpreadsheetId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('המערכת עדיין לא סיימה להסתנכרן מול הדרייב. אנא המתיני.')));
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) {
+        return Padding(
+          padding: MediaQuery.of(context).viewInsets,
+          child: SingleChildScrollView(
+            child: AddClientSheet(
+              spreadsheetId: _activeSpreadsheetId!,
+              clientRepository: widget.clientRepository, // מועבר כעת ישירות מווידג'ט האב
+              eventRepository: widget.eventRepository, // מועבר כעת ישירות מווידג'ט האב
+              homeCubit: widget.cubit,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = widget.cubit.state;
@@ -193,6 +220,13 @@ class _HomePageState extends State<HomePage> {
             : _googleUser == null
             ? _buildSignInScreen()
             : _buildBody(state),
+        floatingActionButton: _googleUser != null
+            ? FloatingActionButton(
+                onPressed: () => _openAddClientSheet(context),
+                backgroundColor: const Color(0xFF1B5565),
+                child: const Icon(Icons.add, color: Colors.white, size: 28),
+              )
+            : null,
       ),
     );
   }
@@ -265,7 +299,7 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start, // תוקן הסינטקס פה
                   children: [
                     const Text(
                       'קובץ הנתונים בענן מחובר ומסונכרן',
