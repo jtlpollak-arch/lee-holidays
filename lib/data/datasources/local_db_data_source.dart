@@ -3,78 +3,61 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/client_model.dart';
 import '../models/event_model.dart';
 
-/// החוזה (Interface) שמגדיר את פעולות השמירה המקומית במכשיר.
-/// מפריד את הלוגיקה העסקית מטכנולוגיית השמירה הספציפית.
 abstract class LocalDbDataSource {
   Future<void> saveClients(List<ClientModel> clients);
   Future<List<ClientModel>> getClients();
   Future<void> saveEvents(List<EventModel> events);
   Future<List<EventModel>> getEvents();
-  Future<void> clearAllLocalData();
 }
 
-/// המימוש בפועל של השמירה המקומית באמצעות SharedPreferences.
-/// המידע נשמר בצורת מחרוזת JSON מוצפנת קלות/מובנית על המכשיר.
 class LocalDbDataSourceImpl implements LocalDbDataSource {
-  final SharedPreferences _sharedPreferences;
+  final SharedPreferences _prefs;
+  static const String _clientsKey = 'cached_clients_json';
+  static const String _eventsKey = 'cached_events_json';
 
-  // מפתחות ייחודיים לשמירה בתוך ה-Storage של המכשיר
-  static const String _clientsKey = 'local_cached_clients';
-  static const String _eventsKey = 'local_cached_events';
-
-  LocalDbDataSourceImpl(this._sharedPreferences);
+  LocalDbDataSourceImpl(this._prefs);
 
   @override
   Future<void> saveClients(List<ClientModel> clients) async {
-    // הפיכת רשימת האובייקטים לרשימה של מפות (Maps)
-    final List<List<dynamic>> rawRows = clients.map((client) => client.toSheetsRow()).toList();
-    // קידוד למחרוזת טקסט אחת (JSON String)
-    final String jsonString = jsonEncode(rawRows);
-    // שמירה מקומית במכשיר
-    await _sharedPreferences.setString(_clientsKey, jsonString);
+    // המרה של כל רשימת הלקוחות למבנה מאובטח של מחרוזת JSON
+    final List<Map<String, dynamic>> jsonList = clients.map((c) => c.toJson()).toList();
+    await _prefs.setString(_clientsKey, json.encode(jsonList));
   }
 
   @override
   Future<List<ClientModel>> getClients() async {
-    final String? jsonString = _sharedPreferences.getString(_clientsKey);
-    if (jsonString == null || jsonString.isEmpty) {
+    final String? cachedData = _prefs.getString(_clientsKey);
+    if (cachedData == null || cachedData.isEmpty) {
       return [];
     }
-
     try {
-      final List<dynamic> decodedList = jsonDecode(jsonString);
-      return decodedList.map((row) => ClientModel.fromSheetsRow(row as List<dynamic>)).toList();
+      final List<dynamic> decodedList = json.decode(cachedData);
+      return decodedList.map((item) => ClientModel.fromJson(item as Map<String, dynamic>)).toList();
     } catch (e) {
-      // במקרה של שגיאה בפענוח, נחזיר רשימה ריקה כדי לא לתקוע את האפליקציה
+      print('שגיאה בפענוח לקוחות מה-Local DB: $e');
       return [];
     }
   }
 
   @override
   Future<void> saveEvents(List<EventModel> events) async {
-    final List<List<dynamic>> rawRows = events.map((event) => event.toSheetsRow()).toList();
-    final String jsonString = jsonEncode(rawRows);
-    await _sharedPreferences.setString(_eventsKey, jsonString);
+    // המרה של כל רשימת האירועים למבנה מאובטח של מחרוזת JSON
+    final List<Map<String, dynamic>> jsonList = events.map((e) => e.toJson()).toList();
+    await _prefs.setString(_eventsKey, json.encode(jsonList));
   }
 
   @override
   Future<List<EventModel>> getEvents() async {
-    final String? jsonString = _sharedPreferences.getString(_eventsKey);
-    if (jsonString == null || jsonString.isEmpty) {
+    final String? cachedData = _prefs.getString(_eventsKey);
+    if (cachedData == null || cachedData.isEmpty) {
       return [];
     }
-
     try {
-      final List<dynamic> decodedList = jsonDecode(jsonString);
-      return decodedList.map((row) => EventModel.fromSheetsRow(row as List<dynamic>)).toList();
+      final List<dynamic> decodedList = json.decode(cachedData);
+      return decodedList.map((item) => EventModel.fromJson(item as Map<String, dynamic>)).toList();
     } catch (e) {
+      print('שגיאה בפענוח אירועים מה-Local DB: $e');
       return [];
     }
-  }
-
-  @override
-  Future<void> clearAllLocalData() async {
-    await _sharedPreferences.remove(_clientsKey);
-    await _sharedPreferences.remove(_eventsKey);
   }
 }

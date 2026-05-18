@@ -11,6 +11,7 @@ import '../../domain/usecases/calculate_daily_events_usecase.dart';
 import '../bloc_or_provider/home_cubit.dart';
 import '../widgets/greeting_canvas.dart';
 import '../widgets/add_client_sheet.dart';
+import '../widgets/clients_book_view.dart';
 
 class HomePage extends StatefulWidget {
   final HomeCubit cubit;
@@ -29,11 +30,16 @@ class _HomePageState extends State<HomePage> {
   final AuthService _authService = AuthService();
   final SpreadsheetManager _spreadsheetManager = SpreadsheetManager();
 
+  // הוספת המפתח הגלובלי כדי לשלוט בריענון של ספר הלקוחות מבחוץ
+  final GlobalKey<ClientsBookViewState> _clientsBookKey = GlobalKey<ClientsBookViewState>();
+
   GoogleSignInAccount? _googleUser;
   bool _isCheckingAuth = true;
   bool _isSettingUpRealData = false;
   String? _activeSpreadsheetId;
   int _totalRecordsCount = 0;
+
+  int _currentTabIndex = 0;
 
   @override
   void initState() {
@@ -126,6 +132,7 @@ class _HomePageState extends State<HomePage> {
       _googleUser = null;
       _activeSpreadsheetId = null;
       _totalRecordsCount = 0;
+      _currentTabIndex = 0;
     });
   }
 
@@ -178,7 +185,16 @@ class _HomePageState extends State<HomePage> {
         return Padding(
           padding: MediaQuery.of(context).viewInsets,
           child: SingleChildScrollView(
-            child: AddClientSheet(spreadsheetId: _activeSpreadsheetId!, clientRepository: widget.clientRepository, eventRepository: widget.eventRepository, homeCubit: widget.cubit),
+            child: AddClientSheet(
+              spreadsheetId: _activeSpreadsheetId!,
+              clientRepository: widget.clientRepository,
+              eventRepository: widget.eventRepository,
+              homeCubit: widget.cubit,
+              onClientAdded: () {
+                // קריאה לרענון המיידי של ספר הלקוחות על המסך ברגע שההוספה מסתיימת
+                _clientsBookKey.currentState?.loadClientsDataExternal();
+              },
+            ),
           ),
         );
       },
@@ -203,14 +219,17 @@ class _HomePageState extends State<HomePage> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('הברכות של לי', style: TextStyle(fontWeight: FontWeight.bold)),
+          title: Text(_currentTabIndex == 0 ? 'הברכות של לי' : 'ספר הלקוחות שלי', style: const TextStyle(fontWeight: FontWeight.bold)),
           backgroundColor: Colors.white,
           elevation: 0.5,
           actions: [
             if (_googleUser != null) ...[
               IconButton(
                 icon: const Icon(Icons.sync, color: Color(0xFF1B5565)),
-                onPressed: _setupAndLoadRealData,
+                onPressed: () {
+                  widget.cubit.loadDailyOverview(spreadsheetId: _activeSpreadsheetId!);
+                  _clientsBookKey.currentState?.loadClientsDataExternal();
+                },
               ),
               IconButton(
                 icon: const Icon(Icons.logout, color: Colors.redAccent),
@@ -224,12 +243,30 @@ class _HomePageState extends State<HomePage> {
             ? const Center(child: CircularProgressIndicator())
             : _googleUser == null
             ? _buildSignInScreen()
-            : _buildBody(state),
-        floatingActionButton: _googleUser != null
+            : _buildNavigationBody(state),
+
+        floatingActionButton: _googleUser != null && _currentTabIndex == 1
             ? FloatingActionButton(
                 onPressed: () => _openAddClientSheet(context),
                 backgroundColor: const Color(0xFF1B5565),
                 child: const Icon(Icons.add, color: Colors.white, size: 28),
+              )
+            : null,
+
+        bottomNavigationBar: _googleUser != null
+            ? BottomNavigationBar(
+                currentIndex: _currentTabIndex,
+                selectedItemColor: const Color(0xFF1B5565),
+                unselectedItemColor: Colors.grey,
+                onTap: (index) {
+                  setState(() {
+                    _currentTabIndex = index;
+                  });
+                },
+                items: const [
+                  BottomNavigationBarItem(icon: Icon(Icons.today_rounded), label: 'המשימות להיום'),
+                  BottomNavigationBarItem(icon: Icon(Icons.contact_phone_rounded), label: 'ספר לקוחות'),
+                ],
               )
             : null,
       ),
@@ -273,6 +310,18 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildNavigationBody(HomeState state) {
+    if (_currentTabIndex == 1 && _activeSpreadsheetId != null) {
+      return ClientsBookView(
+        key: _clientsBookKey, // הזרקת המפתח הגלובלי לצורך ריענון המסך
+        spreadsheetId: _activeSpreadsheetId!,
+        clientRepository: widget.clientRepository,
+        onRefreshRequired: () => widget.cubit.loadDailyOverview(spreadsheetId: _activeSpreadsheetId!),
+      );
+    }
+    return _buildBody(state);
+  }
+
   Widget _buildBody(HomeState state) {
     if (state is HomeLoading) return const Center(child: CircularProgressIndicator());
 
@@ -283,7 +332,7 @@ class _HomePageState extends State<HomePage> {
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
           color: Colors.white,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start, // הוסר ה-const ותוקן המאפיין
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text('היי לי, בוקר טוב!', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               const Text('הנה המשימות שלך להיום:', style: TextStyle(color: Colors.grey)),
@@ -393,6 +442,26 @@ class _HomePageState extends State<HomePage> {
                             Text('טלפון: ${e.client.phone}', style: const TextStyle(fontSize: 14)),
                           ],
                         ),
+                        if (e.client.email.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(Icons.email_outlined, size: 16, color: Colors.grey),
+                              const SizedBox(width: 8),
+                              Text('מייל: ${e.client.email}', style: const TextStyle(fontSize: 14)),
+                            ],
+                          ),
+                        ],
+                        if (e.event.address.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
+                              const SizedBox(width: 8),
+                              Text('כתובת נכס / אזור: ${e.event.address}', style: const TextStyle(fontSize: 14)),
+                            ],
+                          ),
+                        ],
                         if (e.event.notes.isNotEmpty) ...[
                           const SizedBox(height: 8),
                           Row(

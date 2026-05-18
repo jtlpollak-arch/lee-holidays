@@ -4,40 +4,52 @@ import '../models/client_model.dart';
 import '../models/event_model.dart';
 
 abstract class GoogleSheetsDataSource {
+  void updateAuthenticatedClient(http.Client client);
   Future<List<ClientModel>> getClients(String spreadsheetId);
   Future<void> appendClient(String spreadsheetId, ClientModel client);
+  Future<void> updateClientRow(String spreadsheetId, int rowIndex, ClientModel client);
+
   Future<List<EventModel>> getEvents(String spreadsheetId);
   Future<void> appendEvent(String spreadsheetId, EventModel event);
-
-  // פונקציית הזרקה בשביל לעדכן את הטוקן המאומת של לי לאחר התחברות
-  void updateAuthenticatedClient(http.Client client);
+  Future<void> updateEventRow(String spreadsheetId, int rowIndex, EventModel event);
 }
 
 class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
   http.Client? _authenticatedClient;
+
+  GoogleSheetsDataSourceImpl([this._authenticatedClient]);
 
   @override
   void updateAuthenticatedClient(http.Client client) {
     _authenticatedClient = client;
   }
 
-  // אם המשתמש מחובר נשתמש בלקוח המאומת, אחרת בלקוח רגיל
-  http.Client get _effectiveClient => _authenticatedClient ?? http.Client();
+  sheets.SheetsApi _getSheetsApi() {
+    if (_authenticatedClient == null) {
+      throw StateError('ה-Authenticated Client לא אותחל ב-DataSource.');
+    }
+    return sheets.SheetsApi(_authenticatedClient!);
+  }
+
+  // ==========================================
+  // לוגיקת לקוחות (Sheet1) - 6 עמודות: A עד F
+  // ==========================================
 
   @override
   Future<List<ClientModel>> getClients(String spreadsheetId) async {
+    final sheetsApi = _getSheetsApi();
     try {
-      final sheetsApi = sheets.SheetsApi(_effectiveClient);
-      const String range = 'Sheet1!A2:D'; // קריאת עמודות לקוח
+      final response = await sheetsApi.spreadsheets.values.get(spreadsheetId, 'Sheet1!A2:F5000');
+      final List<ClientModel> clients = [];
 
-      final response = await sheetsApi.spreadsheets.values.get(spreadsheetId, range);
-      final List<List<dynamic>>? rows = response.values;
-
-      if (rows == null || rows.isEmpty) {
-        return [];
+      if (response.values != null) {
+        for (var row in response.values!) {
+          if (row.isNotEmpty && row[0].toString().trim().isNotEmpty) {
+            clients.add(ClientModel.fromRow(row));
+          }
+        }
       }
-
-      return rows.map((row) => ClientModel.fromSheetsRow(row)).toList();
+      return clients;
     } catch (e) {
       print('שגיאה במשיכת לקוחות מגוגל שיטס: $e');
       return [];
@@ -46,32 +58,48 @@ class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
 
   @override
   Future<void> appendClient(String spreadsheetId, ClientModel client) async {
+    final sheetsApi = _getSheetsApi();
+    final valueRange = sheets.ValueRange(values: [client.toRow()]);
     try {
-      final sheetsApi = sheets.SheetsApi(_effectiveClient);
-      const String range = 'Sheet1!A1';
-
-      final valueRange = sheets.ValueRange(values: [client.toSheetsRow()]);
-
-      await sheetsApi.spreadsheets.values.append(valueRange, spreadsheetId, range, valueInputOption: 'USER_ENTERED');
+      await sheetsApi.spreadsheets.values.append(valueRange, spreadsheetId, 'Sheet1!A:F', valueInputOption: 'USER_ENTERED');
     } catch (e) {
-      print('שגיאה בהוספת לקוח לגוגל שיטס: $e');
+      print('שגיאה בהוספת לקוח חדש לגוגל שיטס: $e');
+      rethrow;
     }
   }
 
   @override
-  Future<List<EventModel>> getEvents(String spreadsheetId) async {
+  Future<void> updateClientRow(String spreadsheetId, int rowIndex, ClientModel client) async {
+    final sheetsApi = _getSheetsApi();
+    final valueRange = sheets.ValueRange(values: [client.toRow()]);
     try {
-      final sheetsApi = sheets.SheetsApi(_effectiveClient);
-      const String range = 'Events!A2:D'; // קריאת עמודות אירוע מטאב Events
+      await sheetsApi.spreadsheets.values.update(valueRange, spreadsheetId, 'Sheet1!A$rowIndex:F$rowIndex', valueInputOption: 'USER_ENTERED');
+      print('שורת הלקוח $rowIndex עודכנה בהצלחה בענן.');
+    } catch (e) {
+      print('שגיאה בעדכון שורת לקוח בגוגל שיטס: $e');
+      rethrow;
+    }
+  }
 
-      final response = await sheetsApi.spreadsheets.values.get(spreadsheetId, range);
-      final List<List<dynamic>>? rows = response.values;
+  // ==========================================
+  // לוגיקת אירועים (Events) - 6 עמודות: A עד F
+  // ==========================================
 
-      if (rows == null || rows.isEmpty) {
-        return [];
+  @override
+  Future<List<EventModel>> getEvents(String spreadsheetId) async {
+    final sheetsApi = _getSheetsApi();
+    try {
+      final response = await sheetsApi.spreadsheets.values.get(spreadsheetId, 'Events!A2:F5000');
+      final List<EventModel> events = [];
+
+      if (response.values != null) {
+        for (var row in response.values!) {
+          if (row.isNotEmpty && row[0].toString().trim().isNotEmpty) {
+            events.add(EventModel.fromRow(row));
+          }
+        }
       }
-
-      return rows.map((row) => EventModel.fromSheetsRow(row)).toList();
+      return events;
     } catch (e) {
       print('שגיאה במשיכת אירועים מגוגל שיטס: $e');
       return [];
@@ -80,15 +108,26 @@ class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
 
   @override
   Future<void> appendEvent(String spreadsheetId, EventModel event) async {
+    final sheetsApi = _getSheetsApi();
+    final valueRange = sheets.ValueRange(values: [event.toRow()]);
     try {
-      final sheetsApi = sheets.SheetsApi(_effectiveClient);
-      const String range = 'Events!A1';
-
-      final valueRange = sheets.ValueRange(values: [event.toSheetsRow()]);
-
-      await sheetsApi.spreadsheets.values.append(valueRange, spreadsheetId, range, valueInputOption: 'USER_ENTERED');
+      await sheetsApi.spreadsheets.values.append(valueRange, spreadsheetId, 'Events!A:F', valueInputOption: 'USER_ENTERED');
     } catch (e) {
-      print('שגיאה בהוספת אירוע לגוגל שיטס: $e');
+      print('שגיאה בהוספת אירוע חדש לגוגל שיטס: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> updateEventRow(String spreadsheetId, int rowIndex, EventModel event) async {
+    final sheetsApi = _getSheetsApi();
+    final valueRange = sheets.ValueRange(values: [event.toRow()]);
+    try {
+      await sheetsApi.spreadsheets.values.update(valueRange, spreadsheetId, 'Events!A$rowIndex:F$rowIndex', valueInputOption: 'USER_ENTERED');
+      print('שורת האירוע $rowIndex עודכנה בהצלחה בענן.');
+    } catch (e) {
+      print('שגיאה בעדכון שורת אירוע בגוגל שיטס: $e');
+      rethrow;
     }
   }
 }

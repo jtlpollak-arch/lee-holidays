@@ -1,54 +1,47 @@
-import 'package:meta/meta.dart';
-
-@immutable
 class EventModel {
   final int clientId;
   final DateTime date;
   final String eventType;
+  final String address; // כתובת הנכס / אזור הועברה לכאן!
   final String notes;
+  final String status; // פעיל / מחוק
 
-  const EventModel({required this.clientId, required this.date, required this.eventType, required this.notes});
+  EventModel({required this.clientId, required this.date, required this.eventType, required this.address, required this.notes, required this.status});
 
-  /// קונסטרקטור חכם המקבל שורה גולמית מטאב האירועים ב-Google Sheets
-  /// וממיר אותה לאובייקט אירוע באפליקציה.
-  factory EventModel.fromSheetsRow(List<dynamic> row) {
-    final int parsedClientId = row.isNotEmpty ? int.tryParse(row[0].toString()) ?? 0 : 0;
+  /// האם האירוע פעיל במערכת
+  bool get isActive => status == 'פעיל';
 
-    // פענוח התאריך מפורמט DD/MM/YYYY ל-DateTime
-    DateTime parsedDate = DateTime.now();
-    if (row.length > 1 && row[1] != null) {
-      final String dateStr = row[1].toString().trim();
-      final List<String> parts = dateStr.split('/');
-      if (parts.length == 3) {
-        final int? day = int.tryParse(parts[0]);
-        final int? month = int.tryParse(parts[1]);
-        final int? year = int.tryParse(parts[2]);
-        if (day != null && month != null && year != null) {
-          parsedDate = DateTime(year, month, day);
-        }
-      }
-    }
-
-    final String parsedEventType = row.length > 2 ? row[2].toString().trim() : '';
-    final String parsedNotes = row.length > 3 ? row[3].toString().trim() : '';
-
-    return EventModel(clientId: parsedClientId, date: parsedDate, eventType: parsedEventType, notes: parsedNotes);
+  /// המרה מרשימה (שורת גיליון בגוגל שיטס) למודל אירוע (A עד F)
+  factory EventModel.fromRow(List<dynamic> row) {
+    return EventModel(
+      clientId: int.tryParse(row[0].toString()) ?? 0,
+      date: row.length > 1 ? DateTime.tryParse(row[1].toString()) ?? DateTime.now() : DateTime.now(),
+      eventType: row.length > 2 ? row[2].toString() : '',
+      address: row.length > 3 ? row[3].toString() : '', // קריאת טור D
+      notes: row.length > 4 ? row[4].toString() : '', // קריאת טור E
+      status: row.length > 5 ? row[5].toString() : 'פעיל', // קריאת טור F
+    );
   }
 
-  /// מתודה הממירה את אובייקט האירוע למבנה של שורה (רשימה)
-  /// לצורך כתיבה או עדכון ב-Google Sheets בפורמט קבוע.
-  List<dynamic> toSheetsRow() {
-    // פורמט ידני של התאריך ל-DD/MM/YYYY כדי לא להסתמך על חבילות חיצוניות בשלב זה
-    final String day = date.day.toString().padLeft(2, '0');
-    final String month = date.month.toString().padLeft(2, '0');
-    final String year = date.year.toString();
-    final String formattedDate = '$day/$month/$year';
-
-    return [clientId, formattedDate, eventType, notes];
+  /// המרה של מודל אירוע לשורה עבור גוגל שיטס
+  List<dynamic> toRow() {
+    return [
+      clientId,
+      "${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}",
+      eventType,
+      address, // כתיבה לטור D
+      notes, // כתיבה לטור E
+      status, // כתיבה לטור F
+    ];
   }
 
-  /// יצירת עותק חדש עם שינויים במידת הצורך (נחוץ לניהול מצב באפליקציה)
-  EventModel copyWith({int? clientId, DateTime? date, String? eventType, String? notes}) {
-    return EventModel(clientId: clientId ?? this.clientId, date: date ?? this.date, eventType: eventType ?? this.eventType, notes: notes ?? this.notes);
+  /// המרה ממפה (בסיס נתונים מקומי) למודל
+  factory EventModel.fromJson(Map<String, dynamic> json) {
+    return EventModel(clientId: json['clientId'] as int, date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now(), eventType: json['eventType'] as String? ?? '', address: json['address'] as String? ?? '', notes: json['notes'] as String? ?? '', status: json['status'] as String? ?? 'פעיל');
+  }
+
+  /// המרה של המודל למפה עבור בסיס הנתונים המקומי
+  Map<String, dynamic> toJson() {
+    return {'clientId': clientId, 'date': date.toIso8601String(), 'eventType': eventType, 'address': address, 'notes': notes, 'status': status};
   }
 }

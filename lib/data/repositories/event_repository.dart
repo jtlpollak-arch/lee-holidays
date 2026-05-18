@@ -1,17 +1,16 @@
-import 'dart:io';
 import '../datasources/google_calendar_api.dart';
 import '../datasources/google_sheets_data_source.dart';
 import '../datasources/local_db_data_source.dart';
 import '../models/event_model.dart';
 
-/// החוזה (Interface) של שכבת ה-Repository עבור ניהול אירועים ותזכורות.
 abstract class EventRepository {
   Future<List<EventModel>> getAllEvents(String spreadsheetId);
+  Future<void> addEvent(String spreadsheetId, EventModel event);
   Future<void> addNewEvent(String spreadsheetId, EventModel event, String clientName);
+  Future<void> updateEvent(String spreadsheetId, EventModel event);
+  Future<void> deleteEventSoft(String spreadsheetId, int clientId, String eventType);
 }
 
-/// המימוש בפועל המנהל את הלוגיקה המורכבת של מיזוג המידע הדו-כיווני
-/// וסנכרון מול יומן גוגל.
 class EventRepositoryImpl implements EventRepository {
   final GoogleSheetsDataSource _googleSheetsDataSource;
   final LocalDbDataSource _localDbDataSource;
@@ -22,53 +21,82 @@ class EventRepositoryImpl implements EventRepository {
   @override
   Future<List<EventModel>> getAllEvents(String spreadsheetId) async {
     try {
-      // 1. משיכת אירועים מהענן (Google Sheets) ומבסיס הנתונים המקומי
       final List<EventModel> cloudEvents = await _googleSheetsDataSource.getEvents(spreadsheetId);
-
       if (cloudEvents.isNotEmpty) {
-        // עדכון זיכרון מקומי לגיבוי
         await _localDbDataSource.saveEvents(cloudEvents);
-        return cloudEvents;
+        return cloudEvents.where((e) => e.isActive).toList();
       }
-
-      return await _localDbDataSource.getEvents();
+      final local = await _localDbDataSource.getEvents();
+      return local.where((e) => e.isActive).toList();
     } catch (e) {
-      // הגנה במקרה של שגיאה - שימוש במידע המקומי
-      final List<EventModel> localEvents = await _localDbDataSource.getEvents();
-      if (localEvents.isNotEmpty) {
-        return localEvents;
-      }
-      rethrow;
+      final local = await _localDbDataSource.getEvents();
+      return local.where((e) => e.isActive).toList();
     }
   }
 
   @override
+  Future<void> addEvent(String spreadsheetId, EventModel event) async {
+    // קריאה לפונקציית היצירה עם שם לקוח דיפולטיבי, השם משמש רק לכותרת ביומן גוגל
+    await addNewEvent(spreadsheetId, event, 'לקוח מערכת');
+  }
+
+  @override
   Future<void> addNewEvent(String spreadsheetId, EventModel event, String clientName) async {
-    try {
-      // 1. שמירה מיידית בבסיס הנתונים המקומי בטלפון
-      final List<EventModel> currentLocalEvents = await _localDbDataSource.getEvents();
-      currentLocalEvents.add(event);
-      await _localDbDataSource.saveEvents(currentLocalEvents);
+    final List<EventModel> currentLocalEvents = await _localDbDataSource.getEvents();
+    currentLocalEvents.add(event);
+    await _localDbDataSource.saveEvents(currentLocalEvents);
 
-      // 2. העלאת השורה החדשה לענן (Google Sheets) בזמן אמת
-      await _googleSheetsDataSource.appendEvent(spreadsheetId, event);
+    await _googleSheetsDataSource.appendEvent(spreadsheetId, event);
 
-      // 3. בדיקה האם מדובר באירוע יום הולדת שצריך לחזור כל שנה
-      final bool isBirthday = event.eventType == 'יום הולדת';
+    final bool isBirthday = event.eventType == 'יום הולדת';
+    final String eventTitle = 'לשלוח ברכת ${event.eventType} ל-$clientName';
+    final String eventDescription = 'אירוע אוטומטי מאפליקציית הנדל"ן.\\nהערות: ${event.notes}';
 
-      // 4. יצירת אירוע ממוקד של 5 דקות ביומן גוגל (Google Calendar)
-      final String eventTitle = 'לשלוח ברכת ${event.eventType} ל-$clientName';
-      final String eventDescription = 'אירוע אוטומטי מאפליקציית הנדל"ן.\\nהערות: ${event.notes}';
+    await _googleCalendarApi.insertGreetingReminderEvent(title: eventTitle, date: event.date, description: eventDescription, isRecurring: isBirthday);
+  }
 
-      await _googleCalendarApi.insertGreetingReminderEvent(
-        title: eventTitle,
-        date: event.date,
-        description: eventDescription,
-        isRecurring: isBirthday, // העברת הדגל השנתי ליומן גוגל
+  @override
+  Future<void> updateEvent(String spreadsheetId, EventModel event) async {
+    final currentLocal = await _localDbDataSource.getEvents();
+    final index = currentLocal.indexWhere((e) => e.clientId == event.clientId && e.eventType == event.eventType);
+    if (index != -1) {
+      currentLocal[index] = event;
+      await _localDbDataSource.saveEvents(currentLocal);
+    }
+
+    final cloudEvents = await _googleSheetsDataSource.getEvents(spreadsheetId);
+    final cloudIndex = cloudEvents.indexWhere((e) => e.clientId == event.clientId && e.eventType == event.eventType);
+    if (cloudIndex != -1) {
+      final int sheetRowNumber = cloudIndex + 2;
+      await _googleSheetsDataSource.updateEventRow(spreadsheetId, sheetRowNumber, event);
+    }
+  }
+
+  @override
+  Future<void> deleteEventSoft(String spreadsheetId, int clientId, String eventType) async {
+    final cloudEvents = await _googleSheetsDataSource.getEvents(spreadsheetId);
+    final cloudIndex = cloudEvents.indexWhere((e) => e.clientId == clientId && e.eventType == eventType);
+
+    if (cloudIndex != -1) {
+      final targetEvent = cloudEvents[cloudIndex];
+      final updatedEvent = EventModel(
+        clientId: targetEvent.clientId,
+        date: targetEvent.date,
+        eventType: targetEvent.eventType,
+        address: targetEvent.address, // שמירה על הכתובת הקיימת בעת המחיקה הרכה
+        notes: targetEvent.notes,
+        status: 'מחוק',
       );
-    } catch (e) {
-      print('שגיאה במהלך הוספת אירוע חדש ברפוזיטורי: $e');
-      rethrow;
+
+      final int sheetRowNumber = cloudIndex + 2;
+      await _googleSheetsDataSource.updateEventRow(spreadsheetId, sheetRowNumber, updatedEvent);
+
+      final currentLocal = await _localDbDataSource.getEvents();
+      final localIndex = currentLocal.indexWhere((e) => e.clientId == clientId && e.eventType == eventType);
+      if (localIndex != -1) {
+        currentLocal[localIndex] = updatedEvent;
+        await _localDbDataSource.saveEvents(currentLocal);
+      }
     }
   }
 }
