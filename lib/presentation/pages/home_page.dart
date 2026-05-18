@@ -4,16 +4,17 @@ import '../../core/services/auth_service.dart';
 import '../../core/services/spreadsheet_manager.dart';
 import '../../data/models/client_model.dart';
 import '../../data/datasources/google_sheets_data_source.dart';
+import '../../data/datasources/google_calendar_api.dart';
 import '../../domain/usecases/calculate_daily_events_usecase.dart';
 import '../bloc_or_provider/home_cubit.dart';
 import '../widgets/greeting_canvas.dart';
 
 class HomePage extends StatefulWidget {
   final HomeCubit cubit;
-  final String spreadsheetId;
   final GoogleSheetsDataSource googleSheetsDataSource;
+  final GoogleCalendarApi googleCalendarApi;
 
-  const HomePage({super.key, required this.cubit, required this.spreadsheetId, required this.googleSheetsDataSource});
+  const HomePage({super.key, required this.cubit, required this.googleSheetsDataSource, required this.googleCalendarApi});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -25,6 +26,7 @@ class _HomePageState extends State<HomePage> {
 
   GoogleSignInAccount? _googleUser;
   bool _isCheckingAuth = true;
+  bool _isSettingUpRealData = false; // משתנה הגנה למניעת יצירה כפולה של קבצים
   String? _activeSpreadsheetId;
   int _totalRecordsCount = 0;
 
@@ -70,19 +72,39 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _setupAndLoadRealData() async {
+    // אם כבר רץ תהליך איתור או יצירה ברגע זה, אנחנו חוסמים קריאות מקבילות
+    if (_isSettingUpRealData) return;
+
     final authenticatedClient = await _authService.getAuthenticatedClient();
     if (authenticatedClient != null) {
-      final id = await _spreadsheetManager.getOrCreateSpreadsheet(authenticatedClient);
-      if (mounted) {
+      try {
         setState(() {
-          _activeSpreadsheetId = id;
+          _isSettingUpRealData = true;
         });
 
-        // עדכון ה-DataSource הפנימי ב-Client החדש
+        // הזרקת הצינור המאומת לשני מקורות ה-API של גוגל
         widget.googleSheetsDataSource.updateAuthenticatedClient(authenticatedClient);
+        widget.googleCalendarApi.updateAuthenticatedClient(authenticatedClient);
 
-        // קריאה למתודה המקורית שלך עם פרמטר אחד בלבד
-        widget.cubit.loadDailyOverview(spreadsheetId: id);
+        // איתור או יצירה של הקובץ הפיזי ב-Google Drive האמיתי של המשתמש
+        final id = await _spreadsheetManager.getOrCreateSpreadsheet(authenticatedClient);
+
+        if (mounted) {
+          setState(() {
+            _activeSpreadsheetId = id;
+          });
+
+          // קריאה לטעינת המידע מהקובץ האמיתי
+          widget.cubit.loadDailyOverview(spreadsheetId: id);
+        }
+      } catch (e) {
+        print('שגיאה בתהליך איתור/יצירת קובץ הנתונים: $e');
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSettingUpRealData = false;
+          });
+        }
       }
     }
   }
@@ -100,6 +122,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> _handleSignOut() async {
     await _authService.signOut();
     setState(() {
+      _googleUser = null;
       _activeSpreadsheetId = null;
       _totalRecordsCount = 0;
     });
@@ -249,7 +272,7 @@ class _HomePageState extends State<HomePage> {
                       style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1B5565)),
                     ),
                     Text(
-                      _activeSpreadsheetId != null ? 'קובץ פעיל: מערכת הברכות של לי' : 'מאתר קובץ נתונים...',
+                      _activeSpreadsheetId != null ? 'קובץ פעיל בענן גוגל' : 'מאתר קובץ נתונים...',
                       style: const TextStyle(fontSize: 11, color: Colors.grey, overflow: TextOverflow.ellipsis),
                     ),
                   ],
@@ -259,7 +282,7 @@ class _HomePageState extends State<HomePage> {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(color: const Color(0xFF8B7355), borderRadius: BorderRadius.circular(20)),
                 child: Text(
-                  '$_totalRecordsCount רשומות',
+                  '$_totalRecordsCount משימות',
                   style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -275,7 +298,13 @@ class _HomePageState extends State<HomePage> {
     if (state is HomeSuccess) {
       final events = state.dailyEvents;
       if (events.isEmpty) {
-        return const Center(child: Text('אין אירועים להיום.\nיום עבודה פורה!'));
+        return const Center(
+          child: Text(
+            'אין אירועים להיום.\nיום עבודה פורה!',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+        );
       }
       return ListView.builder(
         padding: const EdgeInsets.all(16),

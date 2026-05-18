@@ -16,18 +16,15 @@ class ClientRepositoryImpl implements ClientRepository {
   @override
   Future<List<ClientModel>> getAllClients(String spreadsheetId) async {
     try {
-      // 1. נסמך על ה-DataSource המעודכן שלנו
+      // משיכת הלקוחות אך ורק מהענן האמיתי בגוגל שיטס
       final List<ClientModel> cloudClients = await googleSheetsDataSource.getClients(spreadsheetId);
 
-      if (cloudClients.isNotEmpty) {
-        // עדכון זיכרון מקומי לגיבוי
-        await localDbDataSource.saveClients(cloudClients);
-        return cloudClients;
-      }
-
-      return await localDbDataSource.getClients();
+      // עדכון ה-Cache המקומי במידע האמיתי מהענן (גם אם הענן ריק - נשמור רשימה ריקה)
+      await localDbDataSource.saveClients(cloudClients);
+      return cloudClients;
     } catch (e) {
-      print('שגיאה במשיכת לקוחות מרפוזיטורי: $e');
+      print('שגיאה במשיכת לקוחות מהענן ב-ClientRepository: $e');
+      // במקרה של שגיאת תקשורת חמורה בלבד, נחזור למה ששמור מקומית כדי למנוע קריסה
       return await localDbDataSource.getClients();
     }
   }
@@ -35,13 +32,15 @@ class ClientRepositoryImpl implements ClientRepository {
   @override
   Future<void> addNewClient(String spreadsheetId, ClientModel client) async {
     try {
+      // שמירה מקומית של הלקוח החדש
       final List<ClientModel> currentLocal = await localDbDataSource.getClients();
       currentLocal.add(client);
       await localDbDataSource.saveClients(currentLocal);
 
+      // כתיבה ישירה לענן
       await googleSheetsDataSource.appendClient(spreadsheetId, client);
     } catch (e) {
-      print('שגיאה בהוספת לקוח מרפוזיטורי: $e');
+      print('שגיאה בהוספת לקוח ב-ClientRepository: $e');
     }
   }
 }

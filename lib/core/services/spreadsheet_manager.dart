@@ -9,26 +9,47 @@ class SpreadsheetManager {
 
   Future<String> getOrCreateSpreadsheet(http.Client client) async {
     final prefs = await SharedPreferences.getInstance();
-
-    String? savedId = prefs.getString(_prefsKey);
-    if (savedId != null && savedId.isNotEmpty) {
-      return savedId;
-    }
-
     final driveApi = drive.DriveApi(client);
-    final query = "name = '$_fileName' and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false";
-
-    final fileList = await driveApi.files.list(q: query, spaces: 'drive', $fields: 'files(id, name)');
-
-    if (fileList.files != null && fileList.files!.isNotEmpty) {
-      final existingId = fileList.files!.first.id!;
-      await prefs.setString(_prefsKey, existingId);
-      return existingId;
-    }
-
     final sheetsApi = sheets.SheetsApi(client);
 
-    // יצירת קובץ עם שני טאבים: Sheet1 ללקוחות, ו-Events לאירועים
+    String? savedId = prefs.getString(_prefsKey);
+
+    // בדיקה האם המזהה השמור בזיכרון באמת קיים ותקין בענן
+    if (savedId != null && savedId.isNotEmpty) {
+      try {
+        await sheetsApi.spreadsheets.get(savedId);
+        print('נמצא קובץ תקין בזיכרון המקומי: $savedId');
+        return savedId;
+      } catch (e) {
+        print('הקובץ השמור בזיכרון כבר לא תקף או נמצא באשפה. ננקה ונחפש מחדש.');
+        await prefs.remove(_prefsKey);
+      }
+    }
+
+    // חיפוש קפדני בדרייב, תוך התעלמות מוחלטת מקבצים שנמחקו
+    final query = "name = '$_fileName' and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false";
+
+    try {
+      final fileList = await driveApi.files.list(q: query, spaces: 'drive', $fields: 'files(id, name, trashed)');
+
+      if (fileList.files != null && fileList.files!.isNotEmpty) {
+        // סינון נוסף בקוד לביטחון מקסימלי מפני קבצי אשפה
+        final validFile = fileList.files!.firstWhere((f) => f.trashed == false && f.id != null, orElse: () => drive.File());
+
+        if (validFile.id != null) {
+          final existingId = validFile.id!;
+          print('נמצא קובץ קיים ותקין בענן גוגל דרייב: $existingId');
+          await prefs.setString(_prefsKey, existingId);
+          return existingId;
+        }
+      }
+    } catch (e) {
+      print('שגיאה במהלך חיפוש קובץ קיים: $e');
+    }
+
+    // שלב היצירה של קובץ חדש לחלוטין
+    print('מייצר קובץ נתונים חדש לגמרי בענן בשם: $_fileName');
+
     final newSpreadsheet = sheets.Spreadsheet(
       properties: sheets.SpreadsheetProperties(title: _fileName),
       sheets: [
@@ -40,7 +61,7 @@ class SpreadsheetManager {
     final createdSheet = await sheetsApi.spreadsheets.create(newSpreadsheet);
     final String newId = createdSheet.spreadsheetId!;
 
-    // כותרות ללקוחות
+    // כותרות ללשונית הלקוחות
     await sheetsApi.spreadsheets.values.update(
       sheets.ValueRange(
         values: [
@@ -52,11 +73,11 @@ class SpreadsheetManager {
       valueInputOption: 'USER_ENTERED',
     );
 
-    // כותרות לאירועים
+    // כותרות ללשונית האירועים
     await sheetsApi.spreadsheets.values.update(
       sheets.ValueRange(
         values: [
-          ['מזהה לקוח', 'תאריך אירוע', 'סוג אירוע', 'הערות'],
+          ['מזהה לקוח', 'תאריך', 'סוג אירוע', 'הערות'],
         ],
       ),
       newId,
@@ -64,7 +85,10 @@ class SpreadsheetManager {
       valueInputOption: 'USER_ENTERED',
     );
 
+    // שמירת המזהה החדש בזיכרון המכשיר
     await prefs.setString(_prefsKey, newId);
+    print('הקובץ החדש נוצר ואותחל בהצלחה! מזהה: $newId');
+
     return newId;
   }
 }
