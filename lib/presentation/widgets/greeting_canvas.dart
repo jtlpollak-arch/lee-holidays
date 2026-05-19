@@ -23,6 +23,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
 
   final Color _tealColor = const Color(0xFF1B5565);
   final Color _goldColor = const Color(0xFF8B7355);
+  final Color _lightBgColor = const Color(0xFFF4F7F8);
 
   @override
   void initState() {
@@ -43,174 +44,149 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
     super.dispose();
   }
 
-  // פונקציית שליחה בוואטסאפ הקיימת
+  String get _fullMessage {
+    return 'היי ${widget.client.firstName},\n$_currentGreetingText';
+  }
+
   Future<void> generateAndSendWhatsApp(BuildContext context) async {
-    try {
-      final RenderRepaintBoundary? boundary = _globalKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-      if (boundary == null) return;
+    final String encodedText = Uri.encodeComponent(_fullMessage);
+    final String cleanPhone = widget.client.phone.replaceAll('-', '').trim();
 
-      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) return;
+    // התאמת הקידומת הבינלאומית של ישראל
+    String internationalPhone = cleanPhone;
+    if (cleanPhone.startsWith('0')) {
+      internationalPhone = '972${cleanPhone.substring(1)}';
+    }
 
-      await Clipboard.setData(ClipboardData(text: _currentGreetingText));
+    final url = 'https://wa.me/$internationalPhone?text=$encodedText';
+    final uri = Uri.parse(url);
 
-      final String whatsappNumber = widget.client.phone.replaceAll('-', '').trim();
-      final Uri whatsappUri = Uri.parse('https://wa.me/$whatsappNumber');
-
-      if (await canLaunchUrl(whatsappUri)) {
-        await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('הברכה הועתקה! כעת עשי "הדבק" בוואטסאפ.'), backgroundColor: Colors.green));
-        }
-      } else {
-        throw 'לא ניתן לפתוח את אפליקציית וואטסאפ';
-      }
-    } catch (e) {
+    if (await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      print('וואטסאפ נפתח בהצלחה.');
+    } else {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('שגיאה בתהליך השליחה: $e'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('לא ניתן לפתוח את אפליקציית וואטסאפ')));
       }
     }
   }
 
-  // פונקציה חדשה: שליחה ישירה במייל
   Future<void> sendEmail(BuildContext context) async {
-    try {
-      final String subject = Uri.encodeComponent('ברכה חגיגית מלי אטדגי נדל"ן');
-      final String body = Uri.encodeComponent('היי ${widget.client.firstName},\n\n$_currentGreetingText\n\nשלך,\nלי אטדגי - נדל"ן בגובה העיניים');
+    if (widget.client.email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ללקוח זה לא מוגדרת כתובת אימייל במערכת')));
+      return;
+    }
 
-      // יצירת קישור Mailto רשמי
-      final Uri emailUri = Uri.parse('mailto:?subject=$subject&body=$body');
+    final String subject = Uri.encodeComponent('ברכה חמה מלי');
+    final String body = Uri.encodeComponent(_fullMessage);
+    final url = 'mailto:${widget.client.email}?subject=$subject&body=$body';
+    final uri = Uri.parse(url);
 
-      if (await canLaunchUrl(emailUri)) {
-        await launchUrl(emailUri);
-      } else {
-        // גיבוי במידה ואין אפליקציית מייל מוגדרת - העתקה ללוח
-        await Clipboard.setData(ClipboardData(text: _currentGreetingText));
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('לא נמצאה אפליקציית מייל מוגדרת. תוכן הברכה הועתק ללוח!'), backgroundColor: Colors.orange));
-        }
-      }
-    } catch (e) {
+    if (await launchUrl(uri)) {
+      print('אפליקציית המייל נפתחה בהצלחה.');
+    } else {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('שגיאה בפתיחת המייל: $e'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('לא ניתן לפתוח את אפליקציית המייל')));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        RepaintBoundary(
-          key: _globalKey,
-          child: Container(
-            width: 350,
-            height: 350,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFFFFFDF9), Color(0xFFF9F5F0)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: _goldColor.withOpacity(0.3), width: 1.5),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // חלק עליון: לוגו מעוצב ומרווח
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: _tealColor.withOpacity(0.05), shape: BoxShape.circle),
+              child: Image.asset(widget.logoAssetPath, height: 55, errorBuilder: (context, error, stackTrace) => Icon(Icons.star_purple500_rounded, size: 36, color: _goldColor)),
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: Image.asset(widget.logoAssetPath, height: 70, fit: BoxFit.contain),
+            const SizedBox(height: 16),
+
+            // כותרות פנייה
+            Text(
+              'עריכת ברכה עבור ${widget.client.fullName}',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _tealColor),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'הפתיח "היי ${widget.client.firstName}," יתווסף אוטומטית להודעה',
+              style: const TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 20),
+
+            // שדה טקסט פרימיום מעוגל ונקי ללא מסגרות שחורות
+            TextFormField(
+              controller: _textController,
+              maxLines: 5,
+              style: const TextStyle(fontSize: 15, color: Colors.black87, height: 1.4),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: _lightBgColor,
+                hintText: 'הקלידי את גוף הברכה כאן...',
+                hintStyle: TextStyle(color: Colors.grey.shade400),
+                contentPadding: const EdgeInsets.all(18),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: _tealColor.withOpacity(0.3), width: 1.5),
                 ),
-                Expanded(
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'היי ${widget.client.firstName},',
-                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _tealColor, fontFamily: 'Assistant'),
-                          textAlign: TextAlign.center,
-                          textDirection: TextDirection.rtl,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          _currentGreetingText,
-                          style: const TextStyle(fontSize: 16, color: Color(0xFF555555), height: 1.5, fontFamily: 'Assistant'),
-                          textAlign: TextAlign.center,
-                          textDirection: TextDirection.rtl,
-                        ),
-                      ],
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            // שורת כפתורי הפעולה המאוזנת והממורכזת
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 140,
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: () => generateAndSendWhatsApp(context),
+                    icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 18),
+                    label: const Text(
+                      'וואטסאפ',
+                      style: TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF25D366),
+                      elevation: 1,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                     ),
                   ),
                 ),
-                Column(
-                  children: [
-                    Text(
-                      'שלך,',
-                      style: TextStyle(fontSize: 12, color: _goldColor, fontFamily: 'Assistant'),
+                const SizedBox(width: 16),
+                SizedBox(
+                  width: 140,
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: () => sendEmail(context),
+                    icon: const Icon(Icons.mail_outline_rounded, color: Colors.white, size: 18),
+                    label: const Text(
+                      'שלחי במייל',
+                      style: TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold),
                     ),
-                    Text(
-                      'לי אטדגי - נדל"ן בגובה העיניים',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _tealColor, fontFamily: 'Assistant'),
-                      textAlign: TextAlign.center,
-                      textDirection: TextDirection.rtl,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _tealColor,
+                      elevation: 1,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                     ),
-                  ],
+                  ),
                 ),
               ],
             ),
-          ),
-        ),
-        const SizedBox(height: 24),
-        TextField(
-          controller: _textController,
-          maxLines: 4,
-          textAlign: TextAlign.right,
-          decoration: InputDecoration(
-            hintText: 'כתבי את הברכה האישית שלך כאן...',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: _tealColor, width: 2),
-            ),
-            filled: true,
-            fillColor: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // שורת כפתורי הפעולה המשולבת: WhatsApp ומייל
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () => generateAndSendWhatsApp(context),
-                icon: const Icon(Icons.share, color: Colors.white),
-                label: const Text('וואטסאפ', style: TextStyle(fontSize: 15, color: Colors.white)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF25D366),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () => sendEmail(context),
-                icon: const Icon(Icons.email, color: Colors.white),
-                label: const Text('שלחי במייל', style: TextStyle(fontSize: 15, color: Colors.white)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _tealColor,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ),
+            const SizedBox(height: 10),
           ],
         ),
-      ],
+      ),
     );
   }
 }
