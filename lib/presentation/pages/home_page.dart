@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:holidays/presentation/widgets/client_events_view.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/spreadsheet_manager.dart';
-import '../../data/models/client_model.dart';
 import '../../data/datasources/google_sheets_data_source.dart';
 import '../../data/datasources/google_calendar_api.dart';
 import '../../data/repositories/client_repository.dart';
@@ -30,461 +29,329 @@ class _HomePageState extends State<HomePage> {
   final AuthService _authService = AuthService();
   final SpreadsheetManager _spreadsheetManager = SpreadsheetManager();
 
-  // מפתח גלובלי המאפשר שליטה ורענון של ספר הלקוחות מבחוץ
+  int _selectedIndex = 0;
+  String? _spreadsheetId;
+  bool _isInitializing = true;
+  String? _initError;
+
+  // מפתח גלובלי לגישה ורענון של ספר הלקוחות מהפיג' הנוכחי
   final GlobalKey<ClientsBookViewState> _clientsBookKey = GlobalKey<ClientsBookViewState>();
-
-  GoogleSignInAccount? _googleUser;
-  bool _isCheckingAuth = true;
-  bool _isSettingUpRealData = false;
-  String? _activeSpreadsheetId;
-  int _totalRecordsCount = 0;
-
-  int _currentTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
-
+    // האזנה לשינויי סטייט מה-Cubit כדי לעדכן את הממשק בצורה תקינה
     widget.cubit.listen((state) {
       if (mounted) {
-        setState(() {
-          if (state is HomeSuccess) {
-            _totalRecordsCount = state.dailyEvents.length;
-          }
-        });
+        setState(() {});
       }
     });
-
-    _authService.onCurrentUserChanged.listen((GoogleSignInAccount? account) {
-      if (mounted) {
-        setState(() {
-          _googleUser = account;
-        });
-        if (account != null) {
-          _setupAndLoadRealData();
-        }
-      }
-    });
-
-    _checkInitialAuth();
+    _initializeSpreadsheet();
   }
 
-  Future<void> _checkInitialAuth() async {
-    final user = await _authService.signInSilently();
-    if (mounted) {
-      setState(() {
-        _googleUser = user;
-        _isCheckingAuth = false;
-      });
-      if (user != null) {
-        _setupAndLoadRealData();
-      }
-    }
-  }
-
-  Future<void> _setupAndLoadRealData() async {
-    if (_isSettingUpRealData) return;
-
-    final authenticatedClient = await _authService.getAuthenticatedClient();
-    if (authenticatedClient != null) {
-      try {
-        setState(() {
-          _isSettingUpRealData = true;
-        });
-
-        widget.googleSheetsDataSource.updateAuthenticatedClient(authenticatedClient);
-        widget.googleCalendarApi.updateAuthenticatedClient(authenticatedClient);
-
-        final id = await _spreadsheetManager.getOrCreateSpreadsheet(authenticatedClient);
-
-        if (mounted) {
-          setState(() {
-            _activeSpreadsheetId = id;
-          });
-
-          widget.cubit.loadDailyOverview(spreadsheetId: id);
-        }
-      } catch (e) {
-        print('שגיאה בתהליך איתור/יצירת קובץ הנתונים: $e');
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isSettingUpRealData = false;
-          });
-        }
-      }
-    }
-  }
-
-  Future<void> _handleSignIn() async {
+  Future<void> _initializeSpreadsheet() async {
     try {
-      await _authService.signIn();
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('ההתחברות בוטלה או נכשלה: $error')));
+      setState(() {
+        _isInitializing = true;
+        _initError = null;
+      });
+
+      final currentUser = await _authService.signInSilently();
+      if (currentUser == null) {
+        throw Exception('משתמש לא מחובר לחשבון גוגל. יש לבצע התחברות תחילה.');
       }
+
+      final authClient = await _authService.getAuthenticatedClient();
+      if (authClient == null) {
+        throw Exception('נכשל איתור קליינט מאומת מול שרתי גוגל.');
+      }
+
+      widget.googleSheetsDataSource.updateAuthenticatedClient(authClient);
+      widget.googleCalendarApi.updateAuthenticatedClient(authClient);
+
+      final sId = await _spreadsheetManager.getOrCreateSpreadsheet(authClient);
+
+      setState(() {
+        _spreadsheetId = sId;
+        _isInitializing = false;
+      });
+
+      // טעינת הנתונים למסך הבית הראשי
+      await widget.cubit.loadDailyOverview(spreadsheetId: sId);
+    } catch (e) {
+      setState(() {
+        _initError = e.toString();
+        _isInitializing = false;
+      });
     }
   }
 
-  Future<void> _handleSignOut() async {
-    await _authService.signOut();
-    setState(() {
-      _googleUser = null;
-      _activeSpreadsheetId = null;
-      _totalRecordsCount = 0;
-      _currentTabIndex = 0;
-    });
-  }
-
-  String _generateDefaultGreeting(ClientModel client, String eventType) {
-    if (eventType == 'יום הולדת') {
-      return 'רציתי לאחל לך המון מזל טוב, יום הולדת שמח, בריאות ושפע של הצלחה בכל מה שתעשה/י!';
-    } else if (eventType == 'קניית דירה') {
-      return 'איזה כיף לציין את היום המרגש הזה! שיהיה המון מזל טוב על רכישת הדירה, שתזכו להמון רגעים מאושרים בבית החדש.';
-    } else if (eventType == 'מכירת דירה') {
-      return 'ברכות על המכירה! מאחלת לך המון הצלחה בדרך החדשה ובצעד הבא.';
-    }
-    return 'שולחת לך המון מזל טוב, בריאות ושמחה לרגל האירוע המרגש!';
-  }
-
-  void _openGreetingSender(BuildContext context, DailyEventResult dailyEvent) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          child: AnimatedPadding(
-            padding: MediaQuery.of(context).viewInsets,
-            duration: const Duration(milliseconds: 100),
-            child: SingleChildScrollView(
-              child: GreetingCanvas(client: dailyEvent.client, defaultGreetingText: _generateDefaultGreeting(dailyEvent.client, dailyEvent.event.eventType), logoAssetPath: 'assets/images/logo.png'),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _openAddClientSheet(BuildContext context) {
-    if (_activeSpreadsheetId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('המערכת עדיין לא סיימה להסתנכרן מול הדרייב. אנא המתיני.')));
-      return;
-    }
+  void _showAddClientBottomSheet() {
+    if (_spreadsheetId == null) return;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return Padding(
-          padding: MediaQuery.of(context).viewInsets,
-          child: SingleChildScrollView(
-            child: AddClientSheet(
-              spreadsheetId: _activeSpreadsheetId!,
-              clientRepository: widget.clientRepository,
-              eventRepository: widget.eventRepository,
-              homeCubit: widget.cubit,
-              onClientAdded: () {
-                // ריענון מיידי של ספר הלקוחות על המסך ברגע שההוספה מסתיימת
-                _clientsBookKey.currentState?.forceReloadFromOutside();
-              },
-            ),
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: AddClientSheet(
+            spreadsheetId: _spreadsheetId!,
+            clientRepository: widget.clientRepository,
+            homeCubit: widget.cubit,
+            onClientAdded: () {
+              // קריאה לרענון מיידי של ספר הלקוחות באמצעות המתודה הקיימת בו
+              _clientsBookKey.currentState?.forceReloadFromOutside();
+            },
           ),
         );
       },
     );
-  }
-
-  Map<String, dynamic> _getEventTheme(String eventType) {
-    if (eventType == 'יום הולדת') {
-      return {'icon': Icons.cake_rounded, 'color': const Color(0xFF8B7355), 'bgColor': const Color(0xFF8B7355).withOpacity(0.1)};
-    } else if (eventType == 'קניית דירה') {
-      return {'icon': Icons.vpn_key_rounded, 'color': const Color(0xFF1B5565), 'bgColor': const Color(0xFF1B5565).withOpacity(0.1)};
-    } else {
-      return {'icon': Icons.real_estate_agent_rounded, 'color': Colors.amber.shade800, 'bgColor': Colors.amber.shade50};
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = widget.cubit.state;
-
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(_currentTabIndex == 0 ? 'הברכות של לי' : 'ספר הלקוחות שלי', style: const TextStyle(fontWeight: FontWeight.bold)),
-          backgroundColor: Colors.white,
-          elevation: 0.5,
-          actions: [
-            if (_googleUser != null) ...[
-              IconButton(
-                icon: const Icon(Icons.sync, color: Color(0xFF1B5565)),
-                onPressed: () {
-                  widget.cubit.loadDailyOverview(spreadsheetId: _activeSpreadsheetId!);
-                  _clientsBookKey.currentState?.forceReloadFromOutside();
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.logout, color: Colors.redAccent),
-                onPressed: _handleSignOut,
-                tooltip: 'התנתקי מחשבון גוגל',
-              ),
-            ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'מערכת הברכות של לי',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        centerTitle: true,
+        backgroundColor: const Color(0xFF1B5565),
+        elevation: 2,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: _isInitializing ? null : _initializeSpreadsheet,
+            tooltip: 'סנכרון ורענון מלא',
+          ),
+        ],
+      ),
+      body: _buildBody(),
+      floatingActionButton: _selectedIndex == 1 && _spreadsheetId != null
+          ? FloatingActionButton(
+              onPressed: _showAddClientBottomSheet,
+              backgroundColor: const Color(0xFF1B5565),
+              tooltip: 'הוספת לקוח חדש',
+              child: const Icon(Icons.person_add_alt_1, color: Colors.white),
+            )
+          : null,
+      bottomNavigationBar: Directionality(
+        textDirection: TextDirection.rtl,
+        child: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          },
+          selectedItemColor: const Color(0xFF1B5565),
+          unselectedItemColor: Colors.grey,
+          showUnselectedLabels: true,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.auto_awesome_outlined), activeIcon: Icon(Icons.auto_awesome), label: 'משימות להיום'),
+            BottomNavigationBarItem(icon: Icon(Icons.contact_phone_outlined), activeIcon: Icon(Icons.contact_phone), label: 'ספר לקוחות'),
+            BottomNavigationBarItem(icon: Icon(Icons.calendar_month_outlined), activeIcon: Icon(Icons.calendar_month), label: 'אירועים ועסקאות'),
           ],
         ),
-        body: _isCheckingAuth
-            ? const Center(child: CircularProgressIndicator())
-            : _googleUser == null
-            ? _buildSignInScreen()
-            : _buildNavigationBody(state),
-
-        floatingActionButton: _googleUser != null && _currentTabIndex == 1
-            ? FloatingActionButton(
-                onPressed: () => _openAddClientSheet(context),
-                backgroundColor: const Color(0xFF1B5565),
-                child: const Icon(Icons.add, color: Colors.white, size: 28),
-              )
-            : null,
-
-        bottomNavigationBar: _googleUser != null
-            ? BottomNavigationBar(
-                currentIndex: _currentTabIndex,
-                selectedItemColor: const Color(0xFF1B5565),
-                unselectedItemColor: Colors.grey,
-                onTap: (index) {
-                  setState(() {
-                    _currentTabIndex = index;
-                  });
-                },
-                items: const [
-                  BottomNavigationBarItem(icon: Icon(Icons.today_rounded), label: 'המשימות להיום'),
-                  BottomNavigationBarItem(icon: Icon(Icons.contact_phone_rounded), label: 'ספר לקוחות'),
-                ],
-              )
-            : null,
       ),
     );
   }
 
-  Widget _buildSignInScreen() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
+  Widget _buildBody() {
+    if (_isInitializing) {
+      return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset('assets/images/logo.png', height: 120),
-            const SizedBox(height: 30),
-            const Text(
-              'ברוכה הבאה למערכת הברכות',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1B5565)),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'כדי לסנכרן את הלקוחות מתוך ה-Google Sheets והיומן שלך, יש לבצע התחברות מאובטחת.',
-              style: TextStyle(fontSize: 14, color: Colors.grey),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 40),
-            ElevatedButton.icon(
-              onPressed: _handleSignIn,
-              icon: const Icon(Icons.login, color: Colors.white),
-              label: const Text('התחברי באמצעות Google', style: TextStyle(color: Colors.white, fontSize: 16)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1B5565),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
+            CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1B5565))),
+            SizedBox(height: 16),
+            Text('מאתחל מערך נתונים ומאמת קבצים בענן...', style: TextStyle(fontSize: 16, color: Colors.grey)),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildNavigationBody(HomeState state) {
-    if (_currentTabIndex == 1 && _activeSpreadsheetId != null) {
-      return ClientsBookView(
-        key: _clientsBookKey, // הזרקת המפתח הגלובלי לצורך ריענון המסך
-        spreadsheetId: _activeSpreadsheetId!,
-        clientRepository: widget.clientRepository,
-        onRefreshRequired: () => widget.cubit.loadDailyOverview(spreadsheetId: _activeSpreadsheetId!),
       );
     }
-    return _buildBody(state);
+
+    if (_initError != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.redAccent, size: 60),
+              const SizedBox(height: 16),
+              const Text('שגיאה באתחול האפליקציה', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text(
+                _initError!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _initializeSpreadsheet,
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B5565)),
+                child: const Text('ניסיון חוזר', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    switch (_selectedIndex) {
+      case 0:
+        return _buildDailyTasksTab();
+      case 1:
+        return ClientsBookView(
+          key: _clientsBookKey,
+          spreadsheetId: _spreadsheetId!,
+          clientRepository: widget.clientRepository,
+          onRefreshRequired: () {
+            widget.cubit.loadDailyOverview(spreadsheetId: _spreadsheetId!);
+          },
+        );
+      case 2:
+        return ClientEventsView(spreadsheetId: _spreadsheetId!, clientRepository: widget.clientRepository, eventRepository: widget.eventRepository, homeCubit: widget.cubit);
+      default:
+        return _buildDailyTasksTab();
+    }
   }
 
-  Widget _buildBody(HomeState state) {
-    if (state is HomeLoading) return const Center(child: CircularProgressIndicator());
+  Widget _buildDailyTasksTab() {
+    final state = widget.cubit.state;
 
-    return Column(
-      children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-          color: Colors.white,
+    if (state is HomeLoading) {
+      return const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1B5565))));
+    }
+
+    if (state is HomeSuccess) {
+      return RefreshIndicator(
+        onRefresh: () => widget.cubit.loadDailyOverview(spreadsheetId: _spreadsheetId!),
+        color: const Color(0xFF1B5565),
+        child: Directionality(
+          textDirection: TextDirection.rtl,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('היי לי, בוקר טוב!', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-              const Text('הנה המשימות שלך להיום:', style: TextStyle(color: Colors.grey)),
-            ],
-          ),
-        ),
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1B5565).withOpacity(0.08),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF8B7355).withOpacity(0.3)),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.cloud_done, color: Color(0xFF1B5565), size: 28),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'קובץ הנתונים בענן מחובר ומסונכרן',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1B5565)),
-                    ),
-                    Text(
-                      _activeSpreadsheetId != null ? 'קובץ פעיל בענן גוגל' : 'מאתר קובץ נתונים...',
-                      style: const TextStyle(fontSize: 11, color: Colors.grey, overflow: TextOverflow.ellipsis),
-                    ),
-                  ],
-                ),
-              ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(color: const Color(0xFF8B7355), borderRadius: BorderRadius.circular(20)),
+                width: double.infinity,
+                padding: const EdgeInsets.all(16.0),
+                color: const Color(0xFF1B5565).withOpacity(0.05),
                 child: Text(
-                  '$_totalRecordsCount משימות',
-                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                  'שלום לי, להלן הברכות המתוזמנות להיום (${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}):',
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1B5565)),
                 ),
               ),
+              Expanded(child: _buildEventList(state.dailyEvents)),
             ],
           ),
         ),
-        Expanded(child: _buildEventsList(state)),
-      ],
-    );
+      );
+    }
+
+    if (state is HomeFailure) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'שגיאה בטעינת המשימות: ${state.errorMessage}',
+              style: const TextStyle(color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () => widget.cubit.loadDailyOverview(spreadsheetId: _spreadsheetId!),
+              child: const Text('נסה שנית'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return const Center(child: Text('ברוך הבא!'));
   }
 
-  Widget _buildEventsList(HomeState state) {
-    if (state is HomeSuccess) {
-      final events = state.dailyEvents;
-      if (events.isEmpty) {
-        return const Center(
-          child: Text(
-            'אין אירועים להיום.\nיום עבודה פורה!',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, color: Colors.grey),
-          ),
-        );
-      }
-      return ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        itemCount: events.length,
-        itemBuilder: (context, index) {
-          final e = events[index];
-          final theme = _getEventTheme(e.event.eventType);
+  Widget _buildEventList(List<DailyEventResult> events) {
+    if (events.isEmpty) {
+      return const Center(
+        child: Text(
+          'אין ברכות או אירועים המתוזמנים להיום.\nיום שקט ומוצלח!',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
+      );
+    }
 
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
-              border: Border.all(color: Colors.grey.withOpacity(0.15)),
+    return ListView.builder(
+      itemCount: events.length,
+      itemBuilder: (context, index) {
+        final e = events[index];
+
+        // תיקון כפילות הפתיח: מתחילים ישירות מגוף האיחול
+        final String defaultText = 'רציתי לאחל לך המון מזל טוב לרגל ${e.event.eventType}! ✨';
+
+        return Card(
+          margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          elevation: 1.5,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          child: ListTile(
+            contentPadding: const EdgeInsets.all(12),
+            title: Row(
+              children: [
+                Text(e.client.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(color: e.isEarlyReminder ? Colors.orange.shade50 : const Color(0xFF1B5565).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                  child: Text(
+                    e.event.eventType,
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: e.isEarlyReminder ? Colors.orange.shade900 : const Color(0xFF1B5565)),
+                  ),
+                ),
+              ],
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: ExpansionTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: theme['bgColor'], borderRadius: BorderRadius.circular(10)),
-                  child: Icon(theme['icon'], color: theme['color'], size: 24),
-                ),
-                title: Text(e.client.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                subtitle: Text('${e.event.eventType} | ${e.displayMessage}', style: TextStyle(fontSize: 13, color: e.isEarlyReminder ? Colors.orange.shade800 : Colors.grey.shade600)),
-                trailing: ElevatedButton(
-                  onPressed: () => _openGreetingSender(context, e),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1B5565),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    elevation: 0,
-                  ),
-                  child: const Text('ברכה', style: TextStyle(color: Colors.white, fontSize: 13)),
-                ),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 6.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Divider(),
-                        Row(
-                          children: [
-                            const Icon(Icons.phone, size: 16, color: Colors.grey),
-                            const SizedBox(width: 8),
-                            Text('טלפון: ${e.client.phone}', style: const TextStyle(fontSize: 14)),
-                          ],
-                        ),
-                        if (e.client.email.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              const Icon(Icons.email_outlined, size: 16, color: Colors.grey),
-                              const SizedBox(width: 8),
-                              Text('מייל: ${e.client.email}', style: const TextStyle(fontSize: 14)),
-                            ],
-                          ),
-                        ],
-                        if (e.event.address.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
-                              const SizedBox(width: 8),
-                              Text('כתובת נכס / אזור: ${e.event.address}', style: const TextStyle(fontSize: 14)),
-                            ],
-                          ),
-                        ],
-                        if (e.event.notes.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.speaker_notes, size: 16, color: Colors.grey),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text('הערות: ${e.event.notes}', style: const TextStyle(fontSize: 14, color: Colors.black87)),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
+                  Text(
+                    e.displayMessage,
+                    style: TextStyle(color: e.isEarlyReminder ? Colors.orange.shade700 : Colors.green.shade700, fontWeight: FontWeight.w500, fontSize: 13),
                   ),
+                  if (e.event.address.isNotEmpty) ...[const SizedBox(height: 4), Text('נכס: ${e.event.address}', style: const TextStyle(fontSize: 13, color: Colors.black87))],
+                  if (e.event.notes.isNotEmpty) ...[const SizedBox(height: 4), Text('הערות: ${e.event.notes}', style: const TextStyle(fontSize: 13, color: Colors.black54))],
                 ],
               ),
             ),
-          );
-        },
-      );
-    }
-    return const Center(child: Text('משהו השתבש... נסי לרענן.'));
+            trailing: ElevatedButton.icon(
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+                  builder: (context) => Padding(
+                    padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+                    child: GreetingCanvas(client: e.client, defaultGreetingText: defaultText, logoAssetPath: 'assets/images/logo.png'),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1B5565),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              icon: const Icon(Icons.send_rounded, size: 16, color: Colors.white),
+              label: const Text('ברכה', style: TextStyle(color: Colors.white, fontSize: 13)),
+            ),
+          ),
+        );
+      },
+    );
   }
 }

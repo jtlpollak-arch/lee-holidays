@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../data/models/client_model.dart';
-import '../../data/models/event_model.dart';
 import '../../data/repositories/client_repository.dart';
-import '../../data/repositories/event_repository.dart';
 import '../bloc_or_provider/home_cubit.dart';
 
 class AddClientSheet extends StatefulWidget {
   final String spreadsheetId;
   final ClientRepository clientRepository;
-  final EventRepository eventRepository;
   final HomeCubit homeCubit;
   final VoidCallback onClientAdded;
 
-  const AddClientSheet({super.key, required this.spreadsheetId, required this.clientRepository, required this.eventRepository, required this.homeCubit, required this.onClientAdded});
+  const AddClientSheet({super.key, required this.spreadsheetId, required this.clientRepository, required this.homeCubit, required this.onClientAdded});
 
   @override
   State<AddClientSheet> createState() => _AddClientSheetState();
@@ -22,17 +19,11 @@ class AddClientSheet extends StatefulWidget {
 class _AddClientSheetState extends State<AddClientSheet> {
   final _formKey = GlobalKey<FormState>();
 
-  // שדות לקוח
+  // שדות לקוח בלבד
   final _fullNameController = TextEditingController();
   final _firstNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
-
-  // שדות אירוע
-  String _selectedEventType = 'יום הולדת';
-  DateTime _selectedDate = DateTime.now();
-  final _addressController = TextEditingController();
-  final _notesController = TextEditingController();
 
   bool _isLoading = false;
 
@@ -42,31 +33,7 @@ class _AddClientSheetState extends State<AddClientSheet> {
     _firstNameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
-    _addressController.dispose();
-    _notesController.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickDate() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(1930),
-      lastDate: DateTime(2100),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(primary: Color(0xFF1B5565), onPrimary: Colors.white, onSurface: Colors.black),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
   }
 
   Future<void> _submitForm() async {
@@ -79,7 +46,7 @@ class _AddClientSheetState extends State<AddClientSheet> {
     try {
       final String formattedPhone = _phoneController.text.trim();
 
-      // 1. משיכת הלקוחות הקיימים ובדיקת כפילויות לפי מספר הטלפון
+      // 1. משיכת הלקוחות הקיימים מהענן לצורך בדיקת כפילויות הרמטית לפי טלפון
       final existingClients = await widget.clientRepository.getClients(widget.spreadsheetId, forceRefresh: true);
 
       final bool isDuplicate = existingClients.any((c) => c.phone == formattedPhone && c.isActive);
@@ -117,31 +84,27 @@ class _AddClientSheetState extends State<AddClientSheet> {
             ),
           );
         }
-        return; // עוצרים את תהליך השמירה ולא ממשיכים לענן
+        return;
       }
 
-      // 2. יצירת מודל לקוח - מספר הטלפון משמש כמפתח הראשי (ה-ID הוסר לחלוטיًן)
+      // 2. יצירת מודל הלקוח החדש
       final newClient = ClientModel(phone: formattedPhone, fullName: _fullNameController.text.trim(), firstName: _firstNameController.text.trim(), email: _emailController.text.trim(), status: 'פעיל');
 
-      // 3. יצירת מודל אירוע משויך ללקוח באמצעות מספר הטלפון שלו
-      final newEvent = EventModel(clientPhone: formattedPhone, date: _selectedDate, eventType: _selectedEventType, address: _selectedEventType == 'יום הולדת' ? '' : _addressController.text.trim(), notes: _notesController.text.trim(), status: 'פעיל');
-
-      // 4. שמירה כפולה ומסונכרנת בענן גוגל שיטס
+      // 3. שמירת הלקוח בלבד בענן ובמסד הנתונים המקומי
       await widget.clientRepository.addClient(widget.spreadsheetId, newClient);
-      await widget.eventRepository.addEvent(widget.spreadsheetId, newEvent);
 
-      // 5. משיכה כפויה ומעודכנת של הלקוחות מהענן לתוך ה-Cache מיד לאחר השמירה
+      // 4. משיכה כפויה ומעודכנת של הלקוחות מהענן לתוך ה-Cache מיד לאחר השמירה
       await widget.clientRepository.getClients(widget.spreadsheetId, forceRefresh: true);
 
-      // 6. ריענון ה-Cubit עבור טאב המשימות ברקע
+      // 5. ריענון ה-Cubit עבור טאב המשימות ברקע
       await widget.homeCubit.loadDailyOverview(spreadsheetId: widget.spreadsheetId);
 
-      // 7. הפעלת הקולבק לרענון המיידי של הטאב הנוכחי (ספר לקוחות)
+      // 6. הפעלת הקולבק לרענון המיידי של ספר הלקוחות
       widget.onClientAdded();
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('הלקוח והאירוע התווספו וסונכרנו בהצלחה!', textDirection: TextDirection.rtl)));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('הלקוח התווסף וסונכרן בהצלחה!', textDirection: TextDirection.rtl)));
       }
     } catch (e) {
       if (mounted) {
@@ -172,7 +135,7 @@ class _AddClientSheetState extends State<AddClientSheet> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'הוספת לקוח ואירוע חדש',
+                    'הוספת לקוח חדש',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1B5565)),
                   ),
                   if (_isLoading) const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1B5565))),
@@ -180,12 +143,11 @@ class _AddClientSheetState extends State<AddClientSheet> {
               ),
               const SizedBox(height: 20),
 
-              // --- פרטי הלקוח הכלליים ---
               const Text(
                 'פרטי הלקוח הכלליים:',
                 style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 14),
               TextFormField(
                 controller: _fullNameController,
                 decoration: const InputDecoration(labelText: 'שם מלא *', border: OutlineInputBorder()),
@@ -199,7 +161,6 @@ class _AddClientSheetState extends State<AddClientSheet> {
               ),
               const SizedBox(height: 12),
 
-              // שדה טלפון מעודכן עם פורמטר
               TextFormField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
@@ -217,56 +178,6 @@ class _AddClientSheetState extends State<AddClientSheet> {
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(labelText: 'אימייל (אופציונלי)', border: OutlineInputBorder()),
               ),
-
-              const SizedBox(height: 24),
-              const Divider(),
-              const SizedBox(height: 12),
-
-              // --- פרטי האירוע / העסקה ---
-              const Text(
-                'פרטי האירוע / העסקה הנדל"נית:',
-                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
-              ),
-              const SizedBox(height: 14),
-              DropdownButtonFormField<String>(
-                value: _selectedEventType,
-                decoration: const InputDecoration(labelText: 'סוג האירוע', border: OutlineInputBorder()),
-                items: const [
-                  DropdownMenuItem(value: 'יום הולדת', child: Text('יום הולדת')),
-                  DropdownMenuItem(value: 'קניית דירה', child: Text('קניית דירה (יום השנה)')),
-                  DropdownMenuItem(value: 'מכירת דירה', child: Text('מכירת דירה (יום השנה)')),
-                ],
-                onChanged: (val) {
-                  if (val != null) setState(() => _selectedEventType = val);
-                },
-              ),
-              const SizedBox(height: 12),
-
-              OutlinedButton.icon(
-                onPressed: _pickDate,
-                icon: const Icon(Icons.calendar_month, color: Color(0xFF1B5565)),
-                label: Text('תאריך האירוע: ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}', style: const TextStyle(color: Colors.black87, fontSize: 15)),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 54),
-                  side: BorderSide(color: Colors.grey.shade400),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              if (_selectedEventType != 'יום הולדת') ...[
-                TextFormField(
-                  controller: _addressController,
-                  decoration: const InputDecoration(labelText: 'כתובת נכס / אזור *', border: OutlineInputBorder(), hintText: 'למשל: רוטשילד 45, פתח תקווה'),
-                  validator: (value) => value == null || value.trim().isEmpty ? 'נא להזין את כתובת הנכס' : null,
-                ),
-                const SizedBox(height: 12),
-              ],
-
-              TextFormField(
-                controller: _notesController,
-                maxLines: 2,
-                decoration: const InputDecoration(labelText: 'הערות נוספות (אופציונלי)', border: OutlineInputBorder()),
-              ),
               const SizedBox(height: 24),
 
               Row(
@@ -279,7 +190,7 @@ class _AddClientSheetState extends State<AddClientSheet> {
                         minimumSize: const Size(double.infinity, 50),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      child: const Text('שמירה וסנכרון לענן', style: TextStyle(color: Colors.white, fontSize: 16)),
+                      child: const Text('שמירת לקוח וסנכרון', style: TextStyle(color: Colors.white, fontSize: 16)),
                     ),
                   ),
                   const SizedBox(width: 12),
