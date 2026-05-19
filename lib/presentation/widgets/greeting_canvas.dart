@@ -1,10 +1,6 @@
-import 'dart:io';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // ייבוא רשמי לעבודה מול בסיס הנתונים בענן
 import '../../data/models/client_model.dart';
 
 class GreetingCanvas extends StatefulWidget {
@@ -19,10 +15,9 @@ class GreetingCanvas extends StatefulWidget {
 }
 
 class _GreetingCanvasState extends State<GreetingCanvas> {
-  final GlobalKey _globalKey = GlobalKey();
   late TextEditingController _textController;
   late String _currentGreetingText;
-  bool _isExporting = false;
+  bool _isProcessing = false;
 
   final Color _tealColor = const Color(0xFF1B5565);
   final Color _goldColor = const Color(0xFF8B7355);
@@ -47,58 +42,74 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
     super.dispose();
   }
 
-  /// פונקציית הליבה: לכידת הווידג'ט הגרפי, הפיכתו ל-JPG ושמירתו כקובץ זמני
-  Future<File?> _captureCanvasToImageFile() async {
+  /// פונקציית הליבה: שמירת הברכה בבסיס הנתונים בענן ויצירת קישור ישיר ללקוח
+  Future<void> _processAndSend({required String channelType}) async {
+    setState(() {
+      _isProcessing = true;
+    });
+
     try {
-      final RenderRepaintBoundary? boundary = _globalKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      // 1. גישה לאוסף הברכות ב-Firestore ויצירת מסמך עם מזהה (ID) ייחודי אוטומטי
+      final CollectionReference greetingsRef = FirebaseFirestore.instance.collection('greetings');
+      final String greetingId = greetingsRef.doc().id;
 
-      if (boundary == null) return null;
+      // 2. העלאת נתוני הגלויה לשרת הענן בזמן אמת
+      await greetingsRef.doc(greetingId).set({'id': greetingId, 'clientName': widget.client.firstName, 'text': _currentGreetingText.trim(), 'createdAt': FieldValue.serverTimestamp()});
 
-      // הבטחת רזולוציה גבוהה וחדה ללא טשטוש (pixelRatio: 3.0)
-      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      // 3. בניית כתובת הקישור הרשמית המצביעה ישירות על ה-index.html ב-Hosting
+      final String cloudCardUrl = 'https://lee-greetings.web.app/?id=$greetingId';
 
-      if (byteData == null) return null;
+      // 4. ניסוח הודעת ההזמנה החגיגית שתלווה את הקישור בצ'אט
+      final String messageBody =
+          'היי ${widget.client.firstName} 👋\n'
+          'מצורפת גלויה חגיגית ואישית שנכתבה במיוחד עבורך מלי פתרונות נדל"ן! ✨\n\n'
+          'לחצי כאן לפתיחת הגלויה המלאה:\n$cloudCardUrl';
 
-      final Uint8List pngBytes = byteData.buffer.asUint8List();
+      final String encodedMessage = Uri.encodeComponent(messageBody);
 
-      // מציאת נתיב זמני במכשיר וכתיבת הקובץ
-      final directory = await getTemporaryDirectory();
-      final String filePath = '${directory.path}/greeting_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final File file = File(filePath);
-      await file.writeAsBytes(pngBytes);
+      if (channelType == 'whatsapp') {
+        // ניקוי מספר הטלפון של הלקוח והתאמת קידומת בינלאומית
+        final String cleanPhone = widget.client.phone.replaceAll(RegExp(r'[^0-9]'), '').trim();
+        String internationalPhone = cleanPhone;
+        if (cleanPhone.startsWith('0')) {
+          internationalPhone = '972${cleanPhone.substring(1)}';
+        }
 
-      return file;
-    } catch (e) {
-      debugPrint('שגיאה בתהליך יצירת קובץ הגלויה: $e');
-      return null;
-    }
-  }
+        // פתיחה ישירה וממוקדת של הצ'אט מול מספר הטלפון המדויק ללא מסכי ביניים
+        final String whatsappUrl = 'https://wa.me/$internationalPhone?text=$encodedMessage';
+        final Uri whatsappUri = Uri.parse(whatsappUrl);
 
-  /// הפקת הגלויה ושליחתה לערוץ המבוקש (וואטסאפ או אימייל) כקובץ תמונה
-  Future<void> _handleShareAction({required String channelType}) async {
-    setState(() {
-      _isExporting = true;
-    });
+        if (await launchUrl(whatsappUri, mode: LaunchMode.externalApplication)) {
+          debugPrint('צ\'אט וואטסאפ נפתח ישירות מול הלקוח עם מזהה הגלויה בענן.');
+        } else {
+          throw Exception('לא ניתן לפתוח את אפליקציית וואטסאפ במכשיר זה');
+        }
+      } else if (channelType == 'email') {
+        if (widget.client.email.isEmpty) {
+          throw Exception('לא מוגדרת כתובת אימייל עבור לקוח זה במערכת');
+        }
 
-    final File? imageFile = await _captureCanvasToImageFile();
+        final String subject = Uri.encodeComponent('ברכה חמה ומעוצבת מלי פתרונות נדל"ן');
+        final String emailUrl = 'mailto:${widget.client.email}?subject=$subject&body=$encodedMessage';
+        final Uri emailUri = Uri.parse(emailUrl);
 
-    setState(() {
-      _isExporting = false;
-    });
-
-    if (imageFile == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('נכשל תהליך הפקת הגלויה הגרפית'), backgroundColor: Colors.redAccent));
+        if (await launchUrl(emailUri)) {
+          debugPrint('אפליקציית הדואר נפתחה ישירות מול נמען המייל.');
+        } else {
+          throw Exception('לא ניתן לפתוח את אפליקציית המייל במכשיר זה');
+        }
       }
-      return;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('שגיאה בתהליך השמירה והשליחה: ${e.toString().replaceAll('Exception:', '').trim()}'), backgroundColor: Colors.redAccent));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
     }
-
-    // הגדרת כותרת הברכה לפי סוג הערוץ שבו לי בחרה לשלוח
-    final String shareSubject = channelType == 'whatsapp' ? 'גלויה מעוצבת מוואטסאפ של לי ✨' : 'ברכה חמה ומעוצבת מלי פתרונות נדל"ן';
-
-    // פתיחת תפריט השיתוף הרשמי של המכשיר עם קובץ התמונה המעוצב
-    await Share.shareXFiles([XFile(imageFile.path)], subject: shareSubject, text: 'מצורפת גלויה אישית עבורך! ✨');
   }
 
   @override
@@ -116,15 +127,15 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'גלויה דיגיטלית ללקוח',
+                    'ניהול ושליחת גלויה דיגיטלית',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _tealColor),
                   ),
-                  if (_isExporting) SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(_tealColor))) else IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                  if (_isProcessing) SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(_tealColor))) else IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
                 ],
               ),
               const SizedBox(height: 14),
 
-              // שדה עריכת הטקסט הרך והמודרני
+              // שדה עריכת תוכן הגלויה
               TextFormField(
                 controller: _textController,
                 maxLines: 3,
@@ -132,7 +143,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: _lightBgColor,
-                  hintText: 'ערוך את גוף הברכה שיופיע בתוך הגלויה...',
+                  hintText: 'ערוך את גוף הברכה שיופיע בתוך הגלויה בענן...',
                   contentPadding: const EdgeInsets.all(14),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   focusedBorder: OutlineInputBorder(
@@ -144,67 +155,60 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
               const SizedBox(height: 16),
 
               const Text(
-                'תצוגה מקדימה של הגלויה שתישלח:',
+                'תצוגה מקדימה של הגלויה כפי שתופיע בדפדפן הלקוח:',
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey),
               ),
               const SizedBox(height: 10),
 
-              // קופסת ה-RepaintBoundary המבודדת: כל מה שבתוכה הופך לתמונה חלקה!
-              RepaintBoundary(
-                key: _globalKey,
-                child: Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
-                    border: Border.all(color: _goldColor.withOpacity(0.2), width: 1.5),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // לוגו יוקרתי במרכז הגלויה
-                      Image.asset(widget.logoAssetPath, height: 50, errorBuilder: (context, error, stackTrace) => Icon(Icons.star_purple500_rounded, size: 36, color: _goldColor)),
-                      const SizedBox(height: 16),
+              // סימולטור העיצוב היוקראתי של הגלויה
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+                  border: Border.all(color: _goldColor.withOpacity(0.2), width: 1.5),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.asset(widget.logoAssetPath, height: 50, errorBuilder: (context, error, stackTrace) => Icon(Icons.star_purple500_rounded, size: 36, color: _goldColor)),
+                    const SizedBox(height: 16),
 
-                      // כותרת פנייה מעוצבת
-                      Text(
-                        'היי ${widget.client.firstName},',
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _tealColor, fontFamily: 'Assistant'),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 14),
+                    Text(
+                      'היי ${widget.client.firstName},',
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _tealColor, fontFamily: 'Assistant'),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 14),
 
-                      // תוכן הברכה הדינמי והאישי
-                      Text(
-                        _currentGreetingText,
-                        style: const TextStyle(fontSize: 16, color: Colors.black87, height: 1.5, fontWeight: FontWeight.w500),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 24),
+                    Text(
+                      _currentGreetingText,
+                      style: const TextStyle(fontSize: 16, color: Colors.black87, height: 1.5, fontWeight: FontWeight.w500),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
 
-                      // חתימת המותג המהודרת בתחתית הגלויה
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(width: 20, height: 1, color: _goldColor),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            child: Text(
-                              'לי - תיווך וייעוץ נדל"ן',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _goldColor, letterSpacing: 0.5),
-                            ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(width: 20, height: 1, color: _goldColor),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Text(
+                            'לי - פתרונות נדל"ן יצירתיים',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _goldColor, letterSpacing: 0.5),
                           ),
-                          Container(width: 20, height: 1, color: _goldColor),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                        Container(width: 20, height: 1, color: _goldColor),
+                      ],
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),
 
-              // שורת כפתורי הפעולה המאוזנת והנפרדת
+              // שורת כפתורי ההפעלה הממוקדים
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -212,7 +216,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                     width: 140,
                     height: 48,
                     child: ElevatedButton.icon(
-                      onPressed: _isExporting ? null : () => _handleShareAction(channelType: 'whatsapp'),
+                      onPressed: _isProcessing ? null : () => _processAndSend(channelType: 'whatsapp'),
                       icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 18),
                       label: const Text(
                         'וואטסאפ',
@@ -230,7 +234,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                     width: 140,
                     height: 48,
                     child: ElevatedButton.icon(
-                      onPressed: _isExporting ? null : () => _handleShareAction(channelType: 'email'),
+                      onPressed: _isProcessing ? null : () => _processAndSend(channelType: 'email'),
                       icon: const Icon(Icons.mail_outline_rounded, color: Colors.white, size: 18),
                       label: const Text(
                         'שלחי במייל',

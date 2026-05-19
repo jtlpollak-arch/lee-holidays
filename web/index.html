@@ -1,46 +1,491 @@
 <!DOCTYPE html>
-<html>
+<html lang="he" dir="rtl">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>גלויה דיגיטלית אישית | לי אטדגי - תיווך וייעוץ נדל"ן</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+        /* הגדרת משתני עיצוב דינמיים */
+        :root {
+            --bg-gradient: radial-gradient(circle, #246A7D 0%, #15434F 100%);
+            --card-bg: #ffffff;
+            --card-border: 2px solid #c5a880;
+            --card-backdrop: none;
+            --envelope-bg: #1a3a44;
+            --envelope-paper: #112830;
+        }
 
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
-  <base href="$FLUTTER_BASE_HREF">
+        body {
+            font-family: 'Assistant', sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow: hidden;
+            perspective: 1500px;
+            transition: background 1s ease;
+        }
 
-  <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+        /* רקע עיטורים גיאומטריים מלכותי */
+        .background-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0.03;
+            background-image: linear-gradient(30deg, #8B7355 12%, transparent 12.5%, transparent 87%, #8B7355 87.5%, #8B7355),
+                              linear-gradient(150deg, #8B7355 12%, transparent 12.5%, transparent 87%, #8B7355 87.5%, #8B7355),
+                              linear-gradient(60deg, #8B7355 25%, transparent 25.5%, transparent 75%, #8B7355 75.5%, #8B7355);
+            background-size: 80px 140px;
+            z-index: 1;
+            pointer-events: none;
+        }
 
-  <!-- iOS meta tags & icons -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="holidays">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+        #confetti-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 5;
+            pointer-events: none;
+        }
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+        /* מכל תלת-ממדי ראשי */
+        .stage {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            height: 600px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            transform-style: preserve-3d;
+        }
 
-  <title>holidays</title>
-  <link rel="manifest" href="manifest.json">
+        /* === קונסטרוקציית המעטפה בתלת-ממד === */
+        .envelope-wrapper {
+            position: absolute;
+            width: 100%;
+            height: 320px;
+            background-color: var(--envelope-bg);
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease;
+            z-index: 20;
+            pointer-events: auto;
+            transform: translateY(40px); /* מרכז אותה יפה מול העין בהתחלה */
+        }
+
+        /* הזזת המעטפה למטה ברגע שהיא נפתחת כדי שלא תסתיר את הגלויה */
+        .stage.open .envelope-wrapper {
+            transform: translateY(160px) scale(0.9) rotateX(-5deg);
+            z-index: 5; /* זורק את המעטפה הפתוחה אל מאחורי הגלויה */
+            cursor: default;
+        }
+
+        /* הנייר הפנימי של המעטפה */
+        .envelope-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--envelope-paper);
+            border-radius: 0 0 12px 12px;
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+        }
+
+        /* הכנפיים הצידיות והתחתונות של המעטפה */
+        .envelope-folds {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 25;
+            pointer-events: none;
+        }
+        .envelope-folds::before {
+            content: ''; position: absolute; width: 0; height: 0;
+            border-top: 160px solid transparent; border-bottom: 160px solid transparent;
+            border-left: 225px solid rgba(255,255,255,0.04); border-right: 225px solid rgba(0,0,0,0.15);
+            top: 0; left: 0;
+        }
+        .envelope-folds::after {
+            content: ''; position: absolute; width: 0; height: 0;
+            border-left: 225px solid transparent; border-right: 225px solid transparent;
+            border-bottom: 160px solid rgba(0, 0, 0, 0.22);
+            bottom: 0; left: 0;
+        }
+
+        /* המכסה העליון של המעטפה */
+        .envelope-flap {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 160px;
+            background-color: var(--envelope-bg);
+            clip-path: polygon(0 0, 50% 100%, 100% 0);
+            transform-origin: top center;
+            z-index: 30;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+            pointer-events: none;
+        }
+
+        /* חותם השעווה המוזהב */
+        .wax-seal {
+            position: absolute;
+            top: 130px; left: calc(50% - 30px); width: 60px; height: 60px;
+            background: radial-gradient(circle, #ffe0a3 0%, #c5a880 60%, #8B7355 100%);
+            border-radius: 50%;
+            z-index: 35;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 22px; font-weight: 800; color: #ffffff;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3), inset 0 0 8px rgba(0,0,0,0.3);
+            border: 2px dashed rgba(255,255,255,0.4);
+            transition: transform 0.4s ease, opacity 0.4s ease;
+            pointer-events: none;
+        }
+        .wax-seal::after {
+            content: 'L'; font-family: 'Assistant', sans-serif;
+        }
+
+        /* אנימציית פתיחת המעטפה */
+        .stage.open .envelope-flap {
+            transform: rotateX(180deg);
+        }
+        .stage.open .wax-seal {
+            transform: scale(0.5) translateY(-100px);
+            opacity: 0;
+        }
+
+        /* === קונסטרוקציית הגלויה היוקרתית === */
+        .card-container {
+            position: relative;
+            width: 100%;
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 40px 24px 35px 24px; /* ריווח מהודק ומאוזן */
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            transform-style: preserve-3d;
+            overflow: hidden;
+            
+            opacity: 0;
+            transform: translateY(60px) scale(0.7) translateZ(-50px);
+            transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease;
+            z-index: 10;
+            backdrop-filter: var(--card-backdrop);
+            -webkit-backdrop-filter: var(--card-backdrop);
+            pointer-events: none; 
+        }
+
+        /* אפקט השליפה וההצבה קדימה */
+        .stage.open .card-container {
+            opacity: 1;
+            transform: translateY(-30px) scale(1) translateZ(50px); /* דוחף את הגלויה מעט למעלה למראה נקי */
+            z-index: 40;
+            pointer-events: auto; 
+        }
+
+        /* אפקט הברק המטאלי */
+        .card-container::after {
+            content: ''; position: absolute; top: -50%; left: -60%; width: 30%; height: 200%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+            transform: rotate(25deg); animation: metallicSheen 6s ease-in-out infinite;
+            pointer-events: none; z-index: 12;
+        }
+
+        /* מסגרת זהב פנימית */
+        .inner-gold-frame {
+            position: absolute; top: 15px; bottom: 15px; left: 15px; right: 15px;
+            border: var(--card-border); border-radius: 16px; pointer-events: none; transform: translateZ(10px);
+        }
+        .inner-gold-frame::before {
+            content: ''; position: absolute; top: -6px; bottom: -6px; left: 12px; right: 12px; border-left: 2px solid #ffffff; border-right: 2px solid #ffffff;
+        }
+        .inner-gold-frame::after {
+            content: ''; position: absolute; top: 12px; bottom: 12px; left: -6px; right: -6px; border-top: 2px solid #ffffff; border-bottom: 2px solid #ffffff;
+        }
+
+        /* תוכן פנימי של הגלויה */
+        .logo-wrapper {
+            margin-bottom: 20px; transform: translateZ(20px); display: flex; justify-content: center; align-items: center;
+        }
+        .logo-img { max-width: 150px; height: auto; object-fit: contain; }
+
+        .client-greeting {
+            font-size: 26px; font-weight: 800; color: #1B5565; margin-bottom: 12px; letter-spacing: -0.5px;
+            transform: translateZ(25px); transition: color 0.5s ease;
+            padding: 0 10px;
+        }
+
+        .divider {
+            display: flex; align-items: center; justify-content: center; margin-bottom: 20px; transform: translateZ(15px);
+        }
+        .divider-line { width: 45px; height: 1.5px; background: linear-gradient(to left, transparent, #c5a880); }
+        .divider-line.right { background: linear-gradient(to right, transparent, #c5a880); }
+        .divider-diamond { width: 6px; height: 6px; background-color: #8B7355; transform: rotate(45deg); margin: 0 10px; }
+
+        .greeting-text {
+            font-size: 17px; font-weight: 500; color: #2F3E46; line-height: 1.7; margin-bottom: 30px; 
+            padding: 0 20px; /* מניעת מגע בקצוות והגברת הקריאות */
+            white-space: pre-line; transform: translateZ(30px);
+            word-wrap: break-word;
+        }
+
+        .signature-wrapper { margin-top: 20px; transform: translateZ(15px); }
+        .signature-brand { font-size: 12px; font-weight: 800; color: #8B7355; text-transform: uppercase; letter-spacing: 2px; }
+        .signature-sub { font-size: 10px; color: #8fa086; margin-top: 4px; font-weight: 400; }
+
+        .confetti-item { position: absolute; font-size: 24px; user-select: none; pointer-events: none; opacity: 0.85; animation: fall linear forwards; }
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #8B7355; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block; }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes metallicSheen { 0% { left: -60%; } 30% { left: 140%; } 100% { left: 140%; } }
+        @keyframes fall {
+            0% { transform: translateY(-50px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(105vh) rotate(360deg); opacity: 0; }
+        }
+    </style>
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
 
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
-  <script src="flutter_bootstrap.js" async></script>
+    <div class="background-overlay"></div>
+    <div id="confetti-container"></div>
+
+    <div class="stage" id="mainStage">
+        
+        <div class="envelope-wrapper" id="envelope" onclick="openEnvelope()">
+            <div class="envelope-flap"></div>
+            <div class="wax-seal"></div>
+            <div class="envelope-folds"></div>
+        </div>
+
+        <div class="card-container" id="tiltCard">
+            <div class="inner-gold-frame"></div>
+            
+            <div class="logo-wrapper">
+                <img src="logo.png" class="logo-img" alt="לי תיווך וייעוץ נדל״ן">
+            </div>
+
+            <div class="client-greeting" id="clientName">טוען ברכה אישית...</div>
+
+            <div class="divider">
+                <div class="divider-line left"></div>
+                <div class="divider-diamond"></div>
+                <div class="divider-line right"></div>
+            </div>
+
+            <div class="greeting-text" id="greetingText">
+                <div class="loader"></div>
+            </div>
+
+            <div class="signature-wrapper">
+                <div class="signature-brand">לי • תיווך וייעוץ נדל"ן</div>
+                <div class="signature-sub">יצירתיות • מקצועיות • הכוונה</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBCfo3DoB1fY8BUo-pcWlImmIAANaok9Eo",
+            appId: "1:201464711048:web:fcff4852a31703fb345c3d",
+            projectId: "lee-greetings",
+            authDomain: "lee-greetings.firebaseapp.com",
+            databaseURL: "https://lee-greetings.firebaseio.com",
+            storageBucket: "lee-greetings.firebasestorage.app"
+        };
+
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+        } catch(e) {
+            console.error("Firebase init error:", e);
+        }
+
+        function getGreetingIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+
+        function openEnvelope() {
+            const stage = document.getElementById('mainStage');
+            if (stage.classList.contains('open')) return;
+            
+            stage.classList.add('open');
+            
+            setTimeout(() => {
+                const text = document.getElementById('greetingText').innerText;
+                launchContextualConfetti(text);
+            }, 600);
+        }
+
+        // מערכת ערכות הנושא הדינמית
+        function applyDynamicTheme(text) {
+            const root = document.documentElement;
+            
+            if (text.includes('יום הולדת') || text.includes('יומולדת')) {
+                root.style.setProperty('--bg-gradient', 'radial-gradient(circle, #581845 0%, #2C0828 100%)');
+                root.style.setProperty('--envelope-bg', '#4A0E17');
+                root.style.setProperty('--envelope-paper', '#32070D');
+                root.style.setProperty('--card-bg', 'rgba(255, 255, 255, 0.78)');
+                root.style.setProperty('--card-backdrop', 'blur(20px)');
+                root.style.setProperty('--card-border', '2px solid rgba(255, 215, 0, 0.4)');
+                document.getElementById('clientName').style.color = '#741B47';
+                
+            } else if (text.includes('בית') || text.includes('מפתח') || text.includes('דירה')) {
+                root.style.setProperty('--bg-gradient', 'radial-gradient(circle, #102A43 0%, #02162B 100%)');
+                root.style.setProperty('--envelope-bg', '#1F3A52');
+                root.style.setProperty('--envelope-paper', '#122538');
+                root.style.setProperty('--card-bg', '#ffffff');
+                root.style.setProperty('--card-border', '3px solid #D4AF37');
+                document.getElementById('clientName').style.color = '#0B3C5D';
+                
+            } else {
+                root.style.setProperty('--bg-gradient', 'radial-gradient(circle, #246A7D 0%, #15434F 100%)');
+                root.style.setProperty('--envelope-bg', '#1a3a44');
+                root.style.setProperty('--envelope-paper', '#112830');
+                root.style.setProperty('--card-bg', '#ffffff');
+                root.style.setProperty('--card-border', '2px solid #c5a880');
+                document.getElementById('clientName').style.color = '#1B5565';
+            }
+        }
+
+        function launchContextualConfetti(text) {
+            const container = document.getElementById('confetti-container');
+            if (!container) return;
+
+            container.innerHTML = ''; 
+
+            let emojiPool = ['✨', '🌸', '😊', '⭐', '💖', '💐', '🏡', '🥂'];
+            
+            if (text && (text.includes('יום הולדת') || text.includes('יומולדת'))) {
+                emojiPool = ['🌸', '🎂', '🎉', '🎈', '💐', '😊', '✨', '💖'];
+            } else if (text && (text.includes('תודה') || text.includes('מעריכה'))) {
+                emojiPool = ['💖', '🙏', '🌸', '🌷', '😊', '✨', '⭐'];
+            } else if (text && (text.includes('בית') || text.includes('מפתח') || text.includes('דירה'))) {
+                emojiPool = ['🏡', '🔑', '🥂', '✨', '🌸', '⭐'];
+            }
+
+            const numberOfEmojis = 65; 
+
+            for (let i = 0; i < numberOfEmojis; i++) {
+                const emojiItem = document.createElement('div');
+                emojiItem.classList.add('confetti-item');
+                emojiItem.innerText = emojiPool[Math.floor(Math.random() * emojiPool.length)];
+                
+                emojiItem.style.left = Math.random() * 100 + 'vw';
+                emojiItem.style.fontSize = (Math.random() * 16 + 18) + 'px';
+                emojiItem.style.animationDuration = (Math.random() * 3 + 2.5) + 's';
+                emojiItem.style.animationDelay = (Math.random() * 1.8) + 's';
+                
+                container.appendChild(emojiItem);
+
+                setTimeout(() => {
+                    emojiItem.remove();
+                }, 7500);
+            }
+        }
+
+        // אפקט ה-Tilt
+        const tiltCard = document.getElementById('tiltCard');
+        if (tiltCard) {
+            const handleMove = (e) => {
+                if (!document.getElementById('mainStage').classList.contains('open')) return;
+
+                let clientX, clientY;
+                if (e.touches) {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+                
+                const xAxis = (width / 2 - clientX) / width;
+                const yAxis = (height / 2 - clientY) / height;
+                
+                const rotateX = yAxis * 20; 
+                const rotateY = -xAxis * 20;
+                
+                tiltCard.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(50px)`;
+            };
+
+            const handleReset = () => {
+                if (!document.getElementById('mainStage').classList.contains('open')) return;
+                tiltCard.style.transform = `rotateX(0deg) rotateY(0deg) translateZ(50px)`;
+                tiltCard.style.transition = 'transform 0.6s ease';
+            };
+
+            const handleStart = () => {
+                if (!document.getElementById('mainStage').classList.contains('open')) return;
+                tiltCard.style.transition = 'none';
+            };
+
+            window.addEventListener('mousemove', handleMove);
+            window.addEventListener('touchmove', handleMove);
+            window.addEventListener('mouseleave', handleReset);
+            window.addEventListener('touchend', handleReset);
+            window.addEventListener('touchstart', handleStart);
+        }
+
+        async function loadGreetingCard() {
+            const id = getGreetingIdFromUrl();
+            
+            if (!id) {
+                document.getElementById('clientName').innerText = "שלום לך 👋";
+                document.getElementById('greetingText').innerText = "הקישור אינו מכיל מזהה גלויה תקין.";
+                return;
+            }
+
+            try {
+                const db = firebase.firestore();
+                
+                db.collection("greetings").doc(id).get().then((docSnap) => {
+                    if (docSnap.exists) {
+                        const data = docSnap.data();
+                        
+                        const nameToDisplay = data.clientName || "לקוח יקר";
+                        const textToDisplay = data.text || "";
+                        
+                        document.getElementById('clientName').innerText = `היי ${nameToDisplay},`;
+                        document.getElementById('greetingText').innerText = textToDisplay;
+                        
+                        applyDynamicTheme(textToDisplay);
+                    } else {
+                        document.getElementById('clientName').innerText = "יום נפלא ומבורך ✨";
+                        document.getElementById('greetingText').innerText = "הגלויה המבוקשת לא נמצאה במערכת.";
+                        applyDynamicTheme("");
+                    }
+                }).catch((error) => {
+                    console.error("Firestore loading error:", error);
+                    document.getElementById('clientName').innerText = "יום נפלא ומבורך ✨";
+                    document.getElementById('greetingText').innerText = "תודה רבה לך על האמון, השותפות והבחירה בי!";
+                    applyDynamicTheme("");
+                });
+            } catch (error) {
+                console.error("General wrapper error:", error);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', loadGreetingCard);
+    </script>
 </body>
 </html>

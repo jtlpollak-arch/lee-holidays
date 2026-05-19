@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'data/datasources/local_db_data_source.dart';
 import 'data/datasources/google_sheets_data_source.dart';
@@ -13,6 +14,22 @@ import 'presentation/pages/home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    // אתחול ישיר באמצעות הגדרות קשיחות בקוד (עוקף את שגיאות ה-Native לחלוטין)
+    await Firebase.initializeApp(
+      options: const FirebaseOptions(
+        apiKey: 'AIzaSyBCfo3DoB1fY8BUo-pcWlImmIAANaok9Eo', // החלף בערך מהדפדפן
+        appId: '1:201464711048:web:fcff4852a31703fb345c3d', // החלף בערך מהדפדפן
+        messagingSenderId: '201464711048', // החלף בערך מהדפדפן
+        projectId: 'lee-greetings', // שם הפרויקט שלך
+        storageBucket: 'lee-greetings.firebasestorage.app',
+      ),
+    );
+    debugPrint('Firebase אותחל בהצלחה רבה ובאופן ישיר!');
+  } catch (e) {
+    debugPrint('שגיאה באתחול Firebase: $e');
+  }
 
   final SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
 

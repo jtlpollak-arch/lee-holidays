@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "201464711048",
+    "project_id": "lee-greetings",
+    "storage_bucket": "lee-greetings.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:201464711048:android:7fadacdcdc4b6692345c3d",
+        "android_client_info": {
+          "package_name": "com.example.holidays"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgG9Su6tG7RilqtsjcORrdnQBThmROnsc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
