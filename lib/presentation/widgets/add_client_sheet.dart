@@ -77,31 +77,66 @@ class _AddClientSheetState extends State<AddClientSheet> {
     });
 
     try {
-      // 1. קבלת כל הלקוחות הקיימים כדי לייצר מזהה (ID) רץ וייחודי
+      final String formattedPhone = _phoneController.text.trim();
+
+      // 1. משיכת הלקוחות הקיימים ובדיקת כפילויות לפי מספר הטלפון
       final existingClients = await widget.clientRepository.getClients(widget.spreadsheetId, forceRefresh: true);
-      int nextId = 1;
-      if (existingClients.isNotEmpty) {
-        nextId = existingClients.map((c) => c.id).reduce((a, b) => a > b ? a : b) + 1;
+
+      final bool isDuplicate = existingClients.any((c) => c.phone == formattedPhone && c.isActive);
+
+      if (isDuplicate) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        // הצגת הודעת שגיאה חוסמת ללי במידה והלקוח כבר קיים במערכת
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => Directionality(
+              textDirection: TextDirection.rtl,
+              child: AlertDialog(
+                title: const Row(
+                  children: [
+                    Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+                    SizedBox(width: 8),
+                    Text('לקוח כבר קיים', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                content: Text('מספר הטלפון ($formattedPhone) כבר משויך ללקוח פעיל במערכת.\nלא ניתן להכניס לקוח כפול.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text(
+                      'הבנתי',
+                      style: TextStyle(color: Color(0xFF1B5565), fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        return; // עוצרים את תהליך השמירה ולא ממשיכים לענן
       }
 
-      // 2. יצירת מודל לקוח (פרטים אישיים בלבד, ללא שדה כתובת נכס)
-      final newClient = ClientModel(id: nextId, fullName: _fullNameController.text.trim(), firstName: _firstNameController.text.trim(), phone: _phoneController.text.trim(), email: _emailController.text.trim(), status: 'פעיל');
+      // 2. יצירת מודל לקוח - מספר הטלפון משמש כמפתח הראשי (ה-ID הוסר לחלוטיًן)
+      final newClient = ClientModel(phone: formattedPhone, fullName: _fullNameController.text.trim(), firstName: _firstNameController.text.trim(), email: _emailController.text.trim(), status: 'פעיל');
 
-      // 3. יצירת מודל אירוע משויך ללקוח הכולל בתוכו את שדה כתובת הנכס
-      final newEvent = EventModel(clientId: nextId, date: _selectedDate, eventType: _selectedEventType, address: _selectedEventType == 'יום הולדת' ? '' : _addressController.text.trim(), notes: _notesController.text.trim(), status: 'פעיל');
+      // 3. יצירת מודל אירוע משויך ללקוח באמצעות מספר הטלפון שלו
+      final newEvent = EventModel(clientPhone: formattedPhone, date: _selectedDate, eventType: _selectedEventType, address: _selectedEventType == 'יום הולדת' ? '' : _addressController.text.trim(), notes: _notesController.text.trim(), status: 'פעיל');
 
       // 4. שמירה כפולה ומסונכרנת בענן גוגל שיטס
       await widget.clientRepository.addClient(widget.spreadsheetId, newClient);
       await widget.eventRepository.addEvent(widget.spreadsheetId, newEvent);
 
-      // ** הנה השורה האחת ששינינו והוספנו **
-      // נבצע משיכה כפויה ומעודכנת של הלקוחות מהענן לתוך ה-Cache מיד לאחר השמירה
+      // 5. משיכה כפויה ומעודכנת של הלקוחות מהענן לתוך ה-Cache מיד לאחר השמירה
       await widget.clientRepository.getClients(widget.spreadsheetId, forceRefresh: true);
 
-      // 5. ריענון ה-Cubit עבור טאב המשימות ברקע
+      // 6. ריענון ה-Cubit עבור טאב המשימות ברקע
       await widget.homeCubit.loadDailyOverview(spreadsheetId: widget.spreadsheetId);
 
-      // הפעלת הקולבק לרענון הטאב הנוכחי של ספר הלקוחות
+      // 7. הפעלת הקולבק לרענון המיידי של הטאב הנוכחי (ספר לקוחות)
       widget.onClientAdded();
 
       if (mounted) {
@@ -145,6 +180,7 @@ class _AddClientSheetState extends State<AddClientSheet> {
               ),
               const SizedBox(height: 20),
 
+              // --- פרטי הלקוח הכלליים ---
               const Text(
                 'פרטי הלקוח הכלליים:',
                 style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
@@ -163,6 +199,7 @@ class _AddClientSheetState extends State<AddClientSheet> {
               ),
               const SizedBox(height: 12),
 
+              // שדה טלפון מעודכן עם פורמטר
               TextFormField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
@@ -185,6 +222,7 @@ class _AddClientSheetState extends State<AddClientSheet> {
               const Divider(),
               const SizedBox(height: 12),
 
+              // --- פרטי האירוע / העסקה ---
               const Text(
                 'פרטי האירוע / העסקה הנדל"נית:',
                 style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),

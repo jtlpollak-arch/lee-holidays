@@ -11,27 +11,30 @@ class DailyEventResult {
   DailyEventResult({required this.client, required this.event, required this.isEarlyReminder, required this.displayMessage});
 }
 
-/// Use Caseק האחראי על פילוח וחישוב האירועים שיש להציג היום למשתמשת
+/// Use Case האחראי על פילוח וחישוב האירועים שיש להציג היום למשתמשת
 class CalculateDailyEventsUseCase {
   /// הפונקציה המרכזית שמקבלת את כל המידע ומחזירה רק את מה שרלוונטי להיום
   List<DailyEventResult> execute({required List<ClientModel> allClients, required List<EventModel> allEvents, required DateTime today}) {
     final List<DailyEventResult> results = [];
 
-    // יצירת מפה (Map) של לקוחות לפי ה-ID שלהם לגישה מהירה ב-O(1)
-    final Map<int, ClientModel> clientMap = {for (var client in allClients) client.id: client};
+    // ** תוקן בהתאם לארכיטקטורה החדשה **
+    // יצירת מפה (Map) של לקוחות לפי מספר הטלפון שלהם לגישה מהירה ב-O(1)
+    final Map<String, ClientModel> clientMap = {for (var client in allClients) client.phone: client};
 
-    // הגדרת תאריכי הבדיקה (היום, מחר, ומחרתיים) ללא שעות/דקות לצורך השוואה נקייה
+    // הגדרת תאריכי הבדיקה (היום, מחר, ומחרתיים למנגנון סופי השבוע)
     final DateTime dateToday = DateTime(today.year, today.month, today.day);
     final DateTime dateTomorrow = dateToday.add(const Duration(days: 1));
-    final DateTime dateDayAfterTomorrow = dateToday.add(const Duration(days: 2));
+    final DateTime dateInTwoDays = dateToday.add(const Duration(days: 2));
 
     for (var event in allEvents) {
-      final ClientModel? client = clientMap[event.clientId];
-      if (client == null) continue; // אם הלקוח לא קיים במערכת, נדלג על האירוע
+      if (!event.isActive) continue;
 
-      // קביעת תאריך היעד להשוואה:
-      // אם זה יום הולדת - נשווה רק לפי יום וחודש (מחזורי בכל שנה).
-      // אם זה אירוע נדל"ן (קנייה/מכירה) - נתחשב גם בשנה המקורית (חד-פעמי).
+      // ** תוקן בהתאם לארכיטקטורה החדשה **
+      // שליפת הלקוח המשויך לאירוע לפי מספר הטלפון שלו במקום ה-ID המספרי
+      final client = clientMap[event.clientPhone];
+      if (client == null) continue; // אם הלקוח לא קיים או מחוק, נדלג על האירוע
+
+      // חישוב תאריך היעד לבדיקה השנה - עבור יום הולדת בודקים את השנה הנוכחית, ועבור נדל"ן את התאריך המקורי
       DateTime eventDateToCheck;
       if (event.eventType == 'יום הולדת') {
         eventDateToCheck = DateTime(dateToday.year, event.date.month, event.date.day);
@@ -52,9 +55,9 @@ class CalculateDailyEventsUseCase {
         }
       }
       // אם מחרתיים יום שבת (והאירוע חל מחרתיים) והיום יום חמישי - נקדים אותו להיום (חמישי)
-      else if (eventDateToCheck == dateDayAfterTomorrow) {
-        if (dateDayAfterTomorrow.weekday == DateTime.saturday && dateToday.weekday == DateTime.thursday) {
-          results.add(DailyEventResult(client: client, event: event, isEarlyReminder: true, displayMessage: 'חל בשבת - שליחה מוקדמת מראש'));
+      else if (eventDateToCheck == dateInTwoDays) {
+        if (dateInTwoDays.weekday == DateTime.saturday && dateToday.weekday == DateTime.thursday) {
+          results.add(DailyEventResult(client: client, event: event, isEarlyReminder: true, displayMessage: 'חל בשבת - שליחה מוקדמת מיום חמישי'));
         }
       }
     }

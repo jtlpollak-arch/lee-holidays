@@ -11,72 +11,67 @@ class SpreadsheetManager {
   static const String _clientsCacheKey = 'cached_clients_json';
   static const String _eventsCacheKey = 'cached_events_json';
 
-  // משתנה סטטי ברמת המחלקה שחוסם יצירה מקבילה של קבצים בכל האפליקציה
+  // משתנה סטטי ברמת המחלקה שחוסם ומאחד את כל תהליך הבדיקה והיצירה ברחבי האפליקציה
   static Future<String>? _currentSetupFuture;
 
   Future<String> getOrCreateSpreadsheet(http.Client client) async {
-    // אם כבר רץ תהליך איתור או יצירה של קובץ ברגע זה, כל הקריאות האחרות
-    // ימתינו לאותו ה-Future המקורי ולא יבצעו קריאות כפולות מול גוגל
+    // אם כבר רץ תהליך אתחול, איתור או יצירה של קובץ ברגע זה, כל שאר הקריאות
+    // ימתינו לאותו ה-Future המקורי ולא יבצעו שום בדיקה או קריאה מקבילה מול גוגל
     if (_currentSetupFuture != null) {
-      print('זיהיתי קריאה מקבילה לאיתור קובץ. מפנה את הקריאה להמתין לתהליך שכבר רץ...');
+      print('זיהיתי קריאה מקבילה לאתחול מערך הנתונים. מפנה את הרכיב להמתין לתהליך שכבר רץ...');
       return _currentSetupFuture!;
     }
 
-    // הגדרת ה-Future המרכזי
-    _currentSetupFuture = _executeGetOrCreate(client);
+    // עטיפת כל התהליך (מבדיקת הזיכרון המקומי ועד החיפוש והיצירה בענן) תחת ה-Future הסטטי המשותף
+    _currentSetupFuture = _executeSynchronizedSetup(client);
 
     try {
-      final String resultId = await _currentSetupFuture!;
+      final resultId = await _currentSetupFuture!;
       return resultId;
     } finally {
-      // בסיום התהליך (הצלחה או שגיאה), נפתח את החסימה לקריאות עתידיות
+      // בסיום מוחלט של התהליך (הצלחה או שגיאה), נאפס את המשתנה הסטטי כדי לאפשר קריאות עתידיות במידת הצורך
       _currentSetupFuture = null;
     }
   }
 
-  Future<String> _executeGetOrCreate(http.Client client) async {
-    final prefs = await SharedPreferences.getInstance();
-    final driveApi = drive.DriveApi(client);
-    final sheetsApi = sheets.SheetsApi(client);
+  /// הלוגיקה הפנימית המוגנת שמבוצעת בצורה טורית ומסונכרנת עבור כל רכיבי האפליקציה
+  Future<String> _executeSynchronizedSetup(http.Client client) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? cachedId = prefs.getString(_prefsKey);
 
-    String? savedId = prefs.getString(_prefsKey);
-
-    if (savedId != null && savedId.isNotEmpty) {
+    if (cachedId != null && cachedId.isNotEmpty) {
+      final driveApi = drive.DriveApi(client);
       try {
-        await sheetsApi.spreadsheets.get(savedId);
-        print('נמצא קובץ תקין בזיכרון המקומי: $savedId');
-        return savedId;
+        print('נמצא מזהה קובץ שמור בזיכרון המקומי ($cachedId). מverify שהוא פעיל בענן...');
+        // בדיקה אקטיבית מול גוגל דרייב שהקובץ אכן קיים ואינו נמצא באשפה
+        await driveApi.files.get(cachedId, $fields: 'id, trashed');
+        print('הקובץ השמור אומת בהצלחה ונמצא תקין ופעיל.');
+        return cachedId;
       } catch (e) {
-        print('הקובץ השמור בזיכרון כבר לא תקף או נמצא באשפה. ננקה ונחפש מחדש.');
+        print('הקובץ השמור לא נמצא או נמחק ידנית מהענן ($e). מנקה את ה-Cache המקומי ומתכונן לאיתור או יצירה...');
+        // מחיקת כל הזיכרון הישן וה-Cache מהמכשיר כדי לרוקן את המסכים באופן מיידי
         await prefs.remove(_prefsKey);
-        // אם הקובץ הישן נמחק, ננקה גם את ה-Cache המקומי כדי שלא יציג נתוני רפאים
         await prefs.remove(_clientsCacheKey);
         await prefs.remove(_eventsCacheKey);
       }
     }
 
-    final query = "name = '$_fileName' and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false";
+    final driveApi = drive.DriveApi(client);
+    final sheetsApi = sheets.SheetsApi(client);
 
-    try {
-      final fileList = await driveApi.files.list(q: query, spaces: 'drive', $fields: 'files(id, name, trashed)');
+    print('מחפש קובץ קיים בדרייב בשם: "$_fileName"...');
+    final fileList = await driveApi.files.list(q: "name = '$_fileName' and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false", spaces: 'drive', pageSize: 1);
 
-      if (fileList.files != null && fileList.files!.isNotEmpty) {
-        final validFile = fileList.files!.firstWhere((f) => f.trashed == false && f.id != null, orElse: () => drive.File());
-
-        if (validFile.id != null) {
-          final existingId = validFile.id!;
-          print('נמצא קובץ קיים ותקין בענן גוגל דרייב: $existingId');
-          await prefs.setString(_prefsKey, existingId);
-          return existingId;
-        }
-      }
-    } catch (e) {
-      print('שגיאה במהלך חיפוש קובץ קיים: $e');
+    if (fileList.files != null && fileList.files!.isNotEmpty) {
+      final String existingId = fileList.files!.first.id!;
+      print('נמצא קובץ נתונים קיים בדרייב! מזהה קובץ: $existingId. מעדכן את הזיכרון המקומי.');
+      await prefs.setString(_prefsKey, existingId);
+      return existingId;
     }
 
-    print('מייצר קובץ נתונים חדש לגמרי בענן בשם: $_fileName');
+    print('לא נמצא קובץ תואם בענן. מייצר קובץ Google Sheets חדש ומגדיר את מבנה העמודות המעודכן...');
 
-    // ברגע שמייצרים קובץ חדש מאפס, חובה לנקות את הזיכרון המקומי הישן של הלקוחות והאירועים
+    // ניקוי ביטחוני נוסף של זיכרון המטמון המקומי לקראת התחלת עבודה עם קובץ חדש לחלוטין
     await prefs.remove(_clientsCacheKey);
     await prefs.remove(_eventsCacheKey);
     print('ה-Cache המקומי של הלקוחות והאירועים אופס בהצלחה.');
@@ -92,23 +87,23 @@ class SpreadsheetManager {
     final createdSheet = await sheetsApi.spreadsheets.create(newSpreadsheet);
     final String newId = createdSheet.spreadsheetId!;
 
-    // כותרות מעודכנות ללשונית הלקוחות (הורדנו את כתובת הנכס מפה)
+    // כותרות מעודכנות ללשונית הלקוחות - מספר הטלפון מחליף לחלוטין את המזהה הרץ והופך לטור הראשי
     await sheetsApi.spreadsheets.values.update(
       sheets.ValueRange(
         values: [
-          ['מזהה', 'שם מלא', 'שם פרטי', 'טלפון', 'אימייל', 'סטטוס'],
+          ['טלפון', 'שם מלא', 'שם פרטי', 'אימייל', 'סטטוס'],
         ],
       ),
       newId,
-      'Sheet1!A1:F1',
+      'Sheet1!A1:E1',
       valueInputOption: 'USER_ENTERED',
     );
 
-    // כותרות מורחבות ומעודכנות ללשונית האירועים (הוספנו את כתובת הנכס כאן בטור D)
+    // כותרות מעודכנות ללשונית האירועים - הקישור נעשה באמצעות טלפון לקוח במקום מזהה מספרי
     await sheetsApi.spreadsheets.values.update(
       sheets.ValueRange(
         values: [
-          ['מזהה לקוח', 'תאריך', 'סוג אירוע', 'כתובת נכס / אזור', 'הערות', 'סטטוס'],
+          ['טלפון לקוח', 'תאריך אירוע', 'סוג אירוע', 'כתובת נכס', 'הערות', 'סטטוס'],
         ],
       ),
       newId,
@@ -116,9 +111,16 @@ class SpreadsheetManager {
       valueInputOption: 'USER_ENTERED',
     );
 
+    print('הקובץ החדש נוצר והמבנה עודכן בהצלחה מול גוגל שיטס. מזהה: $newId');
     await prefs.setString(_prefsKey, newId);
-    print('הקובץ החדש נוצר, פולח ואותחל בהצלחה! מזהה: $newId');
-
     return newId;
+  }
+
+  Future<void> clearLocalCachedSpreadsheetId() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_prefsKey);
+    await prefs.remove(_clientsCacheKey);
+    await prefs.remove(_eventsCacheKey);
+    print('מזהה הגיליון וה-Cache של הנתונים נמחקו מה-SharedPreferences בהצלחה.');
   }
 }

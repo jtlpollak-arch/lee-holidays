@@ -32,14 +32,15 @@ class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
   }
 
   // ==========================================
-  // לוגיקת לקוחות (Sheet1) - 6 עמודות: A עד F
+  // לוגיקת לקוחות (Sheet1) - 5 עמודות: A עד E
   // ==========================================
 
   @override
   Future<List<ClientModel>> getClients(String spreadsheetId) async {
     final sheetsApi = _getSheetsApi();
     try {
-      final response = await sheetsApi.spreadsheets.values.get(spreadsheetId, 'Sheet1!A2:F5000');
+      // תוקן לטווח A עד E (5 עמודות) בהתאם להסרת המזהה המספרי
+      final response = await sheetsApi.spreadsheets.values.get(spreadsheetId, 'Sheet1!A2:E5000');
       final List<ClientModel> clients = [];
 
       if (response.values != null) {
@@ -61,7 +62,8 @@ class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
     final sheetsApi = _getSheetsApi();
     final valueRange = sheets.ValueRange(values: [client.toRow()]);
     try {
-      await sheetsApi.spreadsheets.values.append(valueRange, spreadsheetId, 'Sheet1!A:F', valueInputOption: 'USER_ENTERED');
+      // תוקן לטווח A עד E
+      await sheetsApi.spreadsheets.values.append(valueRange, spreadsheetId, 'Sheet1!A:E', valueInputOption: 'USER_ENTERED');
     } catch (e) {
       print('שגיאה בהוספת לקוח חדש לגוגל שיטס: $e');
       rethrow;
@@ -73,7 +75,8 @@ class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
     final sheetsApi = _getSheetsApi();
     final valueRange = sheets.ValueRange(values: [client.toRow()]);
     try {
-      await sheetsApi.spreadsheets.values.update(valueRange, spreadsheetId, 'Sheet1!A$rowIndex:F$rowIndex', valueInputOption: 'USER_ENTERED');
+      // תוקן לטווח A עד E עבור שורה ספציפית
+      await sheetsApi.spreadsheets.values.update(valueRange, spreadsheetId, 'Sheet1!A$rowIndex:E$rowIndex', valueInputOption: 'USER_ENTERED');
       print('שורת הלקוח $rowIndex עודכנה בהצלחה בענן.');
     } catch (e) {
       print('שגיאה בעדכון שורת לקוח בגוגל שיטס: $e');

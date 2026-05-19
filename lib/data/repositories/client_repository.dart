@@ -9,7 +9,7 @@ abstract class ClientRepository {
   Future<void> addNewClient(String spreadsheetId, ClientModel client);
   Future<void> editClientRow(String spreadsheetId, int rowIndex, ClientModel client);
   Future<void> updateClient(String spreadsheetId, ClientModel client);
-  Future<void> deleteClientSoft(String spreadsheetId, int clientId);
+  Future<void> deleteClientSoft(String spreadsheetId, String phone); // שונה מ-clientId למחרוזת phone
 }
 
 class ClientRepositoryImpl implements ClientRepository {
@@ -63,7 +63,8 @@ class ClientRepositoryImpl implements ClientRepository {
   Future<void> editClientRow(String spreadsheetId, int rowIndex, ClientModel client) async {
     await _googleSheetsDataSource.updateClientRow(spreadsheetId, rowIndex, client);
     final currentLocal = await _localDbDataSource.getClients();
-    final index = currentLocal.indexWhere((c) => c.id == client.id);
+    // החיפוש המקומי שונה לטלפון במקום מזהה מספרי
+    final index = currentLocal.indexWhere((c) => c.phone == client.phone);
     if (index != -1) {
       currentLocal[index] = client;
       await _localDbDataSource.saveClients(currentLocal);
@@ -73,14 +74,16 @@ class ClientRepositoryImpl implements ClientRepository {
   @override
   Future<void> updateClient(String spreadsheetId, ClientModel client) async {
     final currentLocal = await _localDbDataSource.getClients();
-    final index = currentLocal.indexWhere((c) => c.id == client.id);
+    // החיפוש המקומי שונה לטלפון
+    final index = currentLocal.indexWhere((c) => c.phone == client.phone);
     if (index != -1) {
       currentLocal[index] = client;
       await _localDbDataSource.saveClients(currentLocal);
     }
 
     final cloudClients = await _googleSheetsDataSource.getClients(spreadsheetId);
-    final cloudIndex = cloudClients.indexWhere((c) => c.id == client.id);
+    // החיפוש בענן שונה לטלפון
+    final cloudIndex = cloudClients.indexWhere((c) => c.phone == client.phone);
     if (cloudIndex != -1) {
       final int sheetRowNumber = cloudIndex + 2;
       await _googleSheetsDataSource.updateClientRow(spreadsheetId, sheetRowNumber, client);
@@ -88,19 +91,21 @@ class ClientRepositoryImpl implements ClientRepository {
   }
 
   @override
-  Future<void> deleteClientSoft(String spreadsheetId, int clientId) async {
+  Future<void> deleteClientSoft(String spreadsheetId, String phone) async {
     final cloudClients = await _googleSheetsDataSource.getClients(spreadsheetId);
-    final cloudIndex = cloudClients.indexWhere((c) => c.id == clientId);
+    // איתור שורת הלקוח בענן לפי מספר הטלפון שלו
+    final cloudIndex = cloudClients.indexWhere((c) => c.phone == phone);
 
     if (cloudIndex != -1) {
       final targetClient = cloudClients[cloudIndex];
-      final updatedClient = ClientModel(id: targetClient.id, fullName: targetClient.fullName, firstName: targetClient.firstName, phone: targetClient.phone, email: targetClient.email, status: 'מחוק');
+      final updatedClient = ClientModel(phone: targetClient.phone, fullName: targetClient.fullName, firstName: targetClient.firstName, email: targetClient.email, status: 'מחוק');
 
       final int sheetRowNumber = cloudIndex + 2;
       await _googleSheetsDataSource.updateClientRow(spreadsheetId, sheetRowNumber, updatedClient);
 
       final currentLocal = await _localDbDataSource.getClients();
-      final localIndex = currentLocal.indexWhere((c) => c.id == clientId);
+      // איתור ועדכון ב-Cache המקומי לפי מספר הטלפון
+      final localIndex = currentLocal.indexWhere((c) => c.phone == phone);
       if (localIndex != -1) {
         currentLocal[localIndex] = updatedClient;
         await _localDbDataSource.saveClients(currentLocal);

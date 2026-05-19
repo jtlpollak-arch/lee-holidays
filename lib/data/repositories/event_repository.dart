@@ -8,7 +8,7 @@ abstract class EventRepository {
   Future<void> addEvent(String spreadsheetId, EventModel event);
   Future<void> addNewEvent(String spreadsheetId, EventModel event, String clientName);
   Future<void> updateEvent(String spreadsheetId, EventModel event);
-  Future<void> deleteEventSoft(String spreadsheetId, int clientId, String eventType);
+  Future<void> deleteEventSoft(String spreadsheetId, String phone, String eventType); // שונה מ-clientId למחרוזת phone
 }
 
 class EventRepositoryImpl implements EventRepository {
@@ -58,14 +58,16 @@ class EventRepositoryImpl implements EventRepository {
   @override
   Future<void> updateEvent(String spreadsheetId, EventModel event) async {
     final currentLocal = await _localDbDataSource.getEvents();
-    final index = currentLocal.indexWhere((e) => e.clientId == event.clientId && e.eventType == event.eventType);
+    // התאמת החיפוש המקומי לפי טלפון הלקוח וסוג האירוע
+    final index = currentLocal.indexWhere((e) => e.clientPhone == event.clientPhone && e.eventType == event.eventType);
     if (index != -1) {
       currentLocal[index] = event;
       await _localDbDataSource.saveEvents(currentLocal);
     }
 
     final cloudEvents = await _googleSheetsDataSource.getEvents(spreadsheetId);
-    final cloudIndex = cloudEvents.indexWhere((e) => e.clientId == event.clientId && e.eventType == event.eventType);
+    // התאמת החיפוש בענן לפי טלפון הלקוח וסוג האירוע
+    final cloudIndex = cloudEvents.indexWhere((e) => e.clientPhone == event.clientPhone && e.eventType == event.eventType);
     if (cloudIndex != -1) {
       final int sheetRowNumber = cloudIndex + 2;
       await _googleSheetsDataSource.updateEventRow(spreadsheetId, sheetRowNumber, event);
@@ -73,26 +75,21 @@ class EventRepositoryImpl implements EventRepository {
   }
 
   @override
-  Future<void> deleteEventSoft(String spreadsheetId, int clientId, String eventType) async {
+  Future<void> deleteEventSoft(String spreadsheetId, String phone, String eventType) async {
     final cloudEvents = await _googleSheetsDataSource.getEvents(spreadsheetId);
-    final cloudIndex = cloudEvents.indexWhere((e) => e.clientId == clientId && e.eventType == eventType);
+    // איתור האירוע בענן על פי מספר הטלפון המקשר וסוג האירוע
+    final cloudIndex = cloudEvents.indexWhere((e) => e.clientPhone == phone && e.eventType == eventType);
 
     if (cloudIndex != -1) {
       final targetEvent = cloudEvents[cloudIndex];
-      final updatedEvent = EventModel(
-        clientId: targetEvent.clientId,
-        date: targetEvent.date,
-        eventType: targetEvent.eventType,
-        address: targetEvent.address, // שמירה על הכתובת הקיימת בעת המחיקה הרכה
-        notes: targetEvent.notes,
-        status: 'מחוק',
-      );
+      final updatedEvent = EventModel(clientPhone: targetEvent.clientPhone, date: targetEvent.date, eventType: targetEvent.eventType, address: targetEvent.address, notes: targetEvent.notes, status: 'מחוק');
 
       final int sheetRowNumber = cloudIndex + 2;
       await _googleSheetsDataSource.updateEventRow(spreadsheetId, sheetRowNumber, updatedEvent);
 
       final currentLocal = await _localDbDataSource.getEvents();
-      final localIndex = currentLocal.indexWhere((e) => e.clientId == clientId && e.eventType == eventType);
+      // איתור ועדכון ב-Cache המקומי על פי מספר הטלפון וסוג האירוע
+      final localIndex = currentLocal.indexWhere((e) => e.clientPhone == phone && e.eventType == eventType);
       if (localIndex != -1) {
         currentLocal[localIndex] = updatedEvent;
         await _localDbDataSource.saveEvents(currentLocal);

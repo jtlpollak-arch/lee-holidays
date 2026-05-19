@@ -30,7 +30,7 @@ class _HomePageState extends State<HomePage> {
   final AuthService _authService = AuthService();
   final SpreadsheetManager _spreadsheetManager = SpreadsheetManager();
 
-  // הוספת המפתח הגלובלי כדי לשלוט בריענון של ספר הלקוחות מבחוץ
+  // מפתח גלובלי המאפשר שליטה ורענון של ספר הלקוחות מבחוץ
   final GlobalKey<ClientsBookViewState> _clientsBookKey = GlobalKey<ClientsBookViewState>();
 
   GoogleSignInAccount? _googleUser;
@@ -191,8 +191,8 @@ class _HomePageState extends State<HomePage> {
               eventRepository: widget.eventRepository,
               homeCubit: widget.cubit,
               onClientAdded: () {
-                // קריאה לרענון המיידי של ספר הלקוחות על המסך ברגע שההוספה מסתיימת
-                _clientsBookKey.currentState?.loadClientsDataExternal();
+                // ריענון מיידי של ספר הלקוחות על המסך ברגע שההוספה מסתיימת
+                _clientsBookKey.currentState?.forceReloadFromOutside();
               },
             ),
           ),
@@ -228,7 +228,7 @@ class _HomePageState extends State<HomePage> {
                 icon: const Icon(Icons.sync, color: Color(0xFF1B5565)),
                 onPressed: () {
                   widget.cubit.loadDailyOverview(spreadsheetId: _activeSpreadsheetId!);
-                  _clientsBookKey.currentState?.loadClientsDataExternal();
+                  _clientsBookKey.currentState?.forceReloadFromOutside();
                 },
               ),
               IconButton(
