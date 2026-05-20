@@ -62,7 +62,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
       // 4. ניסוח הודעת ההזמנה החגיגית שתלווה את הקישור בצ'אט
       final String messageBody =
           'היי ${widget.client.firstName} 👋\n'
-          'מצורפת גלויה חגיגית ואישית שנכתבה במיוחד עבורך מלי פתרונות נדל"ן! ✨\n\n'
+          'מצורפת גלויה חגיגית ואישית שנכתבה במיוחד עבורך מלי אטדגי - תיווך וייעוץ נדל"ן! ✨\n\n'
           'לחצי כאן לפתיחת הגלויה המלאה:\n$cloudCardUrl';
 
       final String encodedMessage = Uri.encodeComponent(messageBody);
@@ -89,7 +89,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
           throw Exception('לא מוגדרת כתובת אימייל עבור לקוח זה במערכת');
         }
 
-        final String subject = Uri.encodeComponent('ברכה חמה ומעוצבת מלי פתרונות נדל"ן');
+        final String subject = Uri.encodeComponent('ברכה חמה ומעוצבת מלי אטדגי - תיווך וייעוץ נדל"ן');
         final String emailUrl = 'mailto:${widget.client.email}?subject=$subject&body=$encodedMessage';
         final Uri emailUri = Uri.parse(emailUrl);
 
@@ -196,7 +196,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           child: Text(
-                            'לי - פתרונות נדל"ן יצירתיים',
+                            'לי אטדגי - תיווך וייעוץ נדל"ן',
                             style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _goldColor, letterSpacing: 0.5),
                           ),
                         ),

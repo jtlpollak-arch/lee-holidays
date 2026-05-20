@@ -242,7 +242,7 @@ class _HomePageState extends State<HomePage> {
                 padding: const EdgeInsets.all(16.0),
                 color: const Color(0xFF1B5565).withOpacity(0.05),
                 child: Text(
-                  'שלום לי, להלן הברכות המתוזמנות להיום (${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}):',
+                  'לי היקרה! שלום! להלן הברכות המתוזמנות להיום (${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}):',
                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1B5565)),
                 ),
               ),
@@ -295,10 +295,24 @@ class _HomePageState extends State<HomePage> {
         // תיקון כפילות הפתיח: מתחילים ישירות מגוף האיחול
         final String defaultText = 'רציתי לאחל לך המון מזל טוב לרגל ${e.event.eventType}! ✨';
 
-        return Card(
+        final isBirthday = e.event.eventType.trim() == 'יום הולדת';
+        final Color eventColor = isBirthday ? const Color(0xFF8B1E3F) : const Color(0xFFC5A880);
+        final String eventEmoji = isBirthday ? '🎂 ' : '🏡 ';
+
+        // קביעת צבעי תגית הסטטוס (אירוע של היום / תזכורת מוקדמת)
+        final Color statusBgColor = e.isEarlyReminder ? Colors.orange.shade50 : Colors.green.shade50;
+        final Color statusTextColor = e.isEarlyReminder ? Colors.orange.shade800 : Colors.green.shade800;
+
+        return Container(
           margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          elevation: 1.5,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2))],
+            border: Border(
+              left: BorderSide(color: eventColor, width: 5), // פס צבע אנכי שמאלי
+            ),
+          ),
           child: ListTile(
             contentPadding: const EdgeInsets.all(12),
             title: Row(
@@ -307,10 +321,10 @@ class _HomePageState extends State<HomePage> {
                 const SizedBox(width: 10),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(color: e.isEarlyReminder ? Colors.orange.shade50 : const Color(0xFF1B5565).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: eventColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
                   child: Text(
-                    e.event.eventType,
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: e.isEarlyReminder ? Colors.orange.shade900 : const Color(0xFF1B5565)),
+                    '$eventEmoji${e.event.eventType}',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: eventColor),
                   ),
                 ),
               ],
@@ -320,12 +334,63 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    e.displayMessage,
-                    style: TextStyle(color: e.isEarlyReminder ? Colors.orange.shade700 : Colors.green.shade700, fontWeight: FontWeight.w500, fontSize: 13),
+                  // הפיכת הודעת הסטטוס המקורית לתגית מעוגלת ועדינה
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(color: statusBgColor, borderRadius: BorderRadius.circular(6)),
+                    child: Text(
+                      e.displayMessage,
+                      style: TextStyle(color: statusTextColor, fontWeight: FontWeight.bold, fontSize: 11),
+                    ),
                   ),
-                  if (e.event.address.isNotEmpty) ...[const SizedBox(height: 4), Text('נכס: ${e.event.address}', style: const TextStyle(fontSize: 13, color: Colors.black87))],
-                  if (e.event.notes.isNotEmpty) ...[const SizedBox(height: 4), Text('הערות: ${e.event.notes}', style: const TextStyle(fontSize: 13, color: Colors.black54))],
+                  const SizedBox(height: 8),
+
+                  // שורות המידע עם אייקונים, ריווח והדגשת כותרות הנתונים
+                  if (e.event.address.isNotEmpty) ...[
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on_rounded, size: 15, color: Colors.black45),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: RichText(
+                            text: TextSpan(
+                              style: const TextStyle(fontSize: 13, color: Colors.black87, fontFamily: 'Roboto'),
+                              children: [
+                                const TextSpan(
+                                  text: 'נכס: ',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                TextSpan(text: e.event.address),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (e.event.notes.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.notes_rounded, size: 15, color: Colors.black45),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: RichText(
+                            text: TextSpan(
+                              style: const TextStyle(fontSize: 13, color: Colors.black54, fontFamily: 'Roboto'),
+                              children: [
+                                const TextSpan(
+                                  text: 'הערות: ',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                TextSpan(text: e.event.notes),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),

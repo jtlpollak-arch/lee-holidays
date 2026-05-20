@@ -35,7 +35,7 @@ class GoogleCalendarApiImpl implements GoogleCalendarApi {
     // הגדרת זמן תחילת האירוע ל-08:00 בבוקר בתאריך המבוקש
     final DateTime startDateTime = DateTime(date.year, date.month, date.day, 8, 0);
     // הגדרת זמן סיום ל-08:05 (אירוע ממוקד של 5 דקות)
-    final DateTime endDateTime = startDateTime.add(const Duration(minutes: 5));
+    final DateTime endDateTime = startDateTime.add(const Duration(minutes: 15));
 
     // בניית אובייקט האירוע לפי המפרט של גוגל
     final calendar.Event event = calendar.Event(
@@ -54,7 +54,7 @@ class GoogleCalendarApiImpl implements GoogleCalendarApi {
         overrides: [
           calendar.EventReminder(
             method: 'popup',
-            minutes: 0, // התראה בדיוק בזמן האירוע (08:00 בבוקר)
+            minutes: 10, // התראה בדיוק בזמן האירוע (08:00 בבוקר)
           ),
         ],
       ),

@@ -42,7 +42,7 @@ class HomeCubit {
   HomeState _state = const HomeInitial();
   HomeState get state => _state;
 
-  // פונקציית קולבק המאפשרת ל-UI להאזין לשינויי הסטייט
+  // קולבק לעדכון ה-UI על שינוי במצב
   void Function(HomeState state)? _onStateChanged;
 
   HomeCubit({required ClientRepository clientRepository, required EventRepository eventRepository, required CalculateDailyEventsUseCase calculateDailyEventsUseCase}) : _clientRepository = clientRepository, _eventRepository = eventRepository, _calculateDailyEventsUseCase = calculateDailyEventsUseCase;
@@ -74,11 +74,33 @@ class HomeCubit {
       // 3. הרצת ה-Use Case החכם שמחשב את אירועי היום והקדמות השבת/חג
       final List<DailyEventResult> dailyEvents = _calculateDailyEventsUseCase.execute(allClients: clients, allEvents: events, today: DateTime.now());
 
-      // 4. עדכון המסך בהצלחה עם הנתונים המעובדים
+      // 4. עדכון הסטייט בהצלחה עם הנתונים המעובדים
       _emit(HomeSuccess(dailyEvents: dailyEvents, allClients: clients));
     } catch (e) {
-      // עדכון הסטייט בשגיאה במקרה של בעיה חמורה (כמו חוסר בהרשאות גוגל)
-      _emit(HomeFailure('נכשלה טעינת הנתונים: ${e.toString()}'));
+      _emit(HomeFailure('שגיאה בטעינת הנתונים: ${e.toString()}'));
+    }
+  }
+
+  /// סימון אירוע כנשלח באמצעות עדכון חותמת הזמן הנוכחית
+  Future<void> markEventAsSent({required String spreadsheetId, required EventModel event}) async {
+    try {
+      final String currentTimestamp = DateTime.now().toIso8601String();
+      final updatedEvent = event.copyWith(sentTimestamp: currentTimestamp);
+      await _eventRepository.updateEvent(spreadsheetId, updatedEvent);
+      await loadDailyOverview(spreadsheetId: spreadsheetId);
+    } catch (e) {
+      _emit(HomeFailure('שגיאה בסימון האירוע כנשלח: ${e.toString()}'));
+    }
+  }
+
+  /// ביטול סימון השליחה והחייאת האירוע על ידי ריקון חותמת הזמן
+  Future<void> cancelEventSentStatus({required String spreadsheetId, required EventModel event}) async {
+    try {
+      final updatedEvent = event.copyWith(sentTimestamp: '');
+      await _eventRepository.updateEvent(spreadsheetId, updatedEvent);
+      await loadDailyOverview(spreadsheetId: spreadsheetId);
+    } catch (e) {
+      _emit(HomeFailure('שגיאה בביטול סימון השליחה: ${e.toString()}'));
     }
   }
 }
