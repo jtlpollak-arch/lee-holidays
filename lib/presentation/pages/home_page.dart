@@ -303,116 +303,161 @@ class _HomePageState extends State<HomePage> {
         final Color statusBgColor = e.isEarlyReminder ? Colors.orange.shade50 : Colors.green.shade50;
         final Color statusTextColor = e.isEarlyReminder ? Colors.orange.shade800 : Colors.green.shade800;
 
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2))],
-            border: Border(
-              left: BorderSide(color: eventColor, width: 5), // פס צבע אנכי שמאלי
+        // בדיקה האם האירוע כבר נשלח בשנה הנוכחית
+        bool isSentThisYear = false;
+        if (e.event.sentTimestamp.isNotEmpty) {
+          final DateTime? sentDate = DateTime.tryParse(e.event.sentTimestamp);
+          if (sentDate != null && sentDate.year == DateTime.now().year) {
+            isSentThisYear = true;
+          }
+        }
+
+        return Opacity(
+          opacity: isSentThisYear ? 0.5 : 1.0,
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2))],
+              border: Border(
+                left: BorderSide(color: eventColor, width: 5), // פס צבע אנכי שמאלי
+              ),
             ),
-          ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.all(12),
-            title: Row(
-              children: [
-                Text(e.client.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                const SizedBox(width: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(color: eventColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                  child: Text(
-                    '$eventEmoji${e.event.eventType}',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: eventColor),
-                  ),
-                ),
-              ],
-            ),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 6.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(12),
+              title: Row(
                 children: [
-                  // הפיכת הודעת הסטטוס המקורית לתגית מעוגלת ועדינה
+                  Text(e.client.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(width: 10),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(color: statusBgColor, borderRadius: BorderRadius.circular(6)),
+                    decoration: BoxDecoration(color: eventColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
                     child: Text(
-                      e.displayMessage,
-                      style: TextStyle(color: statusTextColor, fontWeight: FontWeight.bold, fontSize: 11),
+                      '$eventEmoji${e.event.eventType}',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: eventColor),
                     ),
                   ),
-                  const SizedBox(height: 8),
-
-                  // שורות המידע עם אייקונים, ריווח והדגשת כותרות הנתונים
-                  if (e.event.address.isNotEmpty) ...[
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on_rounded, size: 15, color: Colors.black45),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: RichText(
-                            text: TextSpan(
-                              style: const TextStyle(fontSize: 13, color: Colors.black87, fontFamily: 'Roboto'),
-                              children: [
-                                const TextSpan(
-                                  text: 'נכס: ',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                TextSpan(text: e.event.address),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                  if (e.event.notes.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.notes_rounded, size: 15, color: Colors.black45),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: RichText(
-                            text: TextSpan(
-                              style: const TextStyle(fontSize: 13, color: Colors.black54, fontFamily: 'Roboto'),
-                              children: [
-                                const TextSpan(
-                                  text: 'הערות: ',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                TextSpan(text: e.event.notes),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
                 ],
               ),
-            ),
-            trailing: ElevatedButton.icon(
-              onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-                  builder: (context) => Padding(
-                    padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-                    child: GreetingCanvas(client: e.client, defaultGreetingText: defaultText, logoAssetPath: 'assets/images/logo.png'),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1B5565),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 6.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // הפיכת הודעת הסטטוס המקורית לתגית מעוגלת ועדינה
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(color: statusBgColor, borderRadius: BorderRadius.circular(6)),
+                      child: Text(
+                        e.displayMessage,
+                        style: TextStyle(color: statusTextColor, fontWeight: FontWeight.bold, fontSize: 11),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // שורות המידע עם אייקונים, ריווח והדגשת כותרות הנתונים
+                    if (e.event.address.isNotEmpty) ...[
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on_rounded, size: 15, color: Colors.black45),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: RichText(
+                              text: TextSpan(
+                                style: const TextStyle(fontSize: 13, color: Colors.black87, fontFamily: 'Roboto'),
+                                children: [
+                                  const TextSpan(
+                                    text: 'נכס: ',
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  TextSpan(text: e.event.address),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (e.event.notes.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.notes_rounded, size: 15, color: Colors.black45),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: RichText(
+                              text: TextSpan(
+                                style: const TextStyle(fontSize: 13, color: Colors.black54, fontFamily: 'Roboto'),
+                                children: [
+                                  const TextSpan(
+                                    text: 'הערות: ',
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  TextSpan(text: e.event.notes),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
               ),
-              icon: const Icon(Icons.send_rounded, size: 16, color: Colors.white),
-              label: const Text('ברכה', style: TextStyle(color: Colors.white, fontSize: 13)),
+              trailing: isSentThisYear
+                  ? InkWell(
+                      onTap: () {
+                        if (_spreadsheetId != null) {
+                          widget.cubit.cancelEventSentStatus(spreadsheetId: _spreadsheetId!, event: e.event);
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade400), // תוקן השגיאה מכאן
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.check_circle_rounded, size: 16, color: Colors.grey.shade600),
+                            const SizedBox(width: 6),
+                            Text(
+                              'נשלח',
+                              style: TextStyle(color: Colors.grey.shade700, fontSize: 13, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : ElevatedButton.icon(
+                      onPressed: () {
+                        // הוספנו את הקריאה לסימון כנשלח כאן
+                        if (_spreadsheetId != null) {
+                          widget.cubit.markEventAsSent(spreadsheetId: _spreadsheetId!, event: e.event);
+                        }
+
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+                          builder: (context) => Padding(
+                            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+                            child: GreetingCanvas(client: e.client, defaultGreetingText: defaultText, logoAssetPath: 'assets/images/logo.png'),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1B5565),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      icon: const Icon(Icons.send_rounded, size: 16, color: Colors.white),
+                      label: const Text('ברכה', style: TextStyle(color: Colors.white, fontSize: 13)),
+                    ),
             ),
           ),
         );
