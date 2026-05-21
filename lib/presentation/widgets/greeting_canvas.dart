@@ -50,30 +50,59 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
     });
 
     try {
-      // תיעוד שליחת הברכה ב-Firebase Cloud Firestore
-      await FirebaseFirestore.instance.collection('greeting_logs').add({'clientPhone': widget.client.phone, 'clientName': widget.client.fullName, 'channel': channelType, 'sentAt': FieldValue.serverTimestamp(), 'textSnapshot': _currentGreetingText});
+      // 1. גישה לאוסף הברכות ב-Firestore ויצירת מסמך עם מזהה (ID) ייחודי אוטומטי
+      final CollectionReference greetingsRef = FirebaseFirestore.instance.collection('greetings');
+      final String greetingId = greetingsRef.doc().id;
+
+      // 2. העלאת נתוני הגלויה לשרת הענן בזמן אמת
+      await greetingsRef.doc(greetingId).set({'id': greetingId, 'clientName': widget.client.firstName, 'text': _currentGreetingText.trim(), 'createdAt': FieldValue.serverTimestamp()});
+
+      // 3. בניית כתובת הקישור הרשמית המצביעה ישירות על ה-index.html ב-Hosting
+      final String cloudCardUrl = 'https://lee-greetings.web.app/?id=$greetingId';
+
+      // 4. ניסוח הודעת ההזמנה החגיגית שתלווה את הקישור בצ'אט
+      final String messageBody =
+          'היי ${widget.client.firstName} 👋\n'
+          'מצורפת גלויה חגיגית ואישית שנכתבה במיוחד עבורך מלי אטדגי - תיווך וייעוץ נדל"ן! ✨\n\n'
+          'לחצי כאן לפתיחת הגלויה המלאה:\n$cloudCardUrl';
+
+      final String encodedMessage = Uri.encodeComponent(messageBody);
 
       if (channelType == 'whatsapp') {
-        final encodedText = Uri.encodeComponent(_currentGreetingText);
-        var cleanPhone = widget.client.phone.trim();
+        // ניקוי מספר הטלפון של הלקוח והתאמת קידומת בינלאומית
+        final String cleanPhone = widget.client.phone.replaceAll(RegExp(r'[^0-9]'), '').trim();
+        String internationalPhone = cleanPhone;
         if (cleanPhone.startsWith('0')) {
-          cleanPhone = '972${cleanPhone.substring(1)}';
+          internationalPhone = '972${cleanPhone.substring(1)}';
         }
-        final whatsappUrl = Uri.parse('https://wa.me/$cleanPhone?text=$encodedText');
 
-        if (await canLaunchUrl(whatsappUrl)) {
-          await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+        // פתיחה ישירה וממוקדת של הצ'אט מול מספר הטלפון המדויק ללא מסכי ביניים
+        final String whatsappUrl = 'https://wa.me/$internationalPhone?text=$encodedMessage';
+        final Uri whatsappUri = Uri.parse(whatsappUrl);
+
+        if (await launchUrl(whatsappUri, mode: LaunchMode.externalApplication)) {
+          debugPrint('צ\'אט וואטסאפ נפתח ישירות מול הלקוח עם מזהה הגלויה בענן.');
         } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('לא ניתן לפתוח את אפליקציית WhatsApp במכשיר זה')));
-          }
+          throw Exception('לא ניתן לפתוח את אפליקציית וואטסאפ במכשיר זה');
         }
       } else if (channelType == 'email') {
-        // לוגיקה עתידית למשלוח דואר אלקטרוני
+        if (widget.client.email.isEmpty) {
+          throw Exception('לא מוגדרת כתובת אימייל עבור לקוח זה במערכת');
+        }
+
+        final String subject = Uri.encodeComponent('ברכה חמה ומעוצבת מלי אטדגי - תיווך וייעוץ נדל"ן');
+        final String emailUrl = 'mailto:${widget.client.email}?subject=$subject&body=$encodedMessage';
+        final Uri emailUri = Uri.parse(emailUrl);
+
+        if (await launchUrl(emailUri)) {
+          debugPrint('אפליקציית הדואר נפתחה ישירות מול נמען המייל.');
+        } else {
+          throw Exception('לא ניתן לפתוח את אפליקציית המייל במכשיר זה');
+        }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('שגיאה בתיעוד או בשליחת הברכה: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('שגיאה בתהליך השמירה והשליחה: ${e.toString().replaceAll('Exception:', '').trim()}'), backgroundColor: Colors.redAccent));
       }
     } finally {
       if (mounted) {
