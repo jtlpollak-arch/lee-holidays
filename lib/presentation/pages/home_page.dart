@@ -446,7 +446,7 @@ class _HomePageState extends State<HomePage> {
                           shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
                           builder: (context) => Padding(
                             padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-                            child: GreetingCanvas(client: e.client, defaultGreetingText: defaultText, logoAssetPath: 'assets/images/logo.png'),
+                            child: GreetingCanvas(client: e.client, event: e.event, defaultGreetingText: defaultText, logoAssetPath: 'assets/images/logo.png'),
                           ),
                         );
                       },
