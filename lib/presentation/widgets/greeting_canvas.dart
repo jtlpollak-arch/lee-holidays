@@ -159,12 +159,18 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                                   children: [
                                     Image.asset(widget.logoAssetPath, height: 65, errorBuilder: (context, error, stackTrace) => Icon(Icons.insert_emoticon_rounded, size: 50, color: _goldColor)),
                                     const SizedBox(height: 20),
+                                    Text(
+                                      'היי ${widget.client.firstName},',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 0, 0, 0)),
+                                    ),
+                                    const SizedBox(height: 20),
                                     Expanded(
                                       child: SingleChildScrollView(
                                         child: Text(
                                           _currentGreetingText,
                                           textAlign: TextAlign.center,
-                                          style: TextStyle(fontSize: 16, height: 1.5, color: _tealColor, fontWeight: FontWeight.w500),
+                                          style: TextStyle(fontSize: 16, height: 1.5, color: Color.fromARGB(255, 0, 0, 0), fontWeight: FontWeight.w500),
                                         ),
                                       ),
                                     ),
@@ -184,7 +190,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                     const SizedBox(height: 24),
 
                     // הוספת קוביות תצוגת ההערות מטור E מול עיני המשתמש
-                    if (widget.event.notes.trim().isNotEmpty) ...[
+                    if (widget.event.notes.trim().isNotEmpty || widget.event.address.trim().isNotEmpty) ...[
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
@@ -196,18 +202,50 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                Icon(Icons.notes_rounded, size: 16, color: Colors.amber.shade900),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'הערות לאירוע :',
-                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.amber.shade900),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(widget.event.notes, style: const TextStyle(fontSize: 14, color: Colors.black87)),
+                            // בלוק הצגת הנכס - מוצג רק אם הכתובת לא ריקה
+                            if (widget.event.address.trim().isNotEmpty) ...[
+                              Row(
+                                children: [
+                                  Icon(Icons.location_on_rounded, size: 16, color: Colors.amber.shade900),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      'נכס: ${widget.event.address}',
+                                      style: const TextStyle(fontSize: 14, color: Colors.black87, fontWeight: FontWeight.w500),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              // רווח קטן בין הנכס להערות במידה ושניהם קיימים
+                              if (widget.event.notes.trim().isNotEmpty) const SizedBox(height: 8),
+                            ],
+
+                            // בלוק הצגת ההערות - מוצג רק אם ההערות לא ריקות
+                            if (widget.event.notes.trim().isNotEmpty) ...[
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Icon(Icons.notes_rounded, size: 16, color: Colors.amber.shade900),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'הערות לאירוע:',
+                                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.amber.shade900),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(widget.event.notes, style: const TextStyle(fontSize: 14, color: Colors.black87)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ],
                         ),
                       ),
