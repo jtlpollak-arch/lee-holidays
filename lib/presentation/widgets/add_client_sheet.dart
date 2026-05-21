@@ -47,7 +47,7 @@ class _AddClientSheetState extends State<AddClientSheet> {
       final String formattedPhone = _phoneController.text.trim();
 
       // 1. משיכת הלקוחות הקיימים מהענן לצורך בדיקת כפילויות הרמטית לפי טלפון
-      final existingClients = await widget.clientRepository.getClients(widget.spreadsheetId, forceRefresh: true);
+      final existingClients = await widget.clientRepository.getAllClients(widget.spreadsheetId, forceRefresh: true);
 
       final bool isDuplicate = existingClients.any((c) => c.phone == formattedPhone && c.isActive);
 
@@ -87,14 +87,14 @@ class _AddClientSheetState extends State<AddClientSheet> {
         return;
       }
 
-      // 2. יצירת מודל הלקוח החדש
-      final newClient = ClientModel(phone: formattedPhone, fullName: _fullNameController.text.trim(), firstName: _firstNameController.text.trim(), email: _emailController.text.trim(), status: 'פעיל');
+      // 2. יצירת מודל הלקוח החדש (עודכן בפינצטה שדה id)
+      final newClient = ClientModel(id: '', phone: formattedPhone, fullName: _fullNameController.text.trim(), firstName: _firstNameController.text.trim(), email: _emailController.text.trim(), status: 'פעיל');
 
       // 3. שמירת הלקוח בלבד בענן ובמסד הנתונים המקומי
       await widget.clientRepository.addClient(widget.spreadsheetId, newClient);
 
       // 4. משיכה כפויה ומעודכנת של הלקוחות מהענן לתוך ה-Cache מיד לאחר השמירה
-      await widget.clientRepository.getClients(widget.spreadsheetId, forceRefresh: true);
+      await widget.clientRepository.getAllClients(widget.spreadsheetId, forceRefresh: true);
 
       // 5. ריענון ה-Cubit עבור טאב המשימות ברקע
       await widget.homeCubit.loadDailyOverview(spreadsheetId: widget.spreadsheetId);

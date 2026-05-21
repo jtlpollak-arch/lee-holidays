@@ -32,14 +32,15 @@ class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
   }
 
   // ==========================================
-  // לוגיקת לקוחות (Sheet1) - 5 עמודות: A עד E
+  // לוגיקת לקוחות (Sheet1) - מורחב ל-6 עמודות: A עד F
   // ==========================================
 
   @override
   Future<List<ClientModel>> getClients(String spreadsheetId) async {
     final sheetsApi = _getSheetsApi();
     try {
-      final response = await sheetsApi.spreadsheets.values.get(spreadsheetId, 'Sheet1!A2:E5000');
+      // הטווח עודכן מ-E ל-F כדי לקרוא את כל 6 העמודות (כולל ה-id החדש בטור A)
+      final response = await sheetsApi.spreadsheets.values.get(spreadsheetId, 'Sheet1!A2:F5000');
       final List<ClientModel> clients = [];
 
       if (response.values != null) {
@@ -61,7 +62,8 @@ class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
     final sheetsApi = _getSheetsApi();
     final valueRange = sheets.ValueRange(values: [client.toRow()]);
     try {
-      await sheetsApi.spreadsheets.values.append(valueRange, spreadsheetId, 'Sheet1!A:E', valueInputOption: 'USER_ENTERED');
+      // הטווח עודכן ל-F כדי לתמוך בשמירת 6 העמודות בענן
+      await sheetsApi.spreadsheets.values.append(valueRange, spreadsheetId, 'Sheet1!A:F', valueInputOption: 'USER_ENTERED');
     } catch (e) {
       print('שגיאה בהוספת לקוח חדש לגוגל שיטס: $e');
       rethrow;
@@ -72,10 +74,9 @@ class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
   Future<void> updateClientRow(String spreadsheetId, int rowIndex, ClientModel client) async {
     final sheetsApi = _getSheetsApi();
     final valueRange = sheets.ValueRange(values: [client.toRow()]);
-    final range = 'Sheet1!A$rowIndex:E$rowIndex';
-
     try {
-      await sheetsApi.spreadsheets.values.update(valueRange, spreadsheetId, range, valueInputOption: 'USER_ENTERED');
+      // הטווח עודכן ל-F לעדכון שורה מלאה בענן
+      await sheetsApi.spreadsheets.values.update(valueRange, spreadsheetId, 'Sheet1!A$rowIndex:F$rowIndex', valueInputOption: 'USER_ENTERED');
     } catch (e) {
       print('שגיאה בעדכון שורת לקוח בגוגל שיטס: $e');
       rethrow;
@@ -83,14 +84,13 @@ class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
   }
 
   // ==========================================
-  // לוגיקת אירועים (Events) - 8 עמודות: A עד H
+  // לוגיקת אירועים (Events) - נשארת 8 עמודות: A עד H (ללא שינוי טווחים)
   // ==========================================
 
   @override
   Future<List<EventModel>> getEvents(String spreadsheetId) async {
     final sheetsApi = _getSheetsApi();
     try {
-      // עודכן הטווח ל-H כדי להכיל את עמודת המזהה החדשה בטור A
       final response = await sheetsApi.spreadsheets.values.get(spreadsheetId, 'Events!A2:H5000');
       final List<EventModel> events = [];
 
@@ -113,7 +113,6 @@ class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
     final sheetsApi = _getSheetsApi();
     final valueRange = sheets.ValueRange(values: [event.toRow()]);
     try {
-      // עודכן הטווח ל-H עבור הוספת אירוע חדש
       await sheetsApi.spreadsheets.values.append(valueRange, spreadsheetId, 'Events!A:H', valueInputOption: 'USER_ENTERED');
     } catch (e) {
       print('שגיאה בהוספת אירוע חדש לגוגל שיטס: $e');
@@ -125,11 +124,8 @@ class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
   Future<void> updateEventRow(String spreadsheetId, int rowIndex, EventModel event) async {
     final sheetsApi = _getSheetsApi();
     final valueRange = sheets.ValueRange(values: [event.toRow()]);
-    // עודכן הטווח ל-H עבור עדכון שורה קיימת
-    final range = 'Events!A$rowIndex:H$rowIndex';
-
     try {
-      await sheetsApi.spreadsheets.values.update(valueRange, spreadsheetId, range, valueInputOption: 'USER_ENTERED');
+      await sheetsApi.spreadsheets.values.update(valueRange, spreadsheetId, 'Events!A$rowIndex:H$rowIndex', valueInputOption: 'USER_ENTERED');
     } catch (e) {
       print('שגיאה בעדכון שורת אירוע בגוגל שיטס: $e');
       rethrow;

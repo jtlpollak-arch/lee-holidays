@@ -36,7 +36,7 @@ class ClientsBookViewState extends State<ClientsBookView> {
   // הוספנו לה קריאה ישירה ל- _loadClientsData עם forceRefresh: true
   // כדי שהיא תמשוך את המידע ותבצע setState שיצייר מחדש את הרשימה המעודכנת
   void forceReloadFromOutside() {
-    print('מבצע רענון ספר לקוחות מבחוץ (מכוח קריאה של דף הבית)...');
+    print('מבצע רענון מאולץ לספר הלקוחות מפעולה חיצונית...');
     _loadClientsData(forceRefresh: true);
   }
 
@@ -47,11 +47,12 @@ class ClientsBookViewState extends State<ClientsBookView> {
     });
 
     try {
-      final clients = await widget.clientRepository.getClients(widget.spreadsheetId, forceRefresh: forceRefresh);
+      final clients = await widget.clientRepository.getAllClients(widget.spreadsheetId, forceRefresh: forceRefresh);
+
       if (mounted) {
         setState(() {
-          _allClients = clients;
-          _filteredClients = clients;
+          _allClients = clients.where((c) => c.isActive).toList();
+          _filterClients();
           _isLoading = false;
         });
       }
@@ -66,147 +67,137 @@ class ClientsBookViewState extends State<ClientsBookView> {
   }
 
   void _filterClients() {
-    final query = _searchController.text.toLowerCase().trim();
+    final query = _searchController.text.trim().toLowerCase();
     setState(() {
       if (query.isEmpty) {
-        _filteredClients = _allClients;
+        _filteredClients = List.from(_allClients);
       } else {
         _filteredClients = _allClients.where((client) {
-          return client.fullName.toLowerCase().contains(query) || client.firstName.toLowerCase().contains(query) || client.phone.contains(query) || client.email.toLowerCase().contains(query);
+          return client.fullName.toLowerCase().contains(query) || client.phone.contains(query) || client.email.toLowerCase().contains(query);
         }).toList();
       }
     });
   }
 
-  Future<void> _deleteClient(ClientModel client, int index) async {
-    final bool? confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          title: const Text('מחיקת לקוח', style: TextStyle(fontWeight: FontWeight.bold)),
-          content: Text('האם אתה בטוח שברצונך למחוק את ${client.fullName}?\n(הפעולה תבצע מחיקה רכה בענן).'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('ביטול', style: TextStyle(color: Colors.grey)),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text(
-                'מחק',
-                style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (confirm == true) {
-      try {
-        // מחיקה רכה מבוססת כעת על מספר הטלפון כמפתח הראשי
-        await widget.clientRepository.deleteClientSoft(widget.spreadsheetId, client.phone);
-
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('הלקוח ${client.fullName} נמחק בהצלחה.')));
-
-        // טעינה מחדש של הנתונים כדי לסנכרן את המסך
-        await _loadClientsData(forceRefresh: true);
-
-        // הפעלת רענון המשימות היומיות בדף הבית
-        widget.onRefreshRequired();
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('שגיאה במחיקת לקוח: $e')));
-      }
-    }
-  }
-
   void _openEditClientDialog(ClientModel client) {
-    final formKey = GlobalKey<FormState>();
-    final fullNameCtrl = TextEditingController(text: client.fullName);
-    final firstNameCtrl = TextEditingController(text: client.firstName);
-    final phoneCtrl = TextEditingController(text: client.phone); // מפתח ראשי - לא ניתן לשינוי
-    final emailCtrl = TextEditingController(text: client.email);
+    final nameController = TextEditingController(text: client.fullName);
+    final firstNameController = TextEditingController(text: client.firstName);
+    final phoneController = TextEditingController(text: client.phone);
+    final emailController = TextEditingController(text: client.email);
+    final dialogFormKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
-      builder: (context) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          title: const Text(
-            'עריכת פרטי לקוח',
-            style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B5565)),
-          ),
-          content: SingleChildScrollView(
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: fullNameCtrl,
-                    decoration: const InputDecoration(labelText: 'שם מלא *', border: OutlineInputBorder()),
-                    validator: (v) => v == null || v.trim().isEmpty ? 'שדה חובה' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: firstNameCtrl,
-                    decoration: const InputDecoration(labelText: 'שם פרטי *', border: OutlineInputBorder()),
-                    validator: (v) => v == null || v.trim().isEmpty ? 'שדה חובה' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: phoneCtrl,
-                    readOnly: true, // מספר הטלפון הוא המפתח הראשי החדש, לכן הוא חסום לעריכה
-                    decoration: InputDecoration(labelText: 'מספר טלפון (מפתח קבוע)', border: const OutlineInputBorder(), fillColor: Colors.grey.shade100, filled: true),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: emailCtrl,
-                    decoration: const InputDecoration(labelText: 'אימייל', border: OutlineInputBorder()),
-                  ),
-                ],
+      builder: (context) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            title: const Text(
+              'עריכת פרטי לקוח',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B5565)),
+            ),
+            content: SingleChildScrollView(
+              child: Form(
+                key: dialogFormKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: nameController,
+                      decoration: const InputDecoration(labelText: 'שם מלא *'),
+                      validator: (v) => v == null || v.trim().isEmpty ? 'שדה חובה' : null,
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: firstNameController,
+                      decoration: const InputDecoration(labelText: 'שם פרטי לברכה *'),
+                      validator: (v) => v == null || v.trim().isEmpty ? 'שדה חובה' : null,
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: phoneController,
+                      decoration: const InputDecoration(labelText: 'טלפון *'),
+                      keyboardType: TextInputType.phone,
+                      validator: (v) => v == null || v.trim().isEmpty ? 'שדה חובה' : null,
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: emailController,
+                      decoration: const InputDecoration(labelText: 'אימייל (אופציונלי)'),
+                    ),
+                  ],
+                ),
               ),
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('ביטול', style: TextStyle(color: Colors.grey)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B5565)),
+                onPressed: () async {
+                  if (!dialogFormKey.currentState!.validate()) return;
+
+                  Navigator.pop(context);
+                  setState(() => _isLoading = true);
+
+                  try {
+                    // תיקון בפינצטה: העברת ה-id המקורי של האובייקט כדי לשמור על רציפות המפתח הקבוע
+                    final updatedClient = ClientModel(id: client.id, fullName: nameController.text.trim(), firstName: firstNameController.text.trim(), phone: phoneController.text.trim(), email: emailController.text.trim(), status: client.status);
+
+                    await widget.clientRepository.updateClient(widget.spreadsheetId, updatedClient);
+                    widget.onRefreshRequired(); // מעורר רענון של רשימת המשימות בדף הבית
+                    await _loadClientsData(forceRefresh: true);
+                  } catch (e) {
+                    print('שגיאה בעדכון לקוח: $e');
+                    _loadClientsData();
+                  }
+                },
+                child: const Text('שמירה', style: TextStyle(color: Colors.white)),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('ביטול', style: TextStyle(color: Colors.grey)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B5565)),
-              onPressed: () async {
-                if (!formKey.currentState!.validate()) return;
+        );
+      },
+    );
+  }
 
-                final updatedClient = ClientModel(
-                  phone: client.phone, // שמירה על המפתח המקורי
-                  fullName: fullNameCtrl.text.trim(),
-                  firstName: firstNameCtrl.text.trim(),
-                  email: emailCtrl.text.trim(),
-                  status: client.status,
-                );
-
-                try {
-                  await widget.clientRepository.updateClient(widget.spreadsheetId, updatedClient);
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('פרטי הלקוח עודכנו וסונכרנו בהצלחה!')));
+  void _deleteClient(ClientModel client, int index) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            title: const Text('מחיקת לקוח', style: TextStyle(fontWeight: FontWeight.bold)),
+            content: Text('האם אתה בטוח שברצונך למחוק את הלקוח ${client.fullName}?\nפעולה זו תסיר אותו מספר הלקוחות.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('ביטול', style: TextStyle(color: Colors.grey)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                onPressed: () async {
+                  Navigator.pop(context);
+                  setState(() => _isLoading = true);
+                  try {
+                    // החלפת השימוש במחיקה לפי מזהה הלקוח הקבוע
+                    await widget.clientRepository.deleteClientSoft(widget.spreadsheetId, client.id);
+                    widget.onRefreshRequired(); // מעורר רענון של דף הבית
+                    await _loadClientsData(forceRefresh: true);
+                  } catch (e) {
+                    print('שגיאה במחיקת לקוח: $e');
+                    _loadClientsData();
                   }
-                  await _loadClientsData(forceRefresh: true);
-                  widget.onRefreshRequired();
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('שגיאה בעדכון לקוח: $e')));
-                  }
-                }
-              },
-              child: const Text('שמור שינויים', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
-      ),
+                },
+                child: const Text('מחק', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -216,13 +207,13 @@ class ClientsBookViewState extends State<ClientsBookView> {
       textDirection: TextDirection.rtl,
       child: Column(
         children: [
-          // שורת חיפוש
+          // שורת חיפוש עליונה
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                labelText: 'חיפוש לקוח לפי שם, טלפון או מייל...',
+                labelText: 'חיפוש מהיר בספר הלקוחות...',
                 prefixIcon: const Icon(Icons.search, color: Color(0xFF1B5565)),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 focusedBorder: OutlineInputBorder(
@@ -233,29 +224,36 @@ class ClientsBookViewState extends State<ClientsBookView> {
             ),
           ),
 
-          // רשימת הלקוחות
+          // תוכן ראשי של הרשימה
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1B5565))))
                 : _filteredClients.isEmpty
-                ? const Center(
-                    child: Text('לא נמצאו לקוחות פעילים במאגר.', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.people_outline, size: 64, color: Colors.grey.shade400),
+                        const SizedBox(height: 16),
+                        Text('לא נמצאו לקוחות פעילים במערכת', style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
+                      ],
+                    ),
                   )
                 : RefreshIndicator(
                     onRefresh: () => _loadClientsData(forceRefresh: true),
                     color: const Color(0xFF1B5565),
                     child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       itemCount: _filteredClients.length,
                       itemBuilder: (context, index) {
                         final client = _filteredClients[index];
                         return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 6),
                           elevation: 2,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: const Color(0xFFEBF3F5),
+                              backgroundColor: const Color(0xFF1B5565).withOpacity(0.1),
                               child: Text(
                                 client.fullName.isNotEmpty ? client.fullName[0] : '?',
                                 style: const TextStyle(color: Color(0xFF1B5565), fontWeight: FontWeight.bold),

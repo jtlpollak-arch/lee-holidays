@@ -1,15 +1,15 @@
+import 'dart:math';
 import '../datasources/google_sheets_data_source.dart';
 import '../datasources/local_db_data_source.dart';
 import '../models/client_model.dart';
 
 abstract class ClientRepository {
-  Future<List<ClientModel>> getClients(String spreadsheetId, {bool forceRefresh = false});
-  Future<List<ClientModel>> getAllClients(String spreadsheetId);
+  Future<List<ClientModel>> getAllClients(String spreadsheetId, {bool forceRefresh = false});
   Future<void> addClient(String spreadsheetId, ClientModel client);
   Future<void> addNewClient(String spreadsheetId, ClientModel client);
   Future<void> editClientRow(String spreadsheetId, int rowIndex, ClientModel client);
   Future<void> updateClient(String spreadsheetId, ClientModel client);
-  Future<void> deleteClientSoft(String spreadsheetId, String phone); // שונה מ-clientId למחרוזת phone
+  Future<void> deleteClientSoft(String spreadsheetId, String clientId); // שונה מ-phone ל-clientId הקשיח
 }
 
 class ClientRepositoryImpl implements ClientRepository {
@@ -18,8 +18,15 @@ class ClientRepositoryImpl implements ClientRepository {
 
   ClientRepositoryImpl({required GoogleSheetsDataSource googleSheetsDataSource, required LocalDbDataSource localDbDataSource}) : _googleSheetsDataSource = googleSheetsDataSource, _localDbDataSource = localDbDataSource;
 
+  /// פונקציית עזר פנימית לייצור מזהה ייחודי קשיח ללקוח מבוסס זמן ורכיב אקראי
+  String _generateClientId() {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final random = Random().nextInt(1000);
+    return 'cli_${timestamp}_$random';
+  }
+
   @override
-  Future<List<ClientModel>> getClients(String spreadsheetId, {bool forceRefresh = false}) async {
+  Future<List<ClientModel>> getAllClients(String spreadsheetId, {bool forceRefresh = false}) async {
     if (forceRefresh) {
       final cloudClients = await _googleSheetsDataSource.getClients(spreadsheetId);
       if (cloudClients.isNotEmpty) {
@@ -27,46 +34,49 @@ class ClientRepositoryImpl implements ClientRepository {
       }
       return cloudClients;
     }
-    return getAllClients(spreadsheetId);
-  }
 
-  @override
-  Future<List<ClientModel>> getAllClients(String spreadsheetId) async {
-    try {
-      final List<ClientModel> cloudClients = await _googleSheetsDataSource.getClients(spreadsheetId);
-      if (cloudClients.isNotEmpty) {
-        await _localDbDataSource.saveClients(cloudClients);
-        return cloudClients.where((c) => c.isActive).toList();
-      }
-      final local = await _localDbDataSource.getClients();
-      return local.where((c) => c.isActive).toList();
-    } catch (e) {
-      final local = await _localDbDataSource.getClients();
-      return local.where((c) => c.isActive).toList();
+    final localClients = await _localDbDataSource.getClients();
+    if (localClients.isNotEmpty) {
+      return localClients;
     }
+
+    final cloudClients = await _googleSheetsDataSource.getClients(spreadsheetId);
+    if (cloudClients.isNotEmpty) {
+      await _localDbDataSource.saveClients(cloudClients);
+    }
+    return cloudClients;
   }
 
   @override
   Future<void> addClient(String spreadsheetId, ClientModel client) async {
-    await addNewClient(spreadsheetId, client);
+    final clientWithId = client.id.isEmpty ? client.copyWith(id: _generateClientId()) : client;
+
+    await _googleSheetsDataSource.appendClient(spreadsheetId, clientWithId);
+
+    final currentLocal = await _localDbDataSource.getClients();
+    currentLocal.add(clientWithId);
+    await _localDbDataSource.saveClients(currentLocal);
   }
 
   @override
   Future<void> addNewClient(String spreadsheetId, ClientModel client) async {
-    final current = await _localDbDataSource.getClients();
-    current.add(client);
-    await _localDbDataSource.saveClients(current);
-    await _googleSheetsDataSource.appendClient(spreadsheetId, client);
+    final clientWithId = client.id.isEmpty ? client.copyWith(id: _generateClientId()) : client;
+
+    await _googleSheetsDataSource.appendClient(spreadsheetId, clientWithId);
+
+    final currentLocal = await _localDbDataSource.getClients();
+    currentLocal.add(clientWithId);
+    await _localDbDataSource.saveClients(currentLocal);
   }
 
   @override
   Future<void> editClientRow(String spreadsheetId, int rowIndex, ClientModel client) async {
     await _googleSheetsDataSource.updateClientRow(spreadsheetId, rowIndex, client);
+
     final currentLocal = await _localDbDataSource.getClients();
-    // החיפוש המקומי שונה לטלפון במקום מזהה מספרי
-    final index = currentLocal.indexWhere((c) => c.phone == client.phone);
-    if (index != -1) {
-      currentLocal[index] = client;
+    final localIndex = currentLocal.indexWhere((c) => c.id == client.id); // שונה מ-phone ל-id
+    if (localIndex != -1) {
+      currentLocal[localIndex] = client;
       await _localDbDataSource.saveClients(currentLocal);
     }
   }
@@ -74,16 +84,14 @@ class ClientRepositoryImpl implements ClientRepository {
   @override
   Future<void> updateClient(String spreadsheetId, ClientModel client) async {
     final currentLocal = await _localDbDataSource.getClients();
-    // החיפוש המקומי שונה לטלפון
-    final index = currentLocal.indexWhere((c) => c.phone == client.phone);
-    if (index != -1) {
-      currentLocal[index] = client;
+    final localIndex = currentLocal.indexWhere((c) => c.id == client.id); // שונה מ-phone ל-id
+    if (localIndex != -1) {
+      currentLocal[localIndex] = client;
       await _localDbDataSource.saveClients(currentLocal);
     }
 
     final cloudClients = await _googleSheetsDataSource.getClients(spreadsheetId);
-    // החיפוש בענן שונה לטלפון
-    final cloudIndex = cloudClients.indexWhere((c) => c.phone == client.phone);
+    final cloudIndex = cloudClients.indexWhere((c) => c.id == client.id); // שונה מ-phone ל-id
     if (cloudIndex != -1) {
       final int sheetRowNumber = cloudIndex + 2;
       await _googleSheetsDataSource.updateClientRow(spreadsheetId, sheetRowNumber, client);
@@ -91,21 +99,20 @@ class ClientRepositoryImpl implements ClientRepository {
   }
 
   @override
-  Future<void> deleteClientSoft(String spreadsheetId, String phone) async {
+  Future<void> deleteClientSoft(String spreadsheetId, String clientId) async {
+    // שונה מ-phone ל-clientId
     final cloudClients = await _googleSheetsDataSource.getClients(spreadsheetId);
-    // איתור שורת הלקוח בענן לפי מספר הטלפון שלו
-    final cloudIndex = cloudClients.indexWhere((c) => c.phone == phone);
+    final cloudIndex = cloudClients.indexWhere((c) => c.id == clientId); // שונה מ-phone ל-id
 
     if (cloudIndex != -1) {
       final targetClient = cloudClients[cloudIndex];
-      final updatedClient = ClientModel(phone: targetClient.phone, fullName: targetClient.fullName, firstName: targetClient.firstName, email: targetClient.email, status: 'מחוק');
+      final updatedClient = targetClient.copyWith(status: 'מחוק');
 
       final int sheetRowNumber = cloudIndex + 2;
       await _googleSheetsDataSource.updateClientRow(spreadsheetId, sheetRowNumber, updatedClient);
 
       final currentLocal = await _localDbDataSource.getClients();
-      // איתור ועדכון ב-Cache המקומי לפי מספר הטלפון
-      final localIndex = currentLocal.indexWhere((c) => c.phone == phone);
+      final localIndex = currentLocal.indexWhere((c) => c.id == clientId); // שונה מ-phone ל-id
       if (localIndex != -1) {
         currentLocal[localIndex] = updatedClient;
         await _localDbDataSource.saveClients(currentLocal);

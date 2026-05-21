@@ -64,10 +64,10 @@ class HomeCubit {
     _emit(const HomeLoading());
     try {
       // 1. משיכת הלקוחות מהענן
-      final clients = await _clientRepository.getClients(spreadsheetId);
+      final clients = await _clientRepository.getAllClients(spreadsheetId, forceRefresh: true);
 
       // 2. משיכת האירועים מהענן
-      final events = await _eventRepository.getAllEvents(spreadsheetId);
+      final events = await _eventRepository.getAllEvents(spreadsheetId, forceRefresh: true);
 
       // 3. הרצת ה-Use Case החכם שמחשב את אירועי היום והקדמות השבת/חג
       final List<DailyEventResult> dailyEvents = _calculateDailyEventsUseCase.execute(allClients: clients, allEvents: events, today: DateTime.now());

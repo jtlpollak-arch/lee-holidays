@@ -17,24 +17,22 @@ class CalculateDailyEventsUseCase {
   List<DailyEventResult> execute({required List<ClientModel> allClients, required List<EventModel> allEvents, required DateTime today}) {
     final List<DailyEventResult> results = [];
 
-    // ** תוקן בהתאם לארכיטקטורה החדשה **
-    // יצירת מפה (Map) של לקוחות לפי מספר הטלפון שלהם לגישה מהירה ב-O(1)
-    final Map<String, ClientModel> clientMap = {for (var client in allClients) client.phone: client};
+    // יצירת מפה (Map) של לקוחות לפי ה-ID שלהם לגישה מהירה ב-O(1)
+    final Map<String, ClientModel> clientMap = {for (var client in allClients) client.id: client};
 
-    // הגדרת תאריכי הבדיקה (היום, מחר, ומחרתיים למנגנון סופי השבוע)
-    final DateTime dateToday = DateTime(today.year, today.month, today.day);
-    final DateTime dateTomorrow = dateToday.add(const Duration(days: 1));
-    final DateTime dateInTwoDays = dateToday.add(const Duration(days: 2));
+    // איפוס שעות, דקות ושניות לצורך השוואת תאריכים נקייה
+    final dateToday = DateTime(today.year, today.month, today.day);
+    final dateTomorrow = dateToday.add(const Duration(days: 1));
+    final dateAfterTomorrow = dateToday.add(const Duration(days: 2));
 
     for (var event in allEvents) {
       if (!event.isActive) continue;
 
-      // ** תוקן בהתאם לארכיטקטורה החדשה **
-      // שליפת הלקוח המשויך לאירוע לפי מספר הטלפון שלו במקום ה-ID המספרי
-      final client = clientMap[event.clientPhone];
-      if (client == null) continue; // אם הלקוח לא קיים או מחוק, נדלג על האירוע
+      // שליפת הלקוח המתאים מתוך המפה לפי ה-clientId של האירוע
+      final client = clientMap[event.clientId];
+      if (client == null || !client.isActive) continue; // הגנה: אם הלקוח לא נמצא (למשל נמחק לחלוטין), נדלג על האירוע
 
-      // חישוב תאריך היעד לבדיקה השנה - עבור יום הולדת בודקים את השנה הנוכחית, ועבור נדל"ן את התאריך המקורי
+      // יצירת תאריך לבדיקה - עבור יום הולדת נשליך לשנה הנוכחית, עבור אירוע נדל"ן את התאריך המקורי
       DateTime eventDateToCheck;
       if (event.eventType == 'יום הולדת') {
         eventDateToCheck = DateTime(dateToday.year, event.date.month, event.date.day);
@@ -55,9 +53,10 @@ class CalculateDailyEventsUseCase {
         }
       }
       // אם מחרתיים יום שבת (והאירוע חל מחרתיים) והיום יום חמישי - נקדים אותו להיום (חמישי)
-      else if (eventDateToCheck == dateInTwoDays) {
-        if (dateInTwoDays.weekday == DateTime.saturday && dateToday.weekday == DateTime.thursday) {
-          results.add(DailyEventResult(client: client, event: event, isEarlyReminder: true, displayMessage: 'חל בשבת - שליחה מוקדמת מיום חמישי'));
+      else if (eventDateToCheck == dateAfterTomorrow) {
+        // כאן תוקן ה-thursday ללא רווח ובאות קטנה
+        if (dateAfterTomorrow.weekday == DateTime.saturday && dateToday.weekday == DateTime.thursday) {
+          results.add(DailyEventResult(client: client, event: event, isEarlyReminder: true, displayMessage: 'חל בשבת - שליחה מוקדמת ביום חמישי'));
         }
       }
     }

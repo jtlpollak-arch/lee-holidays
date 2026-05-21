@@ -40,7 +40,7 @@ class _ClientEventsViewState extends State<ClientEventsView> {
       });
 
       // משיכת לקוחות ממאגר המידע (ענן/מקומי)
-      final clients = await widget.clientRepository.getClients(widget.spreadsheetId);
+      final clients = await widget.clientRepository.getAllClients(widget.spreadsheetId);
 
       // סינון לקוחות שאינם מחוקים
       final activeClients = clients.where((c) => c.status != 'מחוק').toList();
@@ -70,7 +70,7 @@ class _ClientEventsViewState extends State<ClientEventsView> {
 
       // סינון אירועים השייכים ללקוח לפי טלפון ושאינם במצב 'מחוק'
       final filteredEvents = allEvents.where((e) {
-        return e.clientPhone == _selectedClient!.phone && e.status != 'מחוק';
+        return e.clientId == _selectedClient!.id && e.status != 'מחוק';
       }).toList();
 
       // מיון האירועים לפי תאריך (מהקרוב לרחוק)
@@ -381,7 +381,15 @@ class _AddEventFormSheetState extends State<_AddEventFormSheet> {
       _isLoading = true;
     });
 
-    final newEvent = EventModel(clientPhone: widget.client.phone, date: _selectedDate, eventType: finalEventType, address: _addressController.text.trim(), notes: _notesController.text.trim(), status: 'פעיל');
+    final newEvent = EventModel(
+      id: '', // ייווצר אוטומטית כמפתח ייחודי קשיח בתוך ה-RepositoryImpl
+      clientId: widget.client.id,
+      date: _selectedDate,
+      eventType: finalEventType,
+      address: _addressController.text.trim(),
+      notes: _notesController.text.trim(),
+      status: 'פעיל',
+    );
 
     try {
       // שמירה של האירוע לענן ולמכשיר וסנכרון מול ה-Calendar

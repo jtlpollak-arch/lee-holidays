@@ -91,11 +91,11 @@ class SpreadsheetManager {
     await sheetsApi.spreadsheets.values.update(
       sheets.ValueRange(
         values: [
-          ['טלפון', 'שם מלא', 'שם פרטי', 'אימייל', 'סטטוס'],
+          ['cl_id', 'טלפון', 'שם מלא', 'שם פרטי', 'אימייל', 'סטטוס'],
         ],
       ),
       newId,
-      'Sheet1!A1:E1',
+      'Sheet1!A1:F1',
       valueInputOption: 'USER_ENTERED',
     );
 
@@ -103,7 +103,7 @@ class SpreadsheetManager {
     await sheetsApi.spreadsheets.values.update(
       sheets.ValueRange(
         values: [
-          ['id', 'טלפון לקוח', 'תאריך אירוע', 'סוג אירוע', 'כתובת נכס', 'הערות', 'סטטוס', 'חותמת זמן'],
+          ['ev_id', 'cl_id', 'תאריך אירוע', 'סוג אירוע', 'כתובת נכס', 'הערות', 'סטטוס', 'חותמת זמן'],
         ],
       ),
       newId,
