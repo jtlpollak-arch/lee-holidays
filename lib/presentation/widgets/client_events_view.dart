@@ -113,7 +113,7 @@ class _ClientEventsViewState extends State<ClientEventsView> {
 
     try {
       // ביצוע מחיקה רכה ב-Repository
-      await widget.eventRepository.deleteEventSoft(widget.spreadsheetId, event.clientPhone, event.eventType);
+      await widget.eventRepository.deleteEventSoft(widget.spreadsheetId, event);
 
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('האירוע נמחק בהצלחה'), backgroundColor: Colors.green));
 

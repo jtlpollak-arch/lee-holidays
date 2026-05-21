@@ -83,15 +83,15 @@ class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
   }
 
   // ==========================================
-  // לוגיקת אירועים (Events) - 7 עמודות: A עד G
+  // לוגיקת אירועים (Events) - 8 עמודות: A עד H
   // ==========================================
 
   @override
   Future<List<EventModel>> getEvents(String spreadsheetId) async {
     final sheetsApi = _getSheetsApi();
     try {
-      // עודכן הטווח ל-G כדי לכלול את חותמת הזמן
-      final response = await sheetsApi.spreadsheets.values.get(spreadsheetId, 'Events!A2:G5000');
+      // עודכן הטווח ל-H כדי להכיל את עמודת המזהה החדשה בטור A
+      final response = await sheetsApi.spreadsheets.values.get(spreadsheetId, 'Events!A2:H5000');
       final List<EventModel> events = [];
 
       if (response.values != null) {
@@ -113,8 +113,8 @@ class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
     final sheetsApi = _getSheetsApi();
     final valueRange = sheets.ValueRange(values: [event.toRow()]);
     try {
-      // עודכן הטווח ל-G עבור הוספת אירוע חדש
-      await sheetsApi.spreadsheets.values.append(valueRange, spreadsheetId, 'Events!A:G', valueInputOption: 'USER_ENTERED');
+      // עודכן הטווח ל-H עבור הוספת אירוע חדש
+      await sheetsApi.spreadsheets.values.append(valueRange, spreadsheetId, 'Events!A:H', valueInputOption: 'USER_ENTERED');
     } catch (e) {
       print('שגיאה בהוספת אירוע חדש לגוגל שיטס: $e');
       rethrow;
@@ -125,8 +125,8 @@ class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
   Future<void> updateEventRow(String spreadsheetId, int rowIndex, EventModel event) async {
     final sheetsApi = _getSheetsApi();
     final valueRange = sheets.ValueRange(values: [event.toRow()]);
-    // עודכן הטווח ל-G עבור עדכון שורה קיימת
-    final range = 'Events!A$rowIndex:G$rowIndex';
+    // עודכן הטווח ל-H עבור עדכון שורה קיימת
+    final range = 'Events!A$rowIndex:H$rowIndex';
 
     try {
       await sheetsApi.spreadsheets.values.update(valueRange, spreadsheetId, range, valueInputOption: 'USER_ENTERED');

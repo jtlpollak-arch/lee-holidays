@@ -103,11 +103,11 @@ class SpreadsheetManager {
     await sheetsApi.spreadsheets.values.update(
       sheets.ValueRange(
         values: [
-          ['טלפון לקוח', 'תאריך אירוע', 'סוג אירוע', 'כתובת נכס', 'הערות', 'סטטוס'],
+          ['id', 'טלפון לקוח', 'תאריך אירוע', 'סוג אירוע', 'כתובת נכס', 'הערות', 'סטטוס', 'חותמת זמן'],
         ],
       ),
       newId,
-      'Events!A1:F1',
+      'Events!A1:H1',
       valueInputOption: 'USER_ENTERED',
     );
 

@@ -42,34 +42,32 @@ class HomeCubit {
   HomeState _state = const HomeInitial();
   HomeState get state => _state;
 
-  // קולבק לעדכון ה-UI על שינוי במצב
-  void Function(HomeState state)? _onStateChanged;
+  // רשימת מאזינים לשינויי מצב
+  final List<void Function(HomeState)> _listeners = [];
 
   HomeCubit({required ClientRepository clientRepository, required EventRepository eventRepository, required CalculateDailyEventsUseCase calculateDailyEventsUseCase}) : _clientRepository = clientRepository, _eventRepository = eventRepository, _calculateDailyEventsUseCase = calculateDailyEventsUseCase;
 
-  /// הרשמה להאזנה לשינויי הסטייט מה-UI
-  void listen(void Function(HomeState state) onStateChanged) {
-    _onStateChanged = onStateChanged;
+  void listen(void Function(HomeState) listener) {
+    _listeners.add(listener);
+    listener(_state);
   }
 
-  /// פונקציה פנימית לעדכון הסטייט והרצת הקולבק
   void _emit(HomeState newState) {
     _state = newState;
-    if (_onStateChanged != null) {
-      _onStateChanged!(_state);
+    for (var listener in _listeners) {
+      listener(_state);
     }
   }
 
-  /// הפעולה המרכזית: טעינה, מיזוג ופילוח של אירועי היום מהענן והמכשיר
+  /// טעינת המבט היומי המשולב מגוגל שיטס (לקוחות + אירועים)
   Future<void> loadDailyOverview({required String spreadsheetId}) async {
     _emit(const HomeLoading());
-
     try {
-      // 1. הבאת הלקוחות מה-Repository (ענן + גיבוי Offline מקומי)
-      final List<ClientModel> clients = await _clientRepository.getAllClients(spreadsheetId);
+      // 1. משיכת הלקוחות מהענן
+      final clients = await _clientRepository.getClients(spreadsheetId);
 
-      // 2. הבאת האירועים מה-Repository (כולל ביצוע המיזוג האוטומטי החכם - גישה 2)
-      final List<EventModel> events = await _eventRepository.getAllEvents(spreadsheetId);
+      // 2. משיכת האירועים מהענן
+      final events = await _eventRepository.getAllEvents(spreadsheetId);
 
       // 3. הרצת ה-Use Case החכם שמחשב את אירועי היום והקדמות השבת/חג
       final List<DailyEventResult> dailyEvents = _calculateDailyEventsUseCase.execute(allClients: clients, allEvents: events, today: DateTime.now());
@@ -101,6 +99,17 @@ class HomeCubit {
       await loadDailyOverview(spreadsheetId: spreadsheetId);
     } catch (e) {
       _emit(HomeFailure('שגיאה בביטול סימון השליחה: ${e.toString()}'));
+    }
+  }
+
+  /// מחיקה לוגית של אירוע
+  Future<void> deleteEvent({required String spreadsheetId, required EventModel event}) async {
+    try {
+      // עודכן לקריאה ממוקדת עם אובייקט האירוע השלם המכיל את ה-ID הייחודי
+      await _eventRepository.deleteEventSoft(spreadsheetId, event);
+      await loadDailyOverview(spreadsheetId: spreadsheetId);
+    } catch (e) {
+      _emit(HomeFailure('שגיאה במחיקת האירוע: ${e.toString()}'));
     }
   }
 }
