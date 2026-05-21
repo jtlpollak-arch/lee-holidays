@@ -113,21 +113,35 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'מערכת הברכות של לי',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        centerTitle: true,
-        backgroundColor: const Color(0xFF1B5565),
-        elevation: 2,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: _isInitializing ? null : _initializeSpreadsheet,
-            tooltip: 'סנכרון ורענון מלא',
+      // עטיפה ב-Directionality כדי שכל ה-AppBar יתיישר לימין
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(60),
+        child: Directionality(
+          textDirection: TextDirection.rtl,
+          child: AppBar(
+            title: const Text(
+              'מערכת הברכות של לי',
+              style: TextStyle(
+                fontWeight: FontWeight.w800, // משקל חזק יותר
+                fontSize: 20,
+                color: Colors.white,
+                letterSpacing: 0.5,
+              ),
+            ),
+            backgroundColor: const Color(0xFF1B5565),
+            elevation: 4, // צל עמוק יותר למראה מודרני
+            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(16))),
+            // ה-actions מסתדרים אוטומטית משמאל לימין לפי ה-Directionality
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh, color: Colors.white),
+                onPressed: _isInitializing ? null : _initializeSpreadsheet,
+                tooltip: 'סנכרון ורענון מלא',
+              ),
+              const SizedBox(width: 8), // מרווח קטן מהקצה
+            ],
           ),
-        ],
+        ),
       ),
       body: _buildBody(),
       floatingActionButton: _selectedIndex == 1 && _spreadsheetId != null

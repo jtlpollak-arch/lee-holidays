@@ -192,7 +192,7 @@ class ClientsBookViewState extends State<ClientsBookView> {
                     _loadClientsData();
                   }
                 },
-                child: const Text('מחק', style: TextStyle(color: Colors.white)),
+                child: const Text('מחקי', style: TextStyle(color: Colors.white)),
               ),
             ],
           ),

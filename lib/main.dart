@@ -11,6 +11,7 @@ import 'data/repositories/event_repository.dart';
 import 'domain/usecases/calculate_daily_events_usecase.dart';
 import 'presentation/bloc_or_provider/home_cubit.dart';
 import 'presentation/pages/home_page.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -63,6 +64,12 @@ class MainApp extends StatelessWidget {
       title: 'מערכת ברכות נדל"ן',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primaryColor: const Color(0xFF8B7355), scaffoldBackgroundColor: const Color(0xFFF8F9FA), fontFamily: 'Assistant'),
+
+      // 2. הוסף את השורות הבאות כאן:
+      localizationsDelegates: const [GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
+      supportedLocales: const [Locale('he', 'IL')],
+      locale: const Locale('he', 'IL'),
+
       home: HomePage(cubit: homeCubit, googleSheetsDataSource: googleSheetsDataSource, googleCalendarApi: googleCalendarApi, clientRepository: clientRepository, eventRepository: eventRepository),
     );
   }
