@@ -91,7 +91,7 @@ class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
   Future<List<EventModel>> getEvents(String spreadsheetId) async {
     final sheetsApi = _getSheetsApi();
     try {
-      final response = await sheetsApi.spreadsheets.values.get(spreadsheetId, 'Events!A2:H5000');
+      final response = await sheetsApi.spreadsheets.values.get(spreadsheetId, 'Events!A2:I1000');
       final List<EventModel> events = [];
 
       if (response.values != null) {
@@ -113,7 +113,7 @@ class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
     final sheetsApi = _getSheetsApi();
     final valueRange = sheets.ValueRange(values: [event.toRow()]);
     try {
-      await sheetsApi.spreadsheets.values.append(valueRange, spreadsheetId, 'Events!A:H', valueInputOption: 'USER_ENTERED');
+      await sheetsApi.spreadsheets.values.append(valueRange, spreadsheetId, 'Events!A:I', valueInputOption: 'USER_ENTERED');
     } catch (e) {
       print('שגיאה בהוספת אירוע חדש לגוגל שיטס: $e');
       rethrow;

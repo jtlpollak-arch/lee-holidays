@@ -75,27 +75,45 @@ class EventRepositoryImpl implements EventRepository {
   Future<void> updateEvent(String spreadsheetId, EventModel event) async {
     String newCalendarId = event.calendarEventId;
 
-    // שלב המחיקה והיצירה מחדש בקלנדר לצורך עדכון נקי ומניעת באגים של חוקי מחזוריות
-    try {
-      // 1. אם קיים מזהה קלנדר ישן, נמחק אותו קודם מהיומן של גוגל
-      if (event.calendarEventId.isNotEmpty) {
-        print('נמצא מזהה קלנדר ישן (${event.calendarEventId}), מוחק את הסדרה הישנה מהיומן...');
-        await _googleCalendarApi.deleteEventSeries(event.calendarEventId);
-      }
+    // לשליפת המצב הקיים מה-DB המקומי לצורך השוואת תאריכים
+    final currentLocal = await _localDbDataSource.getEvents();
+    final localIndex = currentLocal.indexWhere((e) => e.id == event.id);
 
-      // 2. נמשוך את שם הלקוח המעודכן מהרשימה המקומית או נבנה תיאור מעודכן
-      final String calendarTitle = '${event.eventType} (מעודכן)';
-      final String calendarDescription = 'כתובת נכס: ${event.address}\nהערות: ${event.notes}';
-
-      // 3. ניצור אירוע מחזורי שנתי חדש ונקי לחלוטין ביומן גוגל
-      newCalendarId = await _googleCalendarApi.insertGreetingReminderEvent(title: calendarTitle, date: event.date, description: calendarDescription, isRecurring: true);
-    } catch (e) {
-      print('שגיאה בתהליך עדכון האירוע מול Google Calendar: $e. ממשיך בעדכון הנתונים בגיליון.');
+    EventModel? existingLocalEvent;
+    if (localIndex != -1) {
+      existingLocalEvent = currentLocal[localIndex];
     }
 
-    // הצמדת מזהה הקלנדר החדש (או הישן במידה והתהליך נכשל) לאובייקט האירוע
+    // בדיקה האם נדרש עדכון בקלנדר: רק אם התאריך השתנה, או אם אין עדיין מזהה קלנדר בכלל
+    final bool isDateChanged = existingLocalEvent != null && event.date != existingLocalEvent.date;
+    final bool hasNoCalendarId = event.calendarEventId.isEmpty;
+
+    if (isDateChanged || hasNoCalendarId) {
+      // שלב המחיקה והיצירה מחדש בקלנדר לצורך עדכון נקי ומניעת באגים של חוקי מחזוריות
+      try {
+        // 1. אם קיים מזהה קלנדר ישן, נמחק אותו קודם מהיומן של גוגל
+        if (event.calendarEventId.isNotEmpty) {
+          print('נמצא מזהה קלנדר ישן (${event.calendarEventId}), והתאריך השתנה. מוחק את הסדרה הישנה מהיומן...');
+          await _googleCalendarApi.deleteEventSeries(event.calendarEventId);
+        }
+
+        // 2. נמשוך את שם הלקוח המעודכן מהרשימה המקומית או נבנה תיאור מעודכן
+        final String calendarTitle = '${event.eventType} (מעודכן)';
+        final String calendarDescription = 'כתובת נכס: ${event.address}\nהערות: ${event.notes}';
+
+        // 3. ניצור אירוע מחזורי שנתי חדש ונקי לחלוטין ביומן גוגל
+        newCalendarId = await _googleCalendarApi.insertGreetingReminderEvent(title: calendarTitle, date: event.date, description: calendarDescription, isRecurring: true);
+      } catch (e) {
+        print('שגיאה בתהליך עדכון האירוע מול Google Calendar: $e. ממשיך בעדכון הנתונים בגיליון.');
+      }
+    } else {
+      print('עדכון פנימי שאינו כולל שינוי תאריך. מדלג על עדכון Google Calendar כדי למנוע כפילויות.');
+    }
+
+    // הצמדת מזהה הקלנדר החדש (או הישן במידה והתהליך נכשל או דולג) לאובייקט האירוע
     final updatedEvent = event.copyWith(calendarEventId: newCalendarId);
 
+    // עדכון בגיליון הענן של גוגל שיטס
     final cloudEvents = await _googleSheetsDataSource.getEvents(spreadsheetId);
     final cloudIndex = cloudEvents.indexWhere((e) => e.id == updatedEvent.id);
     if (cloudIndex != -1) {
@@ -103,8 +121,7 @@ class EventRepositoryImpl implements EventRepository {
       await _googleSheetsDataSource.updateEventRow(spreadsheetId, sheetRowNumber, updatedEvent);
     }
 
-    final currentLocal = await _localDbDataSource.getEvents();
-    final localIndex = currentLocal.indexWhere((e) => e.id == updatedEvent.id);
+    // עדכון סופי בבסיס הנתונים המקומי
     if (localIndex != -1) {
       currentLocal[localIndex] = updatedEvent;
       await _localDbDataSource.saveEvents(currentLocal);

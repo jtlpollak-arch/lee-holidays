@@ -467,12 +467,9 @@ class _HomePageState extends State<HomePage> {
 
                         showModalBottomSheet(
                           context: context,
-                          isScrollControlled: true,
+                          isScrollControlled: true, // מאפשר לחלונית להשתמש בגובה גמיש
                           shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-                          builder: (context) => Padding(
-                            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-                            child: GreetingCanvas(client: e.client, event: e.event, defaultGreetingText: defaultText, logoAssetPath: 'assets/images/logo.png'),
-                          ),
+                          builder: (context) => GreetingCanvas(client: e.client, event: e.event, defaultGreetingText: defaultText, logoAssetPath: 'assets/images/logo.png'),
                         );
                       },
                       style: ElevatedButton.styleFrom(

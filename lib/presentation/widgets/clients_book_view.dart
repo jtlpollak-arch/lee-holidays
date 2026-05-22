@@ -252,6 +252,7 @@ class ClientsBookViewState extends State<ClientsBookView> {
                           margin: const EdgeInsets.only(bottom: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), // הוספת ריווח פנימי מעט לעידון
                             leading: CircleAvatar(
                               backgroundColor: const Color(0xFF1B5565).withOpacity(0.1),
                               child: Text(
@@ -260,7 +261,40 @@ class ClientsBookViewState extends State<ClientsBookView> {
                               ),
                             ),
                             title: Text(client.fullName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Text('טלפון: ${client.phone}${client.email.isNotEmpty ? ' | מייל: ${client.email}' : ''}', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                            subtitle: Padding(
+                              padding: const EdgeInsets.only(top: 6.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // שורת הטלפון עם אייקון מעודן
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.phone_android_rounded, size: 14, color: Colors.black45),
+                                      const SizedBox(width: 6),
+                                      Text(client.phone, style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
+                                    ],
+                                  ),
+                                  // שורת המייל מוצגת רק אם קיים ערך, עם הגנת גמישות וחיתוך עדין
+                                  if (client.email.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.mail_outline_rounded, size: 14, color: Colors.black45),
+                                        const SizedBox(width: 6),
+                                        Flexible(
+                                          child: Text(
+                                            client.email,
+                                            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis, // מונע שבירת שורה ומציג שלוש נקודות במקרה של מייל ארוך
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
