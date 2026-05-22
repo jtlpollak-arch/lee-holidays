@@ -68,7 +68,15 @@ class _ClientEventsViewState extends State<ClientEventsView> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('אירועי לקוח', style: TextStyle(fontSize: 18)), // כותרת קטנה ומעודנת
+          title: const Text(
+            'אירועי לקוח',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700, // משקל מודגש אך לא "כבד"
+              color: Color(0xFF1B5565), // שימוש בצבע המותג שלך
+              letterSpacing: -0.5, // ריווח אותיות מהודק למראה מודרני
+            ),
+          ),
           centerTitle: true, // זה נותן מראה מאוזן ו"אפליקטיבי"
         ),
         floatingActionButton: _selectedClient == null
@@ -92,48 +100,38 @@ class _ClientEventsViewState extends State<ClientEventsView> {
             ? const Center(child: CircularProgressIndicator())
             : Column(
                 children: [
+                  // בתוך ה-Column שלך
                   Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: DropdownButtonFormField<ClientModel>(
-                      // כאן אנחנו מגדירים פינות עגולות
-                      decoration: InputDecoration(
-                        labelText: 'בחרי לקוח',
-                        labelStyle: TextStyle(color: Colors.grey[700]),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16), // פינות עגולות
-                          borderSide: BorderSide(color: Colors.grey[300]!),
+                    child: Align(
+                      alignment: Alignment.centerRight, // יישור לצד ימין
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 350), // הגבלת רוחב ל-300 פיקסלים
+                        child: DropdownButtonFormField<ClientModel>(
+                          isExpanded: true, // משאירים את זה רק כדי שהטקסט יסתדר בתוך ה-300 פיקסלים
+                          menuMaxHeight: 300, // הגבלת גובה הפתיחה
+                          decoration: InputDecoration(
+                            labelText: 'בחרי לקוח',
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                          value: _selectedClient,
+                          items: _allClients
+                              .map(
+                                (c) => DropdownMenuItem(
+                                  value: c,
+                                  child: Text(c.fullName, textAlign: TextAlign.right),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (val) {
+                            setState(() => _selectedClient = val);
+                            _loadEventsForSelectedClient();
+                          },
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(color: Color(0xFF1B5565), width: 2), // צבע כשלוחצים
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
                       ),
-                      isExpanded: true,
-                      value: _selectedClient,
-                      // הוספת menuMaxHeight מגבילה את הגובה של התפריט שנפתח כדי שלא יתרחב לכל המסך
-                      menuMaxHeight: 300,
-                      items: _allClients
-                          .map(
-                            (c) => DropdownMenuItem(
-                              value: c,
-                              child: Align(
-                                alignment: Alignment.centerRight,
-                                child: Text(c.fullName, textAlign: TextAlign.right),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (val) {
-                        setState(() => _selectedClient = val);
-                        _loadEventsForSelectedClient();
-                      },
                     ),
                   ),
                   Expanded(

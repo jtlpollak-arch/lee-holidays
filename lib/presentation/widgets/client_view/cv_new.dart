@@ -100,7 +100,7 @@ class _CVNewEventFormState extends State<CVNewEventForm> {
               ),
 
             // שדה התאריך המעודכן
-            ListTile(contentPadding: EdgeInsets.zero, title: Text(_selectedDate == null ? 'בחר תאריך' : 'תאריך נבחר: ${_selectedDate!.day}/${_selectedDate!.month}'), trailing: const Icon(Icons.calendar_today), onTap: _pickDate),
+            ListTile(contentPadding: EdgeInsets.zero, title: Text(_selectedDate == null ? 'בחרי תאריך' : 'תאריך נבחר: ${_selectedDate!.day}/${_selectedDate!.month}'), trailing: const Icon(Icons.calendar_today), onTap: _pickDate),
 
             TextField(
               controller: _addressController,

@@ -4,10 +4,15 @@ import 'package:http/http.dart' as http;
 /// החוזה (Interface) לעבודה מול Google Calendar API
 abstract class GoogleCalendarApi {
   void updateAuthenticatedClient(http.Client client);
-  Future<void> insertGreetingReminderEvent({required String title, required DateTime date, required String description, bool isRecurring = false});
+
+  /// יוצר תזכורת ביומן ומחזיר את ה-ID הייחודי של האירוע שנוצר
+  Future<String> insertGreetingReminderEvent({required String title, required DateTime date, required String description, bool isRecurring = false});
+
+  /// מוחק סדרת אירועים שלמה (או אירוע בודד שאינו מחזורי) לפי ה-ID שלו
+  Future<void> deleteEventSeries(String eventId);
 }
 
-/// המימוש בפועל של יצירת תזכורות ביומן גוגל
+/// המימוש בפועל של יצירת ותחזוקת תזכורות ביומן גוגל
 class GoogleCalendarApiImpl implements GoogleCalendarApi {
   http.Client? _authenticatedClient;
 
@@ -29,12 +34,12 @@ class GoogleCalendarApiImpl implements GoogleCalendarApi {
   }
 
   @override
-  Future<void> insertGreetingReminderEvent({required String title, required DateTime date, required String description, bool isRecurring = false}) async {
+  Future<String> insertGreetingReminderEvent({required String title, required DateTime date, required String description, bool isRecurring = false}) async {
     final calendar.CalendarApi api = _getCalendarApi();
 
-    // הגדרת זמן תחילת האירוע ל-08:00 בבוקר בתאריך המבוקש
-    final DateTime startDateTime = DateTime(date.year, date.month, date.day, 8, 0);
-    // הגדרת זמן סיום ל-08:05 (אירוע ממוקד של 5 דקות)
+    // תיקון: הגדרת אובייקט ה-DateTime מראש כ-UTC בשעה 05:00
+    final DateTime startDateTime = DateTime.utc(date.year, date.month, date.day, 5, 0);
+    // הגדרת זמן סיום ל-05:15 UTC (אירוע ממוקד של 15 דקות)
     final DateTime endDateTime = startDateTime.add(const Duration(minutes: 15));
 
     // בניית אובייקט האירוע לפי המפרט של גוגל
@@ -42,10 +47,13 @@ class GoogleCalendarApiImpl implements GoogleCalendarApi {
       summary: title,
       description: description,
       start: calendar.EventDateTime(
-        dateTime: startDateTime.toUtc(),
+        dateTime: startDateTime, // תיקון: מעבירים את ה-DateTime כפי שהוא, הוא כבר ב-UTC
         timeZone: 'UTC', // עבודה ב-UTC מונעת בעיות של שעון קיץ/חורף במכשירים שונים
       ),
-      end: calendar.EventDateTime(dateTime: endDateTime.toUtc(), timeZone: 'UTC'),
+      end: calendar.EventDateTime(
+        dateTime: endDateTime, // תיקון: מעבירים את ה-DateTime כפי שהוא, הוא כבר ב-UTC
+        timeZone: 'UTC',
+      ),
       // אם מדובר ביום הולדת, נוסיף חוק מחזוריות שנתי ליומן
       recurrence: isRecurring ? ['RRULE:FREQ=YEARLY'] : null,
       // הגדרת התראה אקטיבית שתקפוץ על המסך בטלפון ברגע תחילת האירוע
@@ -54,18 +62,34 @@ class GoogleCalendarApiImpl implements GoogleCalendarApi {
         overrides: [
           calendar.EventReminder(
             method: 'popup',
-            minutes: 10, // התראה בדיוק בזמן האירוע (08:00 בבוקר)
+            minutes: 0, // התראה בדיוק בזמן תחילת האירוע
           ),
         ],
       ),
     );
 
+    // שליחת הבקשה ליצירת האירוע ביומן הראשי
+    final calendar.Event createdEvent = await api.events.insert(event, _primaryCalendarId);
+
+    // החזרת ה-ID של האירוע שנוצר כדי שנוכל לשמור אותו במסד הנתונים לצורך מחיקה/עדכון בעתיד
+    if (createdEvent.id == null) {
+      throw Exception('נכשלה קבלת מזהה אירוע מ-Google Calendar');
+    }
+
+    return createdEvent.id!;
+  }
+
+  @override
+  Future<void> deleteEventSeries(String eventId) async {
+    final calendar.CalendarApi api = _getCalendarApi();
+
     try {
-      await api.events.insert(event, _primaryCalendarId);
-      print('האירוע הנוסף נוצר בהצלחה ביומן גוגל. מחזוריות שנתית: $isRecurring');
+      // קריאה למחיקה של האירוע לפי ה-ID שלו.
+      // אם מדובר באירוע מחזורי (Recurring), מחיקה של אב-הטיפוס מוחקת את כל הסדרה מהעבר ומהעתיד.
+      await api.events.delete(_primaryCalendarId, eventId);
     } catch (e) {
-      print('שגיאה במהלך יצירת אירוע ביומן גוגל: $e');
-      rethrow;
+      // טיפול בשגיאה במקרה שהאירוע כבר נמחק ידנית ביומן או שה-ID לא תקין
+      throw Exception('נכשל ניסיון מחיקת האירוע מ-Google Calendar: $e');
     }
   }
 }

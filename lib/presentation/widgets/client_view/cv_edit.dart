@@ -89,7 +89,7 @@ class _CVEditEventFormState extends State<CVEditEventForm> {
                 controller: _otherTypeController,
                 decoration: const InputDecoration(labelText: 'נא לפרט סוג אירוע'),
               ),
-            ListTile(title: Text(_selectedDate == null ? 'בחר תאריך' : '${_selectedDate!.day}/${_selectedDate!.month}'), trailing: const Icon(Icons.calendar_today), onTap: _pickDate),
+            ListTile(title: Text(_selectedDate == null ? 'בחרי תאריך' : '${_selectedDate!.day}/${_selectedDate!.month}'), trailing: const Icon(Icons.calendar_today), onTap: _pickDate),
             TextField(
               controller: _addressController,
               decoration: const InputDecoration(labelText: 'כתובת'),
