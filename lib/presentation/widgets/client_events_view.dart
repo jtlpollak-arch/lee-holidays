@@ -88,9 +88,8 @@ class _ClientEventsViewState extends State<ClientEventsView> {
                   builder: (_) => CVNewEventForm(
                     client: _selectedClient!,
                     onSubmit: (newEvent) async {
-                      await widget.eventRepository.addEvent(widget.spreadsheetId, newEvent);
+                      await widget.eventRepository.addNewEvent(widget.spreadsheetId, newEvent, _selectedClient!.fullName);
                       await _loadEventsForSelectedClient();
-                      if (mounted) Navigator.pop(context);
                     },
                   ),
                 ),
@@ -182,7 +181,6 @@ class _ClientEventsViewState extends State<ClientEventsView> {
                                         onDeleteConfirmed: () async {
                                           await widget.eventRepository.deleteEventSoft(widget.spreadsheetId, event);
                                           await _loadEventsForSelectedClient();
-                                          if (mounted) Navigator.pop(context);
                                         },
                                       ),
                                     ),

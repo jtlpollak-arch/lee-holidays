@@ -56,11 +56,19 @@ class _HomePageState extends State<HomePage> {
         _initError = null;
       });
 
-      final currentUser = await _authService.signInSilently();
+      var currentUser = await _authService.signInSilently();
       if (currentUser == null) {
-        throw Exception('משתמש לא מחובר לחשבון גוגל. יש לבצע התחברות תחילה.');
-      }
+        // פותח את החלון הויזואלי של גוגל וממתין לבחירת חשבון
+        currentUser = await _authService.signIn();
 
+        // אם המשתמשת ביטלה את החלון ולא בחרה חשבון
+        if (currentUser == null) {
+          setState(() {
+            _isInitializing = false;
+          });
+          throw Exception('נכשל איתור קליינט מאומת מול שרתי גוגל.');
+        }
+      }
       final authClient = await _authService.getAuthenticatedClient();
       if (authClient == null) {
         throw Exception('נכשל איתור קליינט מאומת מול שרתי גוגל.');
@@ -160,6 +168,9 @@ class _HomePageState extends State<HomePage> {
             setState(() {
               _selectedIndex = index;
             });
+            if (index == 0 && _spreadsheetId != null) {
+              widget.cubit.loadDailyOverview(spreadsheetId: _spreadsheetId!);
+            }
           },
           selectedItemColor: const Color(0xFF1B5565),
           unselectedItemColor: Colors.grey,

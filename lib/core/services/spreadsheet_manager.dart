@@ -99,15 +99,15 @@ class SpreadsheetManager {
       valueInputOption: 'USER_ENTERED',
     );
 
-    // כותרות מעודכנות ללשונית האירועים - הקישור נעשה באמצעות טלפון לקוח במקום מזהה מספרי
+    // כותרות מעודכנות ללשונית האירועים - הוספת טור 'מזהה קלנדר' ועדכון הטווח ל-A1:I1
     await sheetsApi.spreadsheets.values.update(
       sheets.ValueRange(
         values: [
-          ['ev_id', 'cl_id', 'תאריך אירוע', 'סוג אירוע', 'כתובת נכס', 'הערות', 'סטטוס', 'חותמת זמן'],
+          ['ev_id', 'cl_id', 'תאריך אירוע', 'סוג אירוע', 'כתובת נכס', 'הערות', 'סטטוס', 'חותמת זמן', 'מזהה קלנדר'],
         ],
       ),
       newId,
-      'Events!A1:H1',
+      'Events!A1:I1',
       valueInputOption: 'USER_ENTERED',
     );
 

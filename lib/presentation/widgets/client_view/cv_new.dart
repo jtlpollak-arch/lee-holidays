@@ -63,7 +63,10 @@ class _CVNewEventFormState extends State<CVNewEventForm> {
     );
 
     await widget.onSubmit(newEvent);
-    setState(() => _isLoading = false);
+    if (mounted) {
+      setState(() => _isLoading = false);
+      Navigator.pop(context); // <-- השורה שסוגרת את המסך/הבטום-שיט באופן אוטומטי
+    }
   }
 
   @override

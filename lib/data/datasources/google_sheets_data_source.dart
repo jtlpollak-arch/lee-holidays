@@ -125,7 +125,7 @@ class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
     final sheetsApi = _getSheetsApi();
     final valueRange = sheets.ValueRange(values: [event.toRow()]);
     try {
-      await sheetsApi.spreadsheets.values.update(valueRange, spreadsheetId, 'Events!A$rowIndex:H$rowIndex', valueInputOption: 'USER_ENTERED');
+      await sheetsApi.spreadsheets.values.update(valueRange, spreadsheetId, 'Events!A$rowIndex:I$rowIndex', valueInputOption: 'USER_ENTERED');
     } catch (e) {
       print('שגיאה בעדכון שורת אירוע בגוגל שיטס: $e');
       rethrow;

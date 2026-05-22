@@ -7,6 +7,7 @@ class EventModel {
   final String notes;
   final String status; // פעיל / מחוק
   final String sentTimestamp; // חותמת זמן של השליחה האחרונה בפועל (טור H בשיטס)
+  final String calendarEventId; // מזהה האירוע הרשמי ביומן גוגל (טור I בשיטס)
 
   EventModel({
     this.id = '', // אופציונלי עם ערך דיפולטיבי למניעת שבירת קריאות קיימות באפליקציה
@@ -17,36 +18,40 @@ class EventModel {
     required this.notes,
     required this.status,
     this.sentTimestamp = '',
+    this.calendarEventId = '', // ערך ברירת מחדל ריק לשמירה על תאימות מלאה בקוד הקיים
   });
 
   /// האם האירוע פעיל במערכת
   bool get isActive => status == 'פעיל';
 
-  /// המרה מרשימה (שורת גיליון בגוגל שיטס) למודל אירוע (עמודות A עד H)
+  /// המרה מרשימה (שורת גיליון בגוגל שיטס) למודל אירוע (עמודות A עד I)
   factory EventModel.fromRow(List<dynamic> row) {
     return EventModel(
       id: row.isNotEmpty ? row[0].toString() : '',
-      clientId: row.length > 1 ? row[1].toString() : '', // קריאת ה-id החדש מטור B
+      clientId: row.length > 1 ? row[1].toString() : '',
       date: row.length > 2 ? (DateTime.tryParse(row[2].toString()) ?? DateTime.now()) : DateTime.now(),
       eventType: row.length > 3 ? row[3].toString() : '',
       address: row.length > 4 ? row[4].toString() : '',
       notes: row.length > 5 ? row[5].toString() : '',
       status: row.length > 6 ? row[6].toString() : 'פעיל',
       sentTimestamp: row.length > 7 ? row[7].toString() : '',
+      // משיכת העמודה התשיעית בצורה מוגנת למניעת שבירה של שורות ישנות בגיליון
+      calendarEventId: row.length > 8 ? row[8].toString() : '',
     );
   }
 
-  /// המרה של מודל אירוע לשורה עבור גוגל שיטס (עמודות A עד H)
+  /// המרה ממודל לרשימה שטוחה לצורך כתיבה חזרה לגיליון (עמודות A עד I)
   List<dynamic> toRow() {
     return [
-      id, // כתיבה לטור A
-      clientId, // כתיבה לטור B (מזהה הלקוח החדש במקום הטלפון)
-      date.toIso8601String(), // כתיבה לטור C
-      eventType, // כתיבה לטור D
-      address, // כתיבה לטור E
-      notes, // כתיבה לטור F
-      status, // כתיבה לטור G
-      sentTimestamp, // כתיבה לטור H
+      id,
+      clientId,
+      date.toIso8601String(),
+      eventType,
+      address,
+      notes,
+      status,
+      sentTimestamp,
+      calendarEventId, // נכתב כטור התשיעי (טור I) בגיליון
     ];
   }
 
@@ -61,6 +66,7 @@ class EventModel {
       notes: json['notes'] as String? ?? '',
       status: json['status'] as String? ?? 'פעיל',
       sentTimestamp: json['sentTimestamp'] as String? ?? '',
+      calendarEventId: json['calendarEventId'] as String? ?? '',
     );
   }
 
@@ -75,11 +81,12 @@ class EventModel {
       'notes': notes,
       'status': status,
       'sentTimestamp': sentTimestamp,
+      'calendarEventId': calendarEventId,
     };
   }
 
   /// יצירת עותק חדש של המודל עם ערכים מעודכנים ספציפיים
-  EventModel copyWith({String? id, String? clientId, DateTime? date, String? eventType, String? address, String? notes, String? status, String? sentTimestamp}) {
-    return EventModel(id: id ?? this.id, clientId: clientId ?? this.clientId, date: date ?? this.date, eventType: eventType ?? this.eventType, address: address ?? this.address, notes: notes ?? this.notes, status: status ?? this.status, sentTimestamp: sentTimestamp ?? this.sentTimestamp);
+  EventModel copyWith({String? id, String? clientId, DateTime? date, String? eventType, String? address, String? notes, String? status, String? sentTimestamp, String? calendarEventId}) {
+    return EventModel(id: id ?? this.id, clientId: clientId ?? this.clientId, date: date ?? this.date, eventType: eventType ?? this.eventType, address: address ?? this.address, notes: notes ?? this.notes, status: status ?? this.status, sentTimestamp: sentTimestamp ?? this.sentTimestamp, calendarEventId: calendarEventId ?? this.calendarEventId);
   }
 }
