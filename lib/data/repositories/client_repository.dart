@@ -10,6 +10,7 @@ abstract class ClientRepository {
   Future<void> editClientRow(String spreadsheetId, int rowIndex, ClientModel client);
   Future<void> updateClient(String spreadsheetId, ClientModel client);
   Future<void> deleteClientSoft(String spreadsheetId, String clientId); // שונה מ-phone ל-clientId הקשיח
+  Future<void> deleteClientPermanently(String spreadsheetId, String clientId);
 }
 
 class ClientRepositoryImpl implements ClientRepository {
@@ -117,6 +118,30 @@ class ClientRepositoryImpl implements ClientRepository {
         currentLocal[localIndex] = updatedClient;
         await _localDbDataSource.saveClients(currentLocal);
       }
+    }
+  }
+
+  @override
+  Future<void> deleteClientPermanently(String spreadsheetId, String clientId) async {
+    print('מבצע מחיקה פיזית וצמצום של הלקוח $clientId מ-Google Sheets באמצעות פקודת Batch...');
+
+    final cloudClients = await _googleSheetsDataSource.getClients(spreadsheetId);
+    final cloudIndex = cloudClients.indexWhere((c) => c.id == clientId);
+
+    if (cloudIndex != -1) {
+      final int sheetRowNumber = cloudIndex + 2;
+
+      // למרות שמדובר בשורה בודדת, נשלח אותה כמערך למתודת ה-Batch הכללית כדי לשמור על אחידות המערכת
+      await _googleSheetsDataSource.deleteRowsBatch(spreadsheetId, 'clients', [sheetRowNumber]);
+
+      // ניקוי ה-Cache המקומי במכשיר
+      final currentLocal = await _localDbDataSource.getClients();
+      currentLocal.removeWhere((c) => c.id == clientId);
+      await _localDbDataSource.saveClients(currentLocal);
+
+      print('הלקוח נמחק בהצלחה לצמיתות מהענן ומה-Cache המקומי בפקודת Batch.');
+    } else {
+      print('הלקוח לא נמצא בענן, ייתכן שכבר נמחק.');
     }
   }
 }

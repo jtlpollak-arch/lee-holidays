@@ -8,6 +8,8 @@ abstract class GoogleCalendarApi {
   /// יוצר תזכורת ביומן ומחזיר את ה-ID הייחודי של האירוע שנוצר
   Future<String> insertGreetingReminderEvent({required String title, required DateTime date, required String description, bool isRecurring = false});
 
+  Future<void> deleteMultipleEventSeries(List<String> eventIds);
+
   /// מוחק סדרת אירועים שלמה (או אירוע בודד שאינו מחזורי) לפי ה-ID שלו
   Future<void> deleteEventSeries(String eventId);
 }
@@ -91,5 +93,32 @@ class GoogleCalendarApiImpl implements GoogleCalendarApi {
       // טיפול בשגיאה במקרה שהאירוע כבר נמחק ידנית ביומן או שה-ID לא תקין
       throw Exception('נכשל ניסיון מחיקת האירוע מ-Google Calendar: $e');
     }
+  }
+
+  @override
+  Future<void> deleteMultipleEventSeries(List<String> eventIds) async {
+    print('מתחיל תהליך מחיקה מקבילית של ${eventIds.length} אירועים מהיומן...');
+
+    // סינון מזהים ריקים כדי לא לבזבז קריאות רשת
+    final validIds = eventIds.where((id) => id.trim().isNotEmpty).toList();
+
+    if (validIds.isEmpty) {
+      print('לא נמצאו מזהי יומן תקינים למחיקה מקבילית.');
+      return;
+    }
+
+    // הפעלת כל פקודות המחיקה בו-זמנית בענן של גוגל
+    await Future.wait(
+      validIds.map((id) async {
+        try {
+          await deleteEventSeries(id);
+        } catch (e) {
+          // תפיסת שגיאה נקודתית כדי שאירוע בודד שלא נמצא לא יפיל את שאר המחיקות
+          print('אירוע $id לא נמחק מהיומן (ייתכן שנמחק ידנית בעבר): $e');
+        }
+      }),
+    );
+
+    print('סיום תהליך מחיקת האירועים המקבילית מהיומן.');
   }
 }

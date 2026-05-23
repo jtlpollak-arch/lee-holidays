@@ -12,6 +12,9 @@ abstract class GoogleSheetsDataSource {
   Future<List<EventModel>> getEvents(String spreadsheetId);
   Future<void> appendEvent(String spreadsheetId, EventModel event);
   Future<void> updateEventRow(String spreadsheetId, int rowIndex, EventModel event);
+
+  /// הצהרה ב-Interface המאפשרת ל-Repositories להפעיל את מחיקת ה-Batch המרוכזת
+  Future<void> deleteRowsBatch(String spreadsheetId, String sheetName, List<int> rowNumbers);
 }
 
 class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
@@ -128,6 +131,57 @@ class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
       await sheetsApi.spreadsheets.values.update(valueRange, spreadsheetId, 'Events!A$rowIndex:I$rowIndex', valueInputOption: 'USER_ENTERED');
     } catch (e) {
       print('שגיאה בעדכון שורת אירוע בגוגל שיטס: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> deleteRowsBatch(String spreadsheetId, String sheetName, List<int> rowNumbers) async {
+    if (rowNumbers.isEmpty) return;
+
+    print('GoogleSheetsDataSource: מתחיל בניית בקשת Batch למחיקת ${rowNumbers.length} שורות מהגיליון "$sheetName"...');
+
+    final sheetsApi = _getSheetsApi();
+
+    try {
+      // 1. שלב ראשון: משיכת מזהה הגיליון הפנימי (sheetId) של הטאב הספציפי על פי השם שלו
+      final spreadsheet = await sheetsApi.spreadsheets.get(spreadsheetId);
+
+      // תיקון יציבות: התאמה מדויקת וגמישה לשמות הטאבים הפיזיים שלך בענן (כולל אותיות גדולות/קטנות)
+      final sheet = spreadsheet.sheets?.firstWhere((s) {
+        final title = s.properties?.title;
+        if (sheetName == 'clients' && title == 'Sheet1') return true;
+        if (sheetName == 'events' && title == 'Events') return true; // תיקון הנתק: התאמה ל-'Events' עם E גדולה
+        return title == sheetName;
+      }, orElse: () => throw Exception('הגיליון "$sheetName" לא נמצא בתוך ה-Spreadsheet'));
+
+      final int? sheetId = sheet?.properties?.sheetId;
+      if (sheetId == null) {
+        throw Exception('לא ניתן היה לאחזר את ה-sheetId עבור הגיליון "$sheetName"');
+      }
+
+      // 2. שלב שני: בניית רשימת בקשות המחיקה הפיזיות
+      final List<sheets.Request> requests = rowNumbers.map((rowNumber) {
+        return sheets.Request(
+          deleteDimension: sheets.DeleteDimensionRequest(
+            range: sheets.DimensionRange(
+              sheetId: sheetId,
+              dimension: 'ROWS',
+              startIndex: rowNumber - 1, // המרה ל-0-based index (כולל)
+              endIndex: rowNumber, // הגבול העליון פתוח (לא כולל)
+            ),
+          ),
+        );
+      }).toList();
+
+      // 3. שלב שלישי: אריזת הבקשות לתוך BatchUpdateSpreadsheetRequest ושליחתן במכה אחת לענן
+      final batchUpdateRequest = sheets.BatchUpdateSpreadsheetRequest(requests: requests);
+
+      await sheetsApi.spreadsheets.batchUpdate(batchUpdateRequest, spreadsheetId);
+
+      print('GoogleSheetsDataSource: פקודת ה-Batch בוצעה בהצלחה! השורות נמחקו והגיליון צומצם.');
+    } catch (e) {
+      print('שגיאה בביצוע deleteRowsBatch ב-Google Sheets: $e');
       rethrow;
     }
   }

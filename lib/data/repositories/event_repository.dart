@@ -9,6 +9,7 @@ abstract class EventRepository {
   Future<void> addNewEvent(String spreadsheetId, EventModel event, String clientName);
   Future<void> updateEvent(String spreadsheetId, EventModel event);
   Future<void> deleteEventSoft(String spreadsheetId, EventModel event);
+  Future<List<String>> deleteEventsPermanentlyByClient(String spreadsheetId, String clientId);
 }
 
 class EventRepositoryImpl implements EventRepository {
@@ -158,5 +159,49 @@ class EventRepositoryImpl implements EventRepository {
         await _localDbDataSource.saveEvents(currentLocal);
       }
     }
+  }
+
+  @override
+  Future<List<String>> deleteEventsPermanentlyByClient(String spreadsheetId, String clientId) async {
+    print('מתחיל איסוף ואריזת אירועי הלקוח $clientId לפקודת Batch אחת מרוכזת...');
+
+    // 1. משיכת רשימת האירועים העדכנית ביותר מהענן
+    final cloudEvents = await _googleSheetsDataSource.getEvents(spreadsheetId);
+
+    final List<String> googleCalendarIdsToClean = [];
+    final List<int> targetRowNumbers = [];
+
+    // 2. מיפוי כל השורות הפיזיות ומזהי היומן של הלקוח
+    for (int i = 0; i < cloudEvents.length; i++) {
+      if (cloudEvents[i].clientId == clientId) {
+        targetRowNumbers.add(i + 2); // חישוב השורה הפיזית בגיליון (+2)
+        if (cloudEvents[i].calendarEventId.trim().isNotEmpty) {
+          googleCalendarIdsToClean.add(cloudEvents[i].calendarEventId);
+        }
+      }
+    }
+
+    if (targetRowNumbers.isEmpty) {
+      print('לא נמצאו אירועים המשויכים ללקוח זה בגיליון.');
+      return [];
+    }
+
+    // 3. מיון מספרי השורות בסדר יורד (מהסוף להתחלה) בתוך ה-List
+    // גוגל יעבד את פקודות ה-Batch לפי הסדר שנשלח לו, ולכן המיון היורד כאן מונע תזוזה מוקדמת של שורות!
+    targetRowNumbers.sort((a, b) => b.compareTo(a));
+
+    print('שולח פקודת Batch אחת מרוכזת למחיקת השורות הבאות (בסדר יורד): $targetRowNumbers');
+
+    // 4. שליחת בקשת ה-Batch המרוכזת הבודדת לענן
+    await _googleSheetsDataSource.deleteRowsBatch(spreadsheetId, 'events', targetRowNumbers);
+
+    // 5. ניקוי ה-Cache המקומי של האירועים במכשיר
+    final currentLocal = await _localDbDataSource.getEvents();
+    currentLocal.removeWhere((e) => e.clientId == clientId);
+    await _localDbDataSource.saveEvents(currentLocal);
+
+    print('כל שורות האירועים של הלקוח נמחקו וצומצמו בהצלחה בענן וב-Cache באמצעות Batch Update.');
+
+    return googleCalendarIdsToClean;
   }
 }

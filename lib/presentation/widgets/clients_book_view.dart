@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:holidays/data/datasources/google_calendar_api.dart';
+import 'package:holidays/data/repositories/event_repository.dart';
+import 'package:holidays/presentation/widgets/client_book_view/cbv_del_permanently.dart';
 import 'package:holidays/presentation/widgets/client_book_view/cbv_modify.dart';
 import '../../data/models/client_model.dart';
 import '../../data/repositories/client_repository.dart';
@@ -6,9 +9,18 @@ import '../../data/repositories/client_repository.dart';
 class ClientsBookView extends StatefulWidget {
   final String spreadsheetId;
   final ClientRepository clientRepository;
+  final EventRepository eventRepository; // שדה חדש חסר
+  final GoogleCalendarApi googleCalendarApi;
   final VoidCallback onRefreshRequired;
 
-  const ClientsBookView({super.key, required this.spreadsheetId, required this.clientRepository, required this.onRefreshRequired});
+  const ClientsBookView({
+    super.key,
+    required this.spreadsheetId,
+    required this.clientRepository,
+    required this.eventRepository, // פרמטר חדש ב-Constructor
+    required this.googleCalendarApi, // פרמטר חדש ב-Constructor
+    required this.onRefreshRequired,
+  });
 
   @override
   ClientsBookViewState createState() => ClientsBookViewState();
@@ -19,10 +31,14 @@ class ClientsBookViewState extends State<ClientsBookView> {
   List<ClientModel> _filteredClients = [];
   bool _isLoading = true;
   final _searchController = TextEditingController();
+  late CbvDelPermanently _cbvDelPermanently;
 
   @override
   void initState() {
     super.initState();
+
+    _cbvDelPermanently = CbvDelPermanently(clientRepository: widget.clientRepository, eventRepository: widget.eventRepository, googleCalendarApi: widget.googleCalendarApi);
+
     _loadClientsData();
     _searchController.addListener(_filterClients);
   }
@@ -86,8 +102,8 @@ class ClientsBookViewState extends State<ClientsBookView> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('מחיקת לקוח', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Text('האם אתה בטוח שברצונך למחוק את ${client.fullName}?\nהלקוח יעבור לתחתית הרשימה ותוכל לשחזר אותו בכל עת.'),
+        title: const Text('הקפאת לקוח', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Text('האם את בטוחה שברצונך להקפיא את ${client.fullName}?\nהלקוח יעבור לתחתית הרשימה ותוכלי לשחזר אותו בכל עת.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -96,7 +112,7 @@ class ClientsBookViewState extends State<ClientsBookView> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text(
-              'מחק',
+              'הקפאה',
               style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
             ),
           ),
@@ -285,7 +301,7 @@ class ClientsBookViewState extends State<ClientsBookView> {
                                       IconButton(
                                         icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
                                         onPressed: () => _deleteClient(client, index),
-                                        tooltip: 'מחיקת לקוח',
+                                        tooltip: 'הקפאת לקוח',
                                         constraints: const BoxConstraints(),
                                         padding: const EdgeInsets.all(8),
                                       ),
@@ -294,6 +310,26 @@ class ClientsBookViewState extends State<ClientsBookView> {
                                         icon: const Icon(Icons.restore_from_trash, color: Colors.green),
                                         onPressed: () => _restoreClient(client),
                                         tooltip: 'שחזור לקוח פעיל',
+                                        constraints: const BoxConstraints(),
+                                        padding: const EdgeInsets.all(8),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.clear, color: Colors.red),
+                                        onPressed: () {
+                                          _cbvDelPermanently.showDeleteConfirmationDialog(
+                                            context: context,
+                                            spreadsheetId: widget.spreadsheetId,
+                                            client: client,
+                                            onSuccess: () {
+                                              // רענון נתונים מהענן ועדכון המסכים במקביל לאחר מחיקה מוצלח
+                                              _loadClientsData(forceRefresh: true);
+                                              widget.onRefreshRequired();
+
+                                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('הלקוח ${client.fullName} וכל אירועיו נמחקו לצמיתות מהענן.'), backgroundColor: Colors.blueGrey));
+                                            },
+                                          );
+                                        },
+                                        tooltip: 'מחיקה ברוטלית וסופית מהענן',
                                         constraints: const BoxConstraints(),
                                         padding: const EdgeInsets.all(8),
                                       ),
