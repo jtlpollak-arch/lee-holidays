@@ -251,62 +251,91 @@ class ClientsBookViewState extends State<ClientsBookView> {
                           elevation: 2,
                           margin: const EdgeInsets.only(bottom: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), // הוספת ריווח פנימי מעט לעידון
-                            leading: CircleAvatar(
-                              backgroundColor: const Color(0xFF1B5565).withOpacity(0.1),
-                              child: Text(
-                                client.fullName.isNotEmpty ? client.fullName[0] : '?',
-                                style: const TextStyle(color: Color(0xFF1B5565), fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            title: Text(client.fullName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Padding(
-                              padding: const EdgeInsets.only(top: 6.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // שורת הטלפון עם אייקון מעודן
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.phone_android_rounded, size: 14, color: Colors.black45),
-                                      const SizedBox(width: 6),
-                                      Text(client.phone, style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
-                                    ],
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0), // ריווח פנימי אחיד לכל הכרטיס
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                // 1. אווטאר עם האות הראשונה של השם - בצד ימין (RTL)
+                                CircleAvatar(
+                                  backgroundColor: const Color(0xFF1B5565).withOpacity(0.1),
+                                  radius: 20,
+                                  child: Text(
+                                    client.fullName.isNotEmpty ? client.fullName[0] : '?',
+                                    style: const TextStyle(color: Color(0xFF1B5565), fontWeight: FontWeight.bold),
                                   ),
-                                  // שורת המייל מוצגת רק אם קיים ערך, עם הגנת גמישות וחיתוך עדין
-                                  if (client.email.isNotEmpty) ...[
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.mail_outline_rounded, size: 14, color: Colors.black45),
-                                        const SizedBox(width: 6),
-                                        Flexible(
-                                          child: Text(
-                                            client.email,
-                                            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis, // מונע שבירת שורה ומציג שלוש נקודות במקרה של מייל ארוך
+                                ),
+                                const SizedBox(width: 12), // מרווח בין האווטאר לטקסט
+                                // 2. מרכז הכרטיס - פרטי הלקוח מיושרים לימין עם הגנת גלישה מלאה
+                                Expanded(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.start, // מיישר לימין בסביבת RTL
+                                    children: [
+                                      Text(
+                                        client.fullName,
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      // שורת הטלפון עם אייקון ירוק
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.phone_android_rounded, size: 14, color: Colors.green),
+                                          const SizedBox(width: 6),
+                                          Flexible(
+                                            child: Text(
+                                              client.phone,
+                                              style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ),
+                                        ],
+                                      ),
+                                      // שורת המייל - מוצגת רק אם קיים ערך, עם אייקון כחול
+                                      if (client.email.isNotEmpty) ...[
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.mail_outline_rounded, size: 14, color: Color(0xFF1B5565)),
+                                            const SizedBox(width: 6),
+                                            Flexible(
+                                              child: Text(
+                                                client.email,
+                                                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis, // מציג שלוש נקודות במקום להיחתך או לגלוש
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ],
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(width: 8), // מרווח ביטחון מינימלי בין הפרטים לכפתורים
+                                // 3. כפתורי פעולה - בצד שמאל קיצוני (RTL) עם מרווח מובנה מהקצה
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.edit_outlined, color: Color(0xFF1B5565)),
+                                      onPressed: () => _openEditClientDialog(client),
+                                      tooltip: 'עריכת פרטי לקוח',
+                                      constraints: const BoxConstraints(), // מאפס את חניקת המרווח הדיפולטיבית
+                                      padding: const EdgeInsets.all(8),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                                      onPressed: () => _deleteClient(client, index),
+                                      tooltip: 'מחיקת לקוח',
+                                      constraints: const BoxConstraints(),
+                                      padding: const EdgeInsets.all(8),
                                     ),
                                   ],
-                                ],
-                              ),
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.edit_outlined, color: Color(0xFF1B5565)),
-                                  onPressed: () => _openEditClientDialog(client),
-                                  tooltip: 'עריכת פרטי לקוח',
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                                  onPressed: () => _deleteClient(client, index),
-                                  tooltip: 'מחיקת לקוח',
                                 ),
                               ],
                             ),
