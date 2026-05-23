@@ -40,7 +40,7 @@ void main() async {
 
   final ClientRepository clientRepository = ClientRepositoryImpl(googleSheetsDataSource: googleSheetsDataSource, localDbDataSource: localDbDataSource);
 
-  final EventRepository eventRepository = EventRepositoryImpl(googleSheetsDataSource: googleSheetsDataSource, localDbDataSource: localDbDataSource, googleCalendarApi: googleCalendarApi);
+  final EventRepository eventRepository = EventRepositoryImpl(googleSheetsDataSource: googleSheetsDataSource, localDbDataSource: localDbDataSource, googleCalendarApi: googleCalendarApi, clientRepository: clientRepository);
 
   final CalculateDailyEventsUseCase calculateDailyEventsUseCase = CalculateDailyEventsUseCase();
 

@@ -1,4 +1,7 @@
 import 'dart:math';
+import 'package:holidays/data/models/client_model.dart';
+import 'package:holidays/data/repositories/client_repository.dart';
+
 import '../datasources/google_calendar_api.dart';
 import '../datasources/google_sheets_data_source.dart';
 import '../datasources/local_db_data_source.dart';
@@ -16,8 +19,9 @@ class EventRepositoryImpl implements EventRepository {
   final GoogleSheetsDataSource _googleSheetsDataSource;
   final LocalDbDataSource _localDbDataSource;
   final GoogleCalendarApi _googleCalendarApi;
+  final ClientRepository _clientRepository;
 
-  EventRepositoryImpl({required GoogleSheetsDataSource googleSheetsDataSource, required LocalDbDataSource localDbDataSource, required GoogleCalendarApi googleCalendarApi}) : _googleSheetsDataSource = googleSheetsDataSource, _localDbDataSource = localDbDataSource, _googleCalendarApi = googleCalendarApi;
+  EventRepositoryImpl({required GoogleSheetsDataSource googleSheetsDataSource, required LocalDbDataSource localDbDataSource, required GoogleCalendarApi googleCalendarApi, required ClientRepository clientRepository}) : _googleSheetsDataSource = googleSheetsDataSource, _localDbDataSource = localDbDataSource, _googleCalendarApi = googleCalendarApi, _clientRepository = clientRepository;
 
   /// פונקציית עזר פנימית לייצור מזהה ייחודי קשיח מבוסס זמן ורכיב אקראי עבור האירוע
   String _generateUniqueId() {
@@ -98,8 +102,20 @@ class EventRepositoryImpl implements EventRepository {
           await _googleCalendarApi.deleteEventSeries(event.calendarEventId);
         }
 
-        // 2. נמשוך את שם הלקוח המעודכן מהרשימה המקומית או נבנה תיאור מעודכן
-        final String calendarTitle = '${event.eventType} (מעודכן)';
+        // 2. משיכת רשימת הלקוחות מה-Cache, איתור הלקוח הספציפי ושליפת השם המלא שלו
+        final clients = await _clientRepository.getAllClients(spreadsheetId);
+
+        // חיפוש הלקוח ברשימה ללא יצירת אובייקט חדש
+        String clientName = 'לקוח כללי';
+        for (final c in clients) {
+          if (c.id == event.clientId) {
+            clientName = c.fullName;
+            break;
+          }
+        }
+
+        // בניית כותרת ותיאור מעודכנים ונקיים המכילים את שם הלקוח האמיתי
+        final String calendarTitle = '$clientName - ${event.eventType}';
         final String calendarDescription = 'כתובת נכס: ${event.address}\nהערות: ${event.notes}';
 
         // 3. ניצור אירוע מחזורי שנתי חדש ונקי לחלוטין ביומן גוגל
