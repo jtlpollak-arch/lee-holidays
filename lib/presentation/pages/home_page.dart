@@ -7,9 +7,7 @@ import '../../data/datasources/google_sheets_data_source.dart';
 import '../../data/datasources/google_calendar_api.dart';
 import '../../data/repositories/client_repository.dart';
 import '../../data/repositories/event_repository.dart';
-import '../../domain/usecases/calculate_daily_events_usecase.dart';
 import '../bloc_or_provider/home_cubit.dart';
-import '../widgets/greeting_canvas.dart';
 import '../widgets/add_client_sheet.dart';
 import '../widgets/clients_book_view.dart';
 

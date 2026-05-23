@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:holidays/presentation/widgets/client_book_view/cbv_modify.dart';
 import '../../data/models/client_model.dart';
 import '../../data/repositories/client_repository.dart';
 
@@ -36,33 +37,33 @@ class ClientsBookViewState extends State<ClientsBookView> {
   // הוספנו לה קריאה ישירה ל- _loadClientsData עם forceRefresh: true
   // כדי שהיא תמשוך את המידע ותבצע setState שיצייר מחדש את הרשימה המעודכנת
   void forceReloadFromOutside() {
-    print('מבצע רענון מאולץ לספר הלקוחות מפעולה חיצונית...');
+    print('מבצע רענון מאולץ לספר הלקוחות בעקבות עדכון חיצוני...');
     _loadClientsData(forceRefresh: true);
   }
 
   Future<void> _loadClientsData({bool forceRefresh = false}) async {
-    if (!mounted) return;
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = true;
+      });
+
       final clients = await widget.clientRepository.getAllClients(widget.spreadsheetId, forceRefresh: forceRefresh);
 
-      if (mounted) {
-        setState(() {
-          _allClients = clients.where((c) => c.isActive).toList();
-          _filterClients();
-          _isLoading = false;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        // טוענים את כל הלקוחות ומאפשרים ללוגיקת המיון לנהל את המיקום של המחוקים
+        _allClients = clients;
+        _filterClients();
+        _isLoading = false;
+      });
     } catch (e) {
-      print('שגיאה בטעינת ספר הלקוחות: $e');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      print('שגיאה בטעינת לקוחות: $e');
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('שגיאה בטעינת הנתונים: $e')));
     }
   }
 
@@ -73,240 +74,179 @@ class ClientsBookViewState extends State<ClientsBookView> {
         _filteredClients = List.from(_allClients);
       } else {
         _filteredClients = _allClients.where((client) {
-          return client.fullName.toLowerCase().contains(query) || client.phone.contains(query) || client.email.toLowerCase().contains(query);
+          final fullName = client.fullName.toLowerCase();
+          final phone = client.phone.toLowerCase();
+          return fullName.contains(query) || phone.contains(query);
         }).toList();
       }
     });
   }
 
-  void _openEditClientDialog(ClientModel client) {
-    final nameController = TextEditingController(text: client.fullName);
-    final firstNameController = TextEditingController(text: client.firstName);
-    final phoneController = TextEditingController(text: client.phone);
-    final emailController = TextEditingController(text: client.email);
-    final dialogFormKey = GlobalKey<FormState>();
-
-    showDialog(
+  Future<void> _deleteClient(ClientModel client, int index) async {
+    final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) {
-        return Directionality(
-          textDirection: TextDirection.rtl,
-          child: AlertDialog(
-            title: const Text(
-              'עריכת פרטי לקוח',
-              style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B5565)),
-            ),
-            content: SingleChildScrollView(
-              child: Form(
-                key: dialogFormKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: nameController,
-                      decoration: const InputDecoration(labelText: 'שם מלא *'),
-                      validator: (v) => v == null || v.trim().isEmpty ? 'שדה חובה' : null,
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: firstNameController,
-                      decoration: const InputDecoration(labelText: 'שם פרטי לברכה *'),
-                      validator: (v) => v == null || v.trim().isEmpty ? 'שדה חובה' : null,
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: phoneController,
-                      decoration: const InputDecoration(labelText: 'טלפון *'),
-                      keyboardType: TextInputType.phone,
-                      validator: (v) => v == null || v.trim().isEmpty ? 'שדה חובה' : null,
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: emailController,
-                      decoration: const InputDecoration(labelText: 'אימייל (אופציונלי)'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('ביטול', style: TextStyle(color: Colors.grey)),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B5565)),
-                onPressed: () async {
-                  if (!dialogFormKey.currentState!.validate()) return;
-
-                  Navigator.pop(context);
-                  setState(() => _isLoading = true);
-
-                  try {
-                    // תיקון בפינצטה: העברת ה-id המקורי של האובייקט כדי לשמור על רציפות המפתח הקבוע
-                    final updatedClient = ClientModel(id: client.id, fullName: nameController.text.trim(), firstName: firstNameController.text.trim(), phone: phoneController.text.trim(), email: emailController.text.trim(), status: client.status);
-
-                    await widget.clientRepository.updateClient(widget.spreadsheetId, updatedClient);
-                    widget.onRefreshRequired(); // מעורר רענון של רשימת המשימות בדף הבית
-                    await _loadClientsData(forceRefresh: true);
-                  } catch (e) {
-                    print('שגיאה בעדכון לקוח: $e');
-                    _loadClientsData();
-                  }
-                },
-                child: const Text('שמירה', style: TextStyle(color: Colors.white)),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text('מחיקת לקוח', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Text('האם אתה בטוח שברצונך למחוק את ${client.fullName}?\nהלקוח יעבור לתחתית הרשימה ותוכל לשחזר אותו בכל עת.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('ביטול', style: TextStyle(color: Colors.grey)),
           ),
-        );
-      },
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text(
+              'מחק',
+              style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
     );
+
+    if (confirm != true) return;
+
+    try {
+      await widget.clientRepository.deleteClientSoft(widget.spreadsheetId, client.id);
+
+      await _loadClientsData(forceRefresh: true);
+      widget.onRefreshRequired();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${client.fullName} הועבר לארכיון הלקוחות המחוקים')));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('השבתת הלקוח נכשלה: $e')));
+    }
   }
 
-  void _deleteClient(ClientModel client, int index) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Directionality(
-          textDirection: TextDirection.rtl,
-          child: AlertDialog(
-            title: const Text('מחיקת לקוח', style: TextStyle(fontWeight: FontWeight.bold)),
-            content: Text('האם אתה בטוח שברצונך למחוק את הלקוח ${client.fullName}?\nפעולה זו תסיר אותו מספר הלקוחות.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('ביטול', style: TextStyle(color: Colors.grey)),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-                onPressed: () async {
-                  Navigator.pop(context);
-                  setState(() => _isLoading = true);
-                  try {
-                    // החלפת השימוש במחיקה לפי מזהה הלקוח הקבוע
-                    await widget.clientRepository.deleteClientSoft(widget.spreadsheetId, client.id);
-                    widget.onRefreshRequired(); // מעורר רענון של דף הבית
-                    await _loadClientsData(forceRefresh: true);
-                  } catch (e) {
-                    print('שגיאה במחיקת לקוח: $e');
-                    _loadClientsData();
-                  }
-                },
-                child: const Text('מחקי', style: TextStyle(color: Colors.white)),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+  Future<void> _restoreClient(ClientModel client) async {
+    try {
+      final restoredClient = client.copyWith(status: 'פעיל');
+
+      await widget.clientRepository.updateClient(widget.spreadsheetId, restoredClient);
+
+      await _loadClientsData(forceRefresh: true);
+      widget.onRefreshRequired();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${client.fullName} שוחזר בהצלחה וחזר למצב פעיל')));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('שחזור הלקוח נכשל: $e')));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Column(
+    // מיון דינמי: לקוחות פעילים בראש הרשימה, לקוחות מחוקים שוקעים לתחתית
+    final List<ClientModel> sortedFilteredClients = List.from(_filteredClients)
+      ..sort((a, b) {
+        final bool aActive = a.status == 'פעיל';
+        final bool bActive = b.status == 'פעיל';
+        if (aActive == bActive) return 0;
+        return aActive ? -1 : 1;
+      });
+
+    return Scaffold(
+      backgroundColor: Colors.grey.shade50,
+      body: Column(
         children: [
-          // שורת חיפוש עליונה
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(14.0),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                labelText: 'חיפוש מהיר בספר הלקוחות...',
+                hintText: 'חפש לקוח לפי שם או מספר טלפון...',
                 prefixIcon: const Icon(Icons.search, color: Color(0xFF1B5565)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade200),
+                ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF1B5565), width: 2),
+                  borderSide: const BorderSide(color: Color(0xFF1B5565), width: 1.5),
                 ),
               ),
             ),
           ),
-
-          // תוכן ראשי של הרשימה
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1B5565))))
-                : _filteredClients.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.people_outline, size: 64, color: Colors.grey.shade400),
-                        const SizedBox(height: 16),
-                        Text('לא נמצאו לקוחות פעילים במערכת', style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
-                      ],
-                    ),
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFF1B5565)))
+                : sortedFilteredClients.isEmpty
+                ? const Center(
+                    child: Text('לא נמצאו לקוחות במאגר.', style: TextStyle(fontSize: 16, color: Colors.grey)),
                   )
                 : RefreshIndicator(
                     onRefresh: () => _loadClientsData(forceRefresh: true),
                     color: const Color(0xFF1B5565),
                     child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      itemCount: _filteredClients.length,
+                      itemCount: sortedFilteredClients.length,
                       itemBuilder: (context, index) {
-                        final client = _filteredClients[index];
-                        return Card(
-                          elevation: 2,
-                          margin: const EdgeInsets.only(bottom: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12.0), // ריווח פנימי אחיד לכל הכרטיס
+                        final client = sortedFilteredClients[index];
+                        final bool isActive = client.status == 'פעיל';
+                        final String firstLetter = client.fullName.isNotEmpty ? client.fullName[0] : '?';
+
+                        return Opacity(
+                          opacity: isActive ? 1.0 : 0.5,
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))],
+                            ),
                             child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                // 1. אווטאר עם האות הראשונה של השם - בצד ימין (RTL)
+                                // עוגן חזותי: CircleAvatar יציב עם התאמה עיצובית לסטטוס
                                 CircleAvatar(
-                                  backgroundColor: const Color(0xFF1B5565).withOpacity(0.1),
                                   radius: 20,
+                                  backgroundColor: isActive ? const Color(0xFF1B5565).withOpacity(0.1) : Colors.grey.shade200,
                                   child: Text(
-                                    client.fullName.isNotEmpty ? client.fullName[0] : '?',
-                                    style: const TextStyle(color: Color(0xFF1B5565), fontWeight: FontWeight.bold),
+                                    firstLetter,
+                                    style: TextStyle(color: isActive ? const Color(0xFF1B5565) : Colors.grey.shade600, fontWeight: FontWeight.bold, fontSize: 16),
                                   ),
                                 ),
-                                const SizedBox(width: 12), // מרווח בין האווטאר לטקסט
-                                // 2. מרכז הכרטיס - פרטי הלקוח מיושרים לימין עם הגנת גלישה מלאה
+                                const SizedBox(width: 12),
+
+                                // מידע ופרטי הלקוח
                                 Expanded(
                                   child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.start, // מיישר לימין בסביבת RTL
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         client.fullName,
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
                                       ),
-                                      const SizedBox(height: 6),
-                                      // שורת הטלפון עם אייקון ירוק
+                                      const SizedBox(height: 4),
                                       Row(
                                         children: [
-                                          const Icon(Icons.phone_android_rounded, size: 14, color: Colors.green),
+                                          Icon(Icons.phone_outlined, size: 14, color: isActive ? Colors.green.shade600 : Colors.grey),
                                           const SizedBox(width: 6),
-                                          Flexible(
-                                            child: Text(
-                                              client.phone,
-                                              style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
+                                          Text(
+                                            client.phone,
+                                            style: const TextStyle(fontSize: 13, color: Colors.black54, fontFamily: 'Roboto'),
                                           ),
                                         ],
                                       ),
-                                      // שורת המייל - מוצגת רק אם קיים ערך, עם אייקון כחול
                                       if (client.email.isNotEmpty) ...[
-                                        const SizedBox(height: 4),
+                                        const SizedBox(height: 2),
                                         Row(
                                           children: [
-                                            const Icon(Icons.mail_outline_rounded, size: 14, color: Color(0xFF1B5565)),
+                                            Icon(Icons.email_outlined, size: 14, color: isActive ? const Color(0xFF1B5565) : Colors.grey),
                                             const SizedBox(width: 6),
-                                            Flexible(
+                                            Expanded(
                                               child: Text(
                                                 client.email,
-                                                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                                                style: const TextStyle(fontSize: 13, color: Colors.black54, fontFamily: 'Roboto'),
                                                 maxLines: 1,
-                                                overflow: TextOverflow.ellipsis, // מציג שלוש נקודות במקום להיחתך או לגלוש
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
                                           ],
@@ -316,25 +256,48 @@ class ClientsBookViewState extends State<ClientsBookView> {
                                   ),
                                 ),
 
-                                const SizedBox(width: 8), // מרווח ביטחון מינימלי בין הפרטים לכפתורים
-                                // 3. כפתורי פעולה - בצד שמאל קיצוני (RTL) עם מרווח מובנה מהקצה
+                                // כפתורי פעולה מוגנים בריווח פנימי ומותאמים לסטטוס
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.edit_outlined, color: Color(0xFF1B5565)),
-                                      onPressed: () => _openEditClientDialog(client),
-                                      tooltip: 'עריכת פרטי לקוח',
-                                      constraints: const BoxConstraints(), // מאפס את חניקת המרווח הדיפולטיבית
-                                      padding: const EdgeInsets.all(8),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                                      onPressed: () => _deleteClient(client, index),
-                                      tooltip: 'מחיקת לקוח',
-                                      constraints: const BoxConstraints(),
-                                      padding: const EdgeInsets.all(8),
-                                    ),
+                                    if (isActive) ...[
+                                      IconButton(
+                                        icon: const Icon(Icons.edit_outlined, color: Color(0xFF1B5565)),
+                                        onPressed: () => CbvModify.showEditDialog(
+                                          context: context,
+                                          client: client,
+                                          spreadsheetId: widget.spreadsheetId,
+                                          clientRepository: widget.clientRepository,
+                                          onLoadingStatusChanged: (isLoading) {
+                                            setState(() {
+                                              _isLoading = isLoading;
+                                            });
+                                          },
+                                          onClientUpdated: () {
+                                            widget.onRefreshRequired();
+                                            _loadClientsData(forceRefresh: true);
+                                          },
+                                        ),
+                                        tooltip: 'עריכת פרטי לקוח',
+                                        constraints: const BoxConstraints(),
+                                        padding: const EdgeInsets.all(8),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                                        onPressed: () => _deleteClient(client, index),
+                                        tooltip: 'מחיקת לקוח',
+                                        constraints: const BoxConstraints(),
+                                        padding: const EdgeInsets.all(8),
+                                      ),
+                                    ] else ...[
+                                      IconButton(
+                                        icon: const Icon(Icons.restore_from_trash, color: Colors.green),
+                                        onPressed: () => _restoreClient(client),
+                                        tooltip: 'שחזור לקוח פעיל',
+                                        constraints: const BoxConstraints(),
+                                        padding: const EdgeInsets.all(8),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ],
