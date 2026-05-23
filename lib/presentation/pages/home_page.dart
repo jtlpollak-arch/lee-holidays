@@ -168,7 +168,7 @@ class _HomePageState extends State<HomePage> {
               _selectedIndex = index;
             });
             if (index == 0 && _spreadsheetId != null) {
-              widget.cubit.loadDailyOverview(spreadsheetId: _spreadsheetId!);
+              widget.cubit.loadDailyOverview(spreadsheetId: _spreadsheetId!, forceRefresh: true);
             }
           },
           selectedItemColor: const Color(0xFF1B5565),
