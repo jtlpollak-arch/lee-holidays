@@ -231,6 +231,7 @@ class _HomePageState extends State<HomePage> {
         return _buildDailyTasksTab();
       case 1:
         return ClientsBookView(
+          key: _clientsBookKey,
           spreadsheetId: _spreadsheetId!,
           clientRepository: widget.clientRepository,
           eventRepository: widget.eventRepository,
