@@ -20,7 +20,7 @@ class _CVNewEventFormState extends State<CVNewEventForm> {
   String? _selectedEventType;
   DateTime? _selectedDate;
 
-  final List<String> _eventTypes = ['יום הולדת', 'קניית דירה', 'מכירת דירה', 'השכרת נכס', 'פגישת היכרות', 'יום שנה לקשר', 'אחר (טקסט חופשי)'];
+  final List<String> _eventTypes = ['יום הולדת', 'קניית דירה', 'מכירת דירה', 'השכרת נכס', 'אחר (טקסט חופשי)'];
 
   Future<void> _pickDate() async {
     final now = DateTime.now();

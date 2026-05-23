@@ -21,7 +21,7 @@ class _CVEditEventFormState extends State<CVEditEventForm> {
   DateTime? _selectedDate;
   bool _isLoading = false;
 
-  final List<String> _eventTypes = ['יום הולדת', 'קניית דירה', 'מכירת דירה', 'השכרת נכס', 'פגישת היכרות', 'יום שנה לקשר', 'אחר (טקסט חופשי)'];
+  final List<String> _eventTypes = ['יום הולדת', 'קניית דירה', 'מכירת דירה', 'השכרת נכס', 'אחר (טקסט חופשי)'];
 
   @override
   void initState() {
