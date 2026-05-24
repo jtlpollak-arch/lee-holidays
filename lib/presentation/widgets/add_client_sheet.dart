@@ -24,6 +24,7 @@ class _AddClientSheetState extends State<AddClientSheet> {
   final _firstNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
+  final _notesController = TextEditingController();
 
   bool _isLoading = false;
 
@@ -33,6 +34,7 @@ class _AddClientSheetState extends State<AddClientSheet> {
     _firstNameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
@@ -88,7 +90,7 @@ class _AddClientSheetState extends State<AddClientSheet> {
       }
 
       // 2. יצירת מודל הלקוח החדש (עודכן בפינצטה שדה id)
-      final newClient = ClientModel(id: '', phone: formattedPhone, fullName: _fullNameController.text.trim(), firstName: _firstNameController.text.trim(), email: _emailController.text.trim(), status: 'פעיל');
+      final newClient = ClientModel(id: '', phone: formattedPhone, fullName: _fullNameController.text.trim(), firstName: _firstNameController.text.trim(), email: _emailController.text.trim(), status: 'פעיל', notes: _notesController.text.trim());
 
       // 3. שמירת הלקוח בלבד בענן ובמסד הנתונים המקומי
       await widget.clientRepository.addClient(widget.spreadsheetId, newClient);
@@ -178,7 +180,15 @@ class _AddClientSheetState extends State<AddClientSheet> {
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(labelText: 'אימייל (אופציונלי)', border: OutlineInputBorder()),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
+              // פינצטה: הוספת שדה הקלט החזותי החדש בטופס היצירה עבור הזנת ההערות הקבועות ללקוח
+              TextFormField(
+                controller: _notesController,
+                decoration: const InputDecoration(labelText: 'הערות קבועות ללקוח (אופציונלי)', border: OutlineInputBorder()),
+                maxLines: 2,
+                keyboardType: TextInputType.multiline,
+              ),
+              const SizedBox(height: 20),
 
               Row(
                 children: [

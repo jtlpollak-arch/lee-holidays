@@ -44,7 +44,7 @@ class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
     final sheetsApi = _getSheetsApi();
     try {
       // הטווח עודכן מ-E ל-F כדי לקרוא את כל 6 העמודות (כולל ה-id החדש בטור A)
-      final response = await sheetsApi.spreadsheets.values.get(spreadsheetId, 'Sheet1!A2:F5000');
+      final response = await sheetsApi.spreadsheets.values.get(spreadsheetId, 'Sheet1!A2:G5000');
       final List<ClientModel> clients = [];
 
       if (response.values != null) {
@@ -67,7 +67,7 @@ class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
     final valueRange = sheets.ValueRange(values: [client.toRow()]);
     try {
       // הטווח עודכן ל-F כדי לתמוך בשמירת 6 העמודות בענן
-      await sheetsApi.spreadsheets.values.append(valueRange, spreadsheetId, 'Sheet1!A:F', valueInputOption: 'USER_ENTERED');
+      await sheetsApi.spreadsheets.values.append(valueRange, spreadsheetId, 'Sheet1!A:G', valueInputOption: 'USER_ENTERED');
     } catch (e) {
       print('שגיאה בהוספת לקוח חדש לגוגל שיטס: $e');
       rethrow;
@@ -80,7 +80,7 @@ class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
     final valueRange = sheets.ValueRange(values: [client.toRow()]);
     try {
       // הטווח עודכן ל-F לעדכון שורה מלאה בענן
-      await sheetsApi.spreadsheets.values.update(valueRange, spreadsheetId, 'Sheet1!A$rowIndex:F$rowIndex', valueInputOption: 'USER_ENTERED');
+      await sheetsApi.spreadsheets.values.update(valueRange, spreadsheetId, 'Sheet1!A$rowIndex:G$rowIndex', valueInputOption: 'USER_ENTERED');
     } catch (e) {
       print('שגיאה בעדכון שורת לקוח בגוגל שיטס: $e');
       rethrow;

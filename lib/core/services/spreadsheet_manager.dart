@@ -91,7 +91,7 @@ class SpreadsheetManager {
     await sheetsApi.spreadsheets.values.update(
       sheets.ValueRange(
         values: [
-          ['cl_id', 'טלפון', 'שם מלא', 'שם פרטי', 'אימייל', 'סטטוס'],
+          ['cl_id', 'טלפון', 'שם מלא', 'שם פרטי', 'אימייל', 'סטטוס', 'הערות'],
         ],
       ),
       newId,

@@ -144,8 +144,8 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                     // ה-padding התחתון מתרחב דינמית בגובה המקלדת ומייצר את מרחב הגלילה המושלם והטבעי בתוך החלון היציב
                     padding: EdgeInsets.only(left: 20, right: 20, top: 10, bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? MediaQuery.of(context).viewInsets.bottom + 20 : 24.0),
                     children: [
-                      // 1. הוספת קוביות תצוגת ההערות מטור E מול עיני המשתמש (בראש הרשימה)
-                      if (widget.event.notes.trim().isNotEmpty || widget.event.address.trim().isNotEmpty) ...[
+                      // 1. הוספת קוביות תצוגת ההערות מטור E ומודל הלקוח מול עיני המשתמש (בראש הרשימה)
+                      if (widget.event.notes.trim().isNotEmpty || widget.event.address.trim().isNotEmpty || widget.client.notes.isNotEmpty) ...[
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(12),
@@ -157,32 +157,52 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // 2. בלוק הצגת הנכס - מוצג רק אם הכתובת לא ריקה
+                              // א. בלוק הצגת הנכס - מוצג רק אם הכתובת לא ריקה
                               if (widget.event.address.trim().isNotEmpty) ...[
                                 Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Icon(Icons.location_on_rounded, size: 16, color: _tealColor), // שונה מ-amber לטיל מעודן
+                                    // פינצטה: אייקון המיקום האדום נשאר מקובע בצד ימין למעלה
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 2),
+                                      child: Icon(Icons.location_on_rounded, size: 16, color: Colors.red.shade600),
+                                    ),
                                     const SizedBox(width: 6),
                                     Expanded(
-                                      child: Text(
-                                        'נכס: ${widget.event.address}',
-                                        style: const TextStyle(fontSize: 14, color: Colors.black87, fontWeight: FontWeight.w500),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          // פינצטה: כותרת הבלוק מופרדת עם קו תחתי ואחידה בגודל 12 לשאר הכותרות
+                                          Text(
+                                            'נכס:',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.grey.shade700,
+                                              decoration: TextDecoration.underline, // קו תחתי לכותרת בלבד
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          // פינצטה: תוכן הכתובת זורם בצורה נקייה וקריאה מתחת לכותרת בגודל 14
+                                          Text(widget.event.address, style: const TextStyle(fontSize: 14, color: Colors.black87)),
+                                        ],
                                       ),
                                     ),
                                   ],
                                 ),
-                                // רווח קטן בין הנכס להערות במידה ושניהם קיימים
-                                if (widget.event.notes.trim().isNotEmpty) const SizedBox(height: 8),
+                                // מרווח נשימה קבוע ואחיד במידה ויש עוד אלמנטים מתחתיו
+                                if (widget.event.notes.trim().isNotEmpty || widget.client.notes.isNotEmpty) const SizedBox(height: 10),
                               ],
 
-                              // בלוק הצגת ההערות - מוצג רק אם ההערות לא ריקות
+                              // ב. בלוק הצגת ההערות לאירוע - מוצג רק אם ההערות לא ריקות
                               if (widget.event.notes.trim().isNotEmpty) ...[
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Padding(
                                       padding: const EdgeInsets.only(top: 2),
-                                      child: Icon(Icons.notes_rounded, size: 16, color: _tealColor), // שונה מ-amber לטיל מעודן
+                                      // פינצטה: שינוי צבע אייקון ההערות לאירוע לכתום-אזהרה עדין וממוקד
+                                      child: Icon(Icons.notes_rounded, size: 16, color: Colors.amber.shade700),
                                     ),
                                     const SizedBox(width: 6),
                                     Expanded(
@@ -191,10 +211,42 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                                         children: [
                                           Text(
                                             'הערות לאירוע:',
-                                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade700), // שונה מ-amber לאפור כהה מכובד
+                                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade700, decoration: TextDecoration.underline),
                                           ),
                                           const SizedBox(height: 2),
                                           Text(widget.event.notes, style: const TextStyle(fontSize: 14, color: Colors.black87)),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                // מרווח נשימה קבוע ואחיד במידה ויש את בלוק רקע הלקוח מתחתיו
+                                if (widget.client.notes.isNotEmpty) const SizedBox(height: 10),
+                              ],
+
+                              // ג. פינצטה חזותית: הצגת הערות קבועות ללקוח במבנה סימטרי, אחיד וצבעוני
+                              if (widget.client.notes.isNotEmpty) ...[
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 2),
+                                      // פינצטה: צבע אייקון סגול-מידע עדין המייצג פרטי פרופיל קבועים
+                                      child: Icon(Icons.person_pin_rounded, size: 16, color: Colors.purple.shade600),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          // פינצטה: המלל קוצר ל"הערות ללקוח:" להתאמה מושלמת לשאר הכותרות בקובייה
+                                          Text(
+                                            'הערות ללקוח:',
+                                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade700, decoration: TextDecoration.underline),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          // פינצטה: מוצג כטקסט נקי הזורם באותו פונט וגודל מדויק של שאר הבלוקים בקובייה
+                                          Text(widget.client.notes, style: const TextStyle(fontSize: 14, color: Colors.black87)),
                                         ],
                                       ),
                                     ),
@@ -270,7 +322,8 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                                         style: const TextStyle(
                                           fontSize: 16, // צומצם מ-20
                                           fontWeight: FontWeight.bold,
-                                          color: Color.fromARGB(255, 0, 0, 0),
+                                          // פינצטה: שילוב צבע הטורקיז/טיל המרכזי של המותג שלכם להקפצת השם בקנבס
+                                          color: Color(0xFF1B5565),
                                         ),
                                       ),
                                       const SizedBox(height: 10), // צומצם מ-20
