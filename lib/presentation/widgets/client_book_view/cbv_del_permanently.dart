@@ -50,13 +50,6 @@ class CbvDelPermanently {
                         style: TextStyle(fontSize: 15, color: Colors.grey.shade800, backgroundColor: Colors.amber.shade50),
                       ),
                       const SizedBox(height: 16),
-                      const Text('משמעות פעולה זו היא:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 6),
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('• שורת הלקוח תימחק פיזית מגיליון ה-Google Sheets והגיליון יצומצם.'), const Text('• כל פגישותיו, אירועיו והיסטוריית הטיפולים שלו יימחקו פיזית מהגיליון.'), const Text('• כל התזכורות והסדרות המשויכות אליו ביומן גוגל (Google Calendar) יוסרו לחלוטין.'), const Text('• המידע יימחק לחלוטין מה-Cache המקומי במכשיר הנייד.')]),
-                      ),
-                      const SizedBox(height: 20),
                       Text(
                         '⚠️ אזהרה: פעולה זו היא סופית לחלוטין ולא ניתן לבטל אותה או לשחזר את הנתונים לאחר מכן!',
                         style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold, fontSize: 13),

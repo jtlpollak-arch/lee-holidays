@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:holidays/data/datasources/google_calendar_api.dart';
 import 'package:holidays/data/repositories/event_repository.dart';
 import 'package:holidays/presentation/widgets/client_book_view/cbv_del_permanently.dart';
+import 'package:holidays/presentation/widgets/client_book_view/cbv_freeze.dart';
 import 'package:holidays/presentation/widgets/client_book_view/cbv_modify.dart';
 import '../../data/models/client_model.dart';
 import '../../data/repositories/client_repository.dart';
@@ -96,43 +97,6 @@ class ClientsBookViewState extends State<ClientsBookView> {
         }).toList();
       }
     });
-  }
-
-  Future<void> _deleteClient(ClientModel client, int index) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('הקפאת לקוח', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Text('האם את בטוחה שברצונך להקפיא את ${client.fullName}?\nהלקוח יעבור לתחתית הרשימה ותוכלי לשחזר אותו בכל עת.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('ביטול', style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(
-              'הקפאה',
-              style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
-
-    try {
-      await widget.clientRepository.deleteClientSoft(widget.spreadsheetId, client.id);
-
-      await _loadClientsData(forceRefresh: true);
-      widget.onRefreshRequired();
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${client.fullName} הועבר לארכיון הלקוחות המחוקים')));
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('השבתת הלקוח נכשלה: $e')));
-    }
   }
 
   Future<void> _restoreClient(ClientModel client) async {
@@ -299,11 +263,32 @@ class ClientsBookViewState extends State<ClientsBookView> {
                                         padding: const EdgeInsets.all(8),
                                       ),
                                       IconButton(
-                                        icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                                        onPressed: () => _deleteClient(client, index),
+                                        icon: const Icon(Icons.ac_unit, color: Colors.blue), // שינוי האייקון לאייקון הקפאה (פתית שלג כחול) במקום פח אשפה
                                         tooltip: 'הקפאת לקוח',
                                         constraints: const BoxConstraints(),
                                         padding: const EdgeInsets.all(8),
+                                        onPressed: () {
+                                          CbvFreeze.showFreezeDialog(
+                                            context: context,
+                                            spreadsheetId: widget.spreadsheetId,
+                                            client: client,
+                                            clientRepository: widget.clientRepository,
+                                            eventRepository: widget.eventRepository,
+                                            googleCalendarApi: widget.googleCalendarApi,
+                                            onLoadingStatusChanged: (loading) {
+                                              setState(() {
+                                                _isLoading = loading;
+                                              });
+                                            },
+                                            onSuccess: () {
+                                              // רענון נתונים מהענן ועדכון המסכים במקביל לאחר הקפאה מוצלחת
+                                              _loadClientsData(forceRefresh: true);
+                                              widget.onRefreshRequired();
+
+                                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('הלקוח ${client.fullName} הוקפא ואירועיו העתידיים הוסרו מיומן גוגל.'), backgroundColor: Colors.blue));
+                                            },
+                                          );
+                                        },
                                       ),
                                     ] else ...[
                                       IconButton(
