@@ -95,7 +95,7 @@ class SpreadsheetManager {
         ],
       ),
       newId,
-      'Sheet1!A1:F1',
+      'Sheet1!A1:G1',
       valueInputOption: 'USER_ENTERED',
     );
 
