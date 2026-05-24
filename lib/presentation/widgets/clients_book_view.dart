@@ -4,6 +4,7 @@ import 'package:holidays/data/repositories/event_repository.dart';
 import 'package:holidays/presentation/widgets/client_book_view/cbv_del_permanently.dart';
 import 'package:holidays/presentation/widgets/client_book_view/cbv_freeze.dart';
 import 'package:holidays/presentation/widgets/client_book_view/cbv_modify.dart';
+import 'package:holidays/presentation/widgets/client_book_view/cbv_unfreeze.dart';
 import '../../data/models/client_model.dart';
 import '../../data/repositories/client_repository.dart';
 
@@ -38,7 +39,7 @@ class ClientsBookViewState extends State<ClientsBookView> {
   void initState() {
     super.initState();
 
-    _cbvDelPermanently = CbvDelPermanently(clientRepository: widget.clientRepository, eventRepository: widget.eventRepository, googleCalendarApi: widget.googleCalendarApi);
+    _cbvDelPermanently = CbvDelPermanently(clientRepository: widget.clientRepository, eventRepository: widget.eventRepository);
 
     _loadClientsData();
     _searchController.addListener(_filterClients);
@@ -97,22 +98,6 @@ class ClientsBookViewState extends State<ClientsBookView> {
         }).toList();
       }
     });
-  }
-
-  Future<void> _restoreClient(ClientModel client) async {
-    try {
-      final restoredClient = client.copyWith(status: 'פעיל');
-
-      await widget.clientRepository.updateClient(widget.spreadsheetId, restoredClient);
-
-      await _loadClientsData(forceRefresh: true);
-      widget.onRefreshRequired();
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${client.fullName} שוחזר בהצלחה וחזר למצב פעיל')));
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('שחזור הלקוח נכשל: $e')));
-    }
   }
 
   @override
@@ -292,11 +277,31 @@ class ClientsBookViewState extends State<ClientsBookView> {
                                       ),
                                     ] else ...[
                                       IconButton(
-                                        icon: const Icon(Icons.restore_from_trash, color: Colors.green),
-                                        onPressed: () => _restoreClient(client),
-                                        tooltip: 'שחזור לקוח פעיל',
+                                        icon: const Icon(Icons.wb_sunny, color: Colors.orange), // אייקון שמש/הפשרה כתום
+                                        tooltip: 'שחזור והפשרת לקוח',
                                         constraints: const BoxConstraints(),
                                         padding: const EdgeInsets.all(8),
+                                        onPressed: () {
+                                          CbvUnfreeze.showUnfreezeDialog(
+                                            context: context,
+                                            spreadsheetId: widget.spreadsheetId,
+                                            client: client,
+                                            clientRepository: widget.clientRepository,
+                                            eventRepository: widget.eventRepository,
+                                            onLoadingStatusChanged: (loading) {
+                                              setState(() {
+                                                _isLoading = loading;
+                                              });
+                                            },
+                                            onSuccess: () {
+                                              // רענון נתונים אטומי מהענן ועדכון המסכים במקביל לאחר שחזור מוצלח
+                                              _loadClientsData(forceRefresh: true);
+                                              widget.onRefreshRequired();
+
+                                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('הלקוח ${client.fullName} שוחזר בהצלחה! כל אירועיו הוקמו מחדש ביומן (08:00-08:05).'), backgroundColor: Colors.orange));
+                                            },
+                                          );
+                                        },
                                       ),
                                       IconButton(
                                         icon: const Icon(Icons.clear, color: Colors.red),

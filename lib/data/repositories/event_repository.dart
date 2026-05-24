@@ -1,6 +1,6 @@
 import 'dart:math';
-import 'package:holidays/data/models/client_model.dart';
 import 'package:holidays/data/repositories/client_repository.dart';
+import 'package:googleapis/sheets/v4.dart' as sheets;
 
 import '../datasources/google_calendar_api.dart';
 import '../datasources/google_sheets_data_source.dart';
@@ -13,6 +13,8 @@ abstract class EventRepository {
   Future<void> updateEvent(String spreadsheetId, EventModel event);
   Future<void> deleteEventSoft(String spreadsheetId, EventModel event);
   Future<List<String>> deleteEventsPermanentlyByClient(String spreadsheetId, String clientId);
+  Future<void> freezeEventsByClient(String spreadsheetId, String clientId);
+  Future<void> unfreezeEventsByClient(String spreadsheetId, String clientId, String clientFullName);
 }
 
 class EventRepositoryImpl implements EventRepository {
@@ -219,5 +221,158 @@ class EventRepositoryImpl implements EventRepository {
     print('כל שורות האירועים של הלקוח נמחקו וצומצמו בהצלחה בענן וב-Cache באמצעות Batch Update.');
 
     return googleCalendarIdsToClean;
+  }
+
+  @override
+  Future<void> freezeEventsByClient(String spreadsheetId, String clientId) async {
+    print('CbvEventRepo: מתחיל תהליך הקפאת אירועים מרוכזת (Batch) עבור לקוח: $clientId');
+
+    // 1. משיכת כל האירועים הקיימים מהענן כדי לאתר את השורות המדויקות
+    final List<EventModel> cloudEvents = await _googleSheetsDataSource.getEvents(spreadsheetId);
+
+    final List<String> googleCalendarIdsToClean = [];
+    final List<sheets.ValueRange> sheetsUpdateBatch = [];
+    final List<EventModel> updatedLocalEvents = [];
+
+    // 2. מעבר על האירועים ומיפוי השורות הפיזיות לצורך בניית ה-Batch
+    for (int i = 0; i < cloudEvents.length; i++) {
+      final event = cloudEvents[i];
+
+      if (event.clientId == clientId) {
+        final int sheetRowNumber = i + 2; // חישוב השורה הפיזית בגיליון (+2)
+
+        // א. חילוץ מזהה הקלנדר במידה וקיים
+        if (event.calendarEventId.trim().isNotEmpty) {
+          googleCalendarIdsToClean.add(event.calendarEventId);
+        }
+
+        // ב. בניית אובייקט עדכון הטווח עבור טור I (calendarEventId) בגיליון Events
+        final sheets.ValueRange valueRange = sheets.ValueRange(
+          range: 'Events!I$sheetRowNumber:I$sheetRowNumber',
+          values: [
+            [''], // איפוס התא למחרוזת ריקה
+          ],
+        );
+        sheetsUpdateBatch.add(valueRange);
+      }
+    }
+
+    if (sheetsUpdateBatch.isEmpty) {
+      print('CbvEventRepo: לא נמצאו אירועים לשיונוי או הקפאה עבור לקוח זה.');
+      return;
+    }
+
+    // 3. ביצוע מחיקת Batch אטומי מול Google Calendar (קריאת רשת אחת)
+    if (googleCalendarIdsToClean.isNotEmpty) {
+      print('CbvEventRepo: מוחק ${googleCalendarIdsToClean.length} סדרות אירועים מיומן גוגל ב-Batch...');
+      await _googleCalendarApi.deleteMultipleEventSeries(googleCalendarIdsToClean);
+    }
+
+    // 4. ביצוע איפוס מרוכז (Batch Update) של התאים בתוך Google Sheets (קריאת רשת אחת)
+    print('CbvEventRepo: מאפס תאי מזהי קלנדר בגיליון שיטס ב-Batch עבור שורות הלקוח...');
+    await _googleSheetsDataSource.updateValuesBatch(spreadsheetId, sheetsUpdateBatch);
+
+    // 5. עדכון ה-Cache המקומי במכשיר לשמירה על אחידות הנתונים
+    print('CbvEventRepo: מעדכן את בסיס הנתונים המקומי (Local Cache)...');
+    final List<EventModel> currentLocal = await _localDbDataSource.getEvents();
+
+    for (int i = 0; i < currentLocal.length; i++) {
+      if (currentLocal[i].clientId == clientId) {
+        currentLocal[i] = currentLocal[i].copyWith(calendarEventId: '');
+      }
+    }
+
+    await _localDbDataSource.saveEvents(currentLocal);
+    print('CbvEventRepo: תהליך הקפאת אירועי הלקוח הסתיים בהצלחה מלאה.');
+  }
+
+  @override
+  Future<void> unfreezeEventsByClient(String spreadsheetId, String clientId, String clientFullName) async {
+    print('CbvEventRepo: מתחיל תהליך שחזור אקטיבי (Unfreeze Batch) עבור לקוח: $clientFullName ($clientId)');
+
+    // 1. משיכת כל האירועים הקיימים מהענן כדי לאתר את השורות והאירועים של הלקוח
+    final List<EventModel> cloudEvents = await _googleSheetsDataSource.getEvents(spreadsheetId);
+
+    final List<Map<String, dynamic>> calendarEventsToCreate = [];
+    final List<int> targetSheetRowNumbers = [];
+    final List<EventModel> clientEventsToUpdate = [];
+
+    // 2. מיפוי ובניית המידע עבור ה-Batch של הקלנדר
+    for (int i = 0; i < cloudEvents.length; i++) {
+      final event = cloudEvents[i];
+
+      if (event.clientId == clientId) {
+        final int sheetRowNumber = i + 2; // חישוב השורה הפיזית בגיליון (+2)
+        targetSheetRowNumbers.add(sheetRowNumber);
+        clientEventsToUpdate.add(event);
+
+        // בניית כותרת האירוע: שם מלא + סוג האירוע
+        final String eventTitle = '$clientFullName - ${event.eventType}';
+
+        // בניית גוף האירוע: כתובת הנכס + הערות
+        final StringBuffer descBuilder = StringBuffer();
+        if (event.address.trim().isNotEmpty) {
+          descBuilder.writeln('כתובת הנכס: ${event.address}');
+        }
+        if (event.notes.trim().isNotEmpty) {
+          descBuilder.writeln('הערות: ${event.notes}');
+        }
+
+        calendarEventsToCreate.add({
+          'title': eventTitle,
+          'description': descBuilder.toString().trim(),
+          'date': event.date, // העברת אובייקט ה-DateTime שמחזיק את היום והחודש
+        });
+      }
+    }
+
+    if (calendarEventsToCreate.isEmpty) {
+      print('CbvEventRepo: לא נמצאו שורות אירועים לשחזור עבור לקוח זה.');
+      return;
+    }
+
+    // 3. ביצוע יצירת Batch אטומי מול Google Calendar (קריאת רשת אחת לכל האירועים)
+    print('CbvEventRepo: מקים מחדש ${calendarEventsToCreate.length} אירועים מחזוריים ביומן גוגל ב-Batch...');
+    final List<String> newCalendarIds = await _googleCalendarApi.insertMultipleEventSeries(calendarEventsToCreate);
+
+    if (newCalendarIds.length != calendarEventsToCreate.length) {
+      throw Exception('שגיאה בסנכרון ה-Batch: כמות המזהים שחזרה מגוגל קלנדר (${newCalendarIds.length}) אינה תואמת לכמות האירועים שנשלחה (${calendarEventsToCreate.length})');
+    }
+
+    // 4. בניית רשימת אובייקטי ה-Batch לשיטס לצורך עדכון מזהי היומן החדשים בטור I
+    final List<sheets.ValueRange> sheetsUpdateBatch = [];
+    for (int i = 0; i < targetSheetRowNumbers.length; i++) {
+      final int rowNumber = targetSheetRowNumbers[i];
+      final String newId = newCalendarIds[i];
+
+      final sheets.ValueRange valueRange = sheets.ValueRange(
+        range: 'Events!I$rowNumber:I$rowNumber',
+        values: [
+          [newId], // השתלת מזהה היומן החדש בתא
+        ],
+      );
+      sheetsUpdateBatch.add(valueRange);
+    }
+
+    // 5. ביצוע עדכון מרוכז (Batch Update) ב-Google Sheets (קריאת רשת אחת)
+    print('CbvEventRepo: מעדכן מזהי יומן חדשים בגיליון שיטס ב-Batch...');
+    await _googleSheetsDataSource.updateValuesBatch(spreadsheetId, sheetsUpdateBatch);
+
+    // 6. עדכון ה-Cache המקומי במכשיר לשמירה על אחידות וסנכרון הנתונים
+    print('CbvEventRepo: מעדכן את בסיס הנתונים המקומי (Local Cache) עם המזהים החדשים...');
+    final List<EventModel> currentLocal = await _localDbDataSource.getEvents();
+
+    for (int i = 0; i < currentLocal.length; i++) {
+      if (currentLocal[i].clientId == clientId) {
+        // מציאת האינדקס התואם ברשימה המקומית לפי מזהה השורה הייחודי (id)
+        final int matchIndex = clientEventsToUpdate.indexWhere((e) => e.id == currentLocal[i].id);
+        if (matchIndex != -1) {
+          currentLocal[i] = currentLocal[i].copyWith(calendarEventId: newCalendarIds[matchIndex]);
+        }
+      }
+    }
+
+    await _localDbDataSource.saveEvents(currentLocal);
+    print('CbvEventRepo: תהליך שחזור אקטיבי של אירועי הלקוח הסתיים בהצלחה מלאה.');
   }
 }

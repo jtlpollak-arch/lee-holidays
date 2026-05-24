@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:googleapis/calendar/v3.dart' as calendar;
 import 'package:http/http.dart' as http;
 
@@ -9,6 +11,8 @@ abstract class GoogleCalendarApi {
   Future<String> insertGreetingReminderEvent({required String title, required DateTime date, required String description, bool isRecurring = false});
 
   Future<void> deleteMultipleEventSeries(List<String> eventIds);
+
+  Future<List<String>> insertMultipleEventSeries(List<Map<String, dynamic>> eventsData);
 
   /// מוחק סדרת אירועים שלמה (או אירוע בודד שאינו מחזורי) לפי ה-ID שלו
   Future<void> deleteEventSeries(String eventId);
@@ -97,28 +101,147 @@ class GoogleCalendarApiImpl implements GoogleCalendarApi {
 
   @override
   Future<void> deleteMultipleEventSeries(List<String> eventIds) async {
-    print('מתחיל תהליך מחיקה מקבילית של ${eventIds.length} אירועים מהיומן...');
+    print('CbvCalendarBatch: מתחיל תהליך מחיקת Batch אטומי של ${eventIds.length} אירועים מהיומן...');
 
-    // סינון מזהים ריקים כדי לא לבזבז קריאות רשת
+    // סינון מזהים ריקים
     final validIds = eventIds.where((id) => id.trim().isNotEmpty).toList();
 
     if (validIds.isEmpty) {
-      print('לא נמצאו מזהי יומן תקינים למחיקה מקבילית.');
+      print('CbvCalendarBatch: לא נמצאו מזהי יומן תקינים למחיקת Batch.');
       return;
     }
 
-    // הפעלת כל פקודות המחיקה בו-זמנית בענן של גוגל
-    await Future.wait(
-      validIds.map((id) async {
-        try {
-          await deleteEventSeries(id);
-        } catch (e) {
-          // תפיסת שגיאה נקודתית כדי שאירוע בודד שלא נמצא לא יפיל את שאר המחיקות
-          print('אירוע $id לא נמחק מהיומן (ייתכן שנמחק ידנית בעבר): $e');
-        }
-      }),
-    );
+    if (_authenticatedClient == null) {
+      throw StateError('ה-Authenticated Client לא אותחל ב-DataSource.');
+    }
 
-    print('סיום תהליך מחיקת האירועים המקבילית מהיומן.');
+    // 1. הגדרת נקודת הקצה הרשמית של גוגל ל-Batch בקלנדר
+    final Uri batchUrl = Uri.parse('https://www.googleapis.com/batch/calendar/v3');
+
+    // 2. יצירת בקשת HTTP גולמית מסוג POST (כדי שנוכל לשלוט על ה-Bytes של ה-body באופן מלא)
+    final http.Request request = http.Request('POST', batchUrl);
+
+    // 3. הגדרת ה-Headers הנדרשים עם ה-boundary המדויק
+    request.headers['Content-Type'] = 'multipart/mixed; boundary=batch_boundary';
+
+    // 4. בניית גוף הבקשה עם סיומות שורה קשיחות מסוג CRLF (\r\n) לפי הפרוטוקול הסטנדרטי של גוגל
+    final StringBuffer bodyBuilder = StringBuffer();
+
+    for (int i = 0; i < validIds.length; i++) {
+      final String id = validIds[i];
+      bodyBuilder.write('--batch_boundary\r\n');
+      bodyBuilder.write('Content-Type: application/http\r\n');
+      bodyBuilder.write('Content-ID: <item_${i + 1}>\r\n');
+      bodyBuilder.write('\r\n');
+      bodyBuilder.write('DELETE /calendar/v3/calendars/$_primaryCalendarId/events/$id HTTP/1.1\r\n');
+      bodyBuilder.write('\r\n');
+    }
+    bodyBuilder.write('--batch_boundary--\r\n');
+
+    // 5. המרת מחרוזת הטקסט ל-Bytes והזרקתה ישירות לתוך גוף ה-Request הראשי
+    request.bodyBytes = utf8.encode(bodyBuilder.toString());
+
+    try {
+      // שליחת בקשת ה-Batch המאוחדת בערוץ המאומת (קריאת HTTP בודדת)
+      final http.StreamedResponse response = await _authenticatedClient!.send(request);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        print('CbvCalendarBatch: בקשת ה-Batch בוצעה בהצלחה מלאה מול שרתי Google Calendar.');
+      } else {
+        throw Exception('שרת גוגל החזיר סטטוס שגיאה לבקשת ה-Batch: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('CbvCalendarBatch: שגיאה במהלך ביצוע בקשת ה-Batch בקלנדר: $e');
+      throw Exception('נכשל ניסיון מחיקת ה-Batch מ-Google Calendar: $e');
+    }
+  }
+
+  @override
+  Future<List<String>> insertMultipleEventSeries(List<Map<String, dynamic>> eventsData) async {
+    print('CbvCalendarBatch: מתחיל תהליך יצירת Batch אטומי של ${eventsData.length} אירועים מחזוריים ביומן...');
+
+    if (eventsData.isEmpty) return [];
+
+    if (_authenticatedClient == null) {
+      throw StateError('ה-Authenticated Client לא אותחל ב-DataSource.');
+    }
+
+    final Uri batchUrl = Uri.parse('https://www.googleapis.com/batch/calendar/v3');
+    final http.Request request = http.Request('POST', batchUrl);
+    request.headers['Content-Type'] = 'multipart/mixed; boundary=batch_boundary';
+
+    final StringBuffer bodyBuilder = StringBuffer();
+
+    // בניית גוף ה-Batch המרוכז עבור כל אירוע ברשימה
+    for (int i = 0; i < eventsData.length; i++) {
+      final data = eventsData[i];
+      final String title = data['title'] ?? '';
+      final String description = data['description'] ?? '';
+      final DateTime date = data['date'] ?? DateTime.now();
+
+      // עיצוב התאריך הנוכחי לשנה הנוכחית בפורמט YYYY-MM-DD
+      final String yearStr = DateTime.now().year.toString();
+      final String monthStr = date.month.toString().padLeft(2, '0');
+      final String dayStr = date.day.toString().padLeft(2, '0');
+      final String baseDateStr = '$yearStr-$monthStr-$dayStr';
+
+      // קביעת שעות קשיחות: התחלה ב-08:00, סיום ב-08:05 באזור זמן ישראל (+03:00)
+      final String startDateTime = '${baseDateStr}T08:00:00+03:00';
+      final String endDateTime = '${baseDateStr}T08:05:00+03:00';
+
+      // בניית גוף ה-JSON הייעודי של גוגל עבור אירוע מחזורי קבוע בשעות מוגדרות
+      final Map<String, dynamic> eventJson = {
+        'summary': title,
+        'description': description,
+        'start': {'dateTime': startDateTime, 'timeZone': 'Asia/Jerusalem'},
+        'end': {'dateTime': endDateTime, 'timeZone': 'Asia/Jerusalem'},
+        'recurrence': ['RRULE:FREQ=YEARLY'],
+      };
+
+      final String jsonString = json.encode(eventJson);
+
+      bodyBuilder.write('--batch_boundary\r\n');
+      bodyBuilder.write('Content-Type: application/http\r\n');
+      bodyBuilder.write('Content-ID: <item_${i + 1}>\r\n');
+      bodyBuilder.write('\r\n');
+      bodyBuilder.write('POST /calendar/v3/calendars/$_primaryCalendarId/events HTTP/1.1\r\n');
+      bodyBuilder.write('Content-Type: application/json\r\n');
+      bodyBuilder.write('Content-Length: ${utf8.encode(jsonString).length}\r\n');
+      bodyBuilder.write('\r\n');
+      bodyBuilder.write('$jsonString\r\n');
+      bodyBuilder.write('\r\n');
+    }
+    bodyBuilder.write('--batch_boundary--\r\n');
+
+    request.bodyBytes = utf8.encode(bodyBuilder.toString());
+
+    final List<String> createdEventIds = [];
+
+    try {
+      final http.StreamedResponse response = await _authenticatedClient!.send(request);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final String responseBody = await response.stream.bytesToString();
+        print('CbvCalendarBatch: תגובת ה-Batch התקבלה משרתי גוגל. מפענח מזהים...');
+
+        // פענוח מזהי ה-ID מתוך תגובת ה-Multipart של גוגל באמצעות RegExp מהיר וחסין
+        final RegExp idExp = RegExp(r'"id":\s*"([^"]+)"');
+        final matches = idExp.allMatches(responseBody);
+
+        for (final match in matches) {
+          if (match.groupCount >= 1) {
+            createdEventIds.add(match.group(1)!);
+          }
+        }
+
+        print('CbvCalendarBatch: חולצו בהצלחה ${createdEventIds.length} מזהי אירועים חדשים מהיומן.');
+        return createdEventIds;
+      } else {
+        throw Exception('שרת גוגל החזיר סטטוס שגיאה לבקשת ה-Insert Batch: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('CbvCalendarBatch: שגיאה במהלך ביצוע יצירת ה-Batch בקלנדר: $e');
+      throw Exception('נכשל ניסיון יצירת ה-Batch ב-Google Calendar: $e');
+    }
   }
 }

@@ -35,13 +35,18 @@ class CbvFreeze {
                   onLoadingStatusChanged(true); // הפעלת מצב טעינה במסך האב
 
                   try {
-                    // 1. יצירת מודל מעודכן עם סטטוס מוקפא
+                    print('CbvFreeze: מתחיל תהליך הקפאה משולב עבור הלקוח ${client.id}');
+
+                    // 1. שלב א': ביצוע חוק ה-Batch הקשיח על כל אירועי הלקוח (ניקוי קלנדר ואיפוס מזהים בשיטס ב-Batch)
+                    await eventRepository.freezeEventsByClient(spreadsheetId, client.id);
+
+                    // 2. שלב ב': יצירת מודל מעודכן עם סטטוס מוקפא
                     final updatedClient = client.copyWith(status: 'מוקפא');
 
-                    // 2. עדכון סטטוס הלקוח בענן וב-Cache המקומי
+                    // 3. שלב ג': עדכון סטטוס הלקוח עצמו בענן וב-Cache המקומי
                     await clientRepository.updateClient(spreadsheetId, updatedClient);
 
-                    // 5. קריאה לקולבק הצלחה לצורך רענון המסכים
+                    // 4. קריאה לקולבק הצלחה לצורך רענון המסכים
                     onSuccess();
                   } catch (e) {
                     print('שגיאה בתהליך הקפאת לקוח: $e');

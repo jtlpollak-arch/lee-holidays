@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:holidays/data/datasources/google_calendar_api.dart';
 import 'package:holidays/data/models/client_model.dart';
 import 'package:holidays/data/repositories/client_repository.dart';
 import 'package:holidays/data/repositories/event_repository.dart';
 
 /// קומפוננטת לוויין עצמאית לניהול, תצוגה וביצוע של מחיקת לקוח לצמיתות (פיזית וצמצום)
-/// מה-Google Sheet, מה-Cache המקומי ומיומן גוגל במקביל.
+/// מה-Google Sheet ומה-Cache המקומי במקביל, ללא פנייה לקלנדר (מאחר שהלקוח כבר מוקפא).
 class CbvDelPermanently {
   final ClientRepository clientRepository;
   final EventRepository eventRepository;
-  final GoogleCalendarApi googleCalendarApi;
 
-  CbvDelPermanently({required this.clientRepository, required this.eventRepository, required this.googleCalendarApi});
+  CbvDelPermanently({required this.clientRepository, required this.eventRepository});
 
   /// מציג דיאלוג אזהרה קפדני ומבצע את שרשרת המחיקות האטומית במידה והמשתמשת מאשרת
   void showDeleteConfirmationDialog({required BuildContext context, required String spreadsheetId, required ClientModel client, required VoidCallback onSuccess}) {
@@ -22,46 +20,42 @@ class CbvDelPermanently {
         bool isDeleting = false;
 
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (BuildContext context, StateSetter setDialogState) {
             return Directionality(
-              textDirection: TextDirection.rtl, // עימוד לימין כמבוקש
+              textDirection: TextDirection.rtl,
               child: AlertDialog(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 title: Row(
                   children: [
-                    const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
-                    const SizedBox(width: 8),
-                    Text(
-                      'מחיקת לקוח לצמיתות',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red.shade900),
+                    Icon(Icons.warning_amber_rounded, color: Colors.red.shade700, size: 30),
+                    const SizedBox(width: 10),
+                    const Text(
+                      'אזהרת מחיקה סופית',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
                     ),
                   ],
                 ),
                 content: SizedBox(
-                  width: double.maxFinite,
+                  width: 400,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('את עומדת למחוק את הלקוח/ה לצמיתות:', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                      const SizedBox(height: 6),
-                      Text(
-                        '${client.fullName} (${client.phone})',
-                        style: TextStyle(fontSize: 15, color: Colors.grey.shade800, backgroundColor: Colors.amber.shade50),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        '⚠️ אזהרה: פעולה זו היא סופית לחלוטין ולא ניתן לבטל אותה או לשחזר את הנתונים לאחר מכן!',
-                        style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold, fontSize: 13),
+                      Text('את עומדת למחוק לצמיתות את הלקוח: ${client.fullName}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'פעולה זו בלתי הפיכה! כל שורות האירועים המשויכות אליו יימחקו פיזית מגיליון הנתונים בענן והגיליון יצומצם.',
+                        style: TextStyle(color: Colors.red, fontWeight: FontWeight.w500),
                       ),
                       if (isDeleting) ...[
-                        const SizedBox(height: 24),
-                        Row(
-                          children: const [
-                            CircularProgressIndicator(strokeWidth: 3),
-                            SizedBox(width: 16),
-                            Expanded(
-                              child: Text('מבצע מחיקה מרוכזת (Batch Update) ומצמצם שורות בענן, נא לא לסגור את האפליקציה...', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+                        const SizedBox(height: 20),
+                        const Row(
+                          children: [
+                            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.red)),
+                            SizedBox(width: 12),
+                            Text(
+                              'מבצע מחיקת שורות וכיווץ גיליונות ב-Batch...',
+                              style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
                             ),
                           ],
                         ),
@@ -69,52 +63,52 @@ class CbvDelPermanently {
                     ],
                   ),
                 ),
-                actions: isDeleting
-                    ? null // הסרת הכפתורים בזמן ביצוע המחיקה למניעת הפרעות
-                    : [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text(
-                            'ביטול',
-                            style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-                          ),
-                          onPressed: () async {
-                            setState(() {
+                actions: [
+                  TextButton(
+                    onPressed: isDeleting ? null : () => Navigator.pop(dialogContext),
+                    child: const Text(
+                      'ביטול',
+                      style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade700,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    ),
+                    onPressed: isDeleting
+                        ? null
+                        : () async {
+                            setDialogState(() {
                               isDeleting = true;
                             });
 
                             try {
+                              // הפעלת שרשרת המחיקה המזוקקת מול Sheets בלבד
                               await _executePermanentDeletionChain(spreadsheetId: spreadsheetId, clientId: client.id);
 
-                              // סגירת הדיאלוג לאחר הצלחה מלאה
                               if (context.mounted) {
-                                Navigator.of(context).pop();
+                                Navigator.pop(dialogContext); // סגירת הדיאלוג
                               }
-
-                              // הפעלת פונקציית ההצלחה (למשל רענון מסך הבית או מעבר דף)
-                              onSuccess();
+                              onSuccess(); // הפעלת קולבק הצלחה לרענון התצוגה
                             } catch (e) {
-                              print('שגיאה קריטית בשרשרת המחיקה: $e');
-
-                              setState(() {
+                              print('שגיאה במהלך מחיקה סופית: $e');
+                              setDialogState(() {
                                 isDeleting = false;
                               });
 
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('נכשלה מחיקת הלקוח: ${e.toString()}'), backgroundColor: Colors.red));
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('נכשלה המחיקה הסופית: $e'), backgroundColor: Colors.red));
                               }
                             }
                           },
-                          child: const Text('כן, מחקי לצמיתות', style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                      ],
+                    child: const Text(
+                      'מחקי לצמיתות',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
               ),
             );
           },
@@ -123,32 +117,17 @@ class CbvDelPermanently {
     );
   }
 
-  /// מנהל את השרשרת האטומית של המחיקות הפיזיות מול ה-Repositories והיומן
+  /// מנהל את שרשרת הפעולות של מחיקת השורות מול Google Sheets ב-Batch, ללא פניות לקלנדר
   Future<void> _executePermanentDeletionChain({required String spreadsheetId, required String clientId}) async {
-    print('CbvDelPermanently: מתחיל שרשרת מחיקה פיזית אטומית עבור לקוח: $clientId');
+    print('CbvDelPermanently: מתחיל שרשרת מחיקה פיזית אטומית עבור לקוח מוקפא: $clientId');
 
-    // 1. שלב א': מחיקת כל שורות האירועים המשויכים ללקוח ב-Google Sheets בפקודת Batch אחת מרוכזת
-    // המתודה מחזירה לנו את כל מזהי יומן גוגל שהיו רשומים על השורות שנמחקו
-    final List<String> calendarEventIdsToClean = await eventRepository.deleteEventsPermanentlyByClient(spreadsheetId, clientId);
+    // 1. שלב א': מחיקת כל שורות האירועים המשויכים ללקוח ב-Google Sheets בפקודת Batch אחת מרוכזת (בסדר יורד)
+    await eventRepository.deleteEventsPermanentlyByClient(spreadsheetId, clientId);
 
-    // 2. שלב ב': מעבר על מזהי יומן גוגל וניקוי האירועים/סדרות מהיומן הפיזי של המשתמשת
-    if (calendarEventIdsToClean.isNotEmpty) {
-      print('CbvDelPermanently: נמצאו ${calendarEventIdsToClean.length} אירועי יומן לניקוי מ-Google Calendar.');
-
-      for (final eventId in calendarEventIdsToClean) {
-        try {
-          print('CbvDelPermanently: מוחק מיומן גוגל אירוע ID: $eventId');
-          await googleCalendarApi.deleteEventSeries(eventId);
-        } catch (e) {
-          // אנחנו עוטפים ב-try-catch פנימי כדי שגם אם אירוע ספציפי נמחק ידנית ביומן בעבר, השרשרת לא תיעצר!
-          print('CbvDelPermanently: שגיאה זמנית בניקוי אירוע יומן ספציפי (ייתכן שנמחק כבר): $e');
-        }
-      }
-    }
-
-    // 3. שלב ג': מחיקה פיזית וצמצום של שורת הלקוח עצמו מגיליון הלקוחות בענן ומה-Cache המקומי במכשיר
+    // 2. שלב ב': מחיקת שורת הלקוח עצמו מגיליון הלקוחות וכיווץ הגיליון
+    print('CbvDelPermanently: מוחק את שורת הלקוח לצמיתות מגיליון הלקוחות...');
     await clientRepository.deleteClientPermanently(spreadsheetId, clientId);
 
-    print('CbvDelPermanently: שרשרת המחיקה הפיזית והצמצום הסתיימה בהצלחה מוחלטת!');
+    print('CbvDelPermanently: שרשרת מחיקת ה-Batch של הלקוח המוקפא הסתיימה בהצלחה מלאה.');
   }
 }

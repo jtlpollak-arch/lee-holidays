@@ -15,6 +15,7 @@ abstract class GoogleSheetsDataSource {
 
   /// הצהרה ב-Interface המאפשרת ל-Repositories להפעיל את מחיקת ה-Batch המרוכזת
   Future<void> deleteRowsBatch(String spreadsheetId, String sheetName, List<int> rowNumbers);
+  Future<void> updateValuesBatch(String spreadsheetId, List<sheets.ValueRange> data);
 }
 
 class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
@@ -183,6 +184,26 @@ class GoogleSheetsDataSourceImpl implements GoogleSheetsDataSource {
     } catch (e) {
       print('שגיאה בביצוע deleteRowsBatch ב-Google Sheets: $e');
       rethrow;
+    }
+  }
+
+  @override
+  Future<void> updateValuesBatch(String spreadsheetId, List<sheets.ValueRange> data) async {
+    if (data.isEmpty) return;
+
+    print('CbvSheetsBatch: מתחיל עדכון ערכים מרוכז (Batch Update) עבור ${data.length} טווחים...');
+
+    final sheets.SheetsApi sheetsApi = _getSheetsApi();
+
+    // אריזת כל הטווחים והערכים לתוך בקשת ה-Batch המובנית של גוגל שיטס
+    final batchUpdateRequest = sheets.BatchUpdateValuesRequest(valueInputOption: 'USER_ENTERED', data: data);
+
+    try {
+      await sheetsApi.spreadsheets.values.batchUpdate(batchUpdateRequest, spreadsheetId);
+      print('CbvSheetsBatch: עדכון ה-Batch של הערכים בוצע בהצלחה מול Google Sheets.');
+    } catch (e) {
+      print('CbvSheetsBatch: שגיאה במהלך ביצוע batchUpdate של ערכים: $e');
+      throw Exception('נכשל עדכון ערכים מרוכז ב-Google Sheets: $e');
     }
   }
 }
