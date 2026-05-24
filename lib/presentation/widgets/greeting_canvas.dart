@@ -64,7 +64,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
       final String messageBody =
           'היי ${widget.client.firstName} 👋\n'
           'מצורפת גלויה חגיגית ואישית שנכתבה במיוחד עבורך מלי אטדגי - תיווך וייעוץ נדל"ן! ✨\n\n'
-          'לחצי כאן לפתיחת הגלויה המלאה:\n$cloudCardUrl';
+          'לחצו כאן לפתיחת הגלויה המלאה:\n$cloudCardUrl';
 
       final String encodedMessage = Uri.encodeComponent(messageBody);
 
@@ -125,7 +125,8 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
         ),
         child: Scaffold(
           backgroundColor: Colors.transparent,
-          resizeToAvoidBottomInset: true, // מאפשר לתוכן הפנימי להצטמצם ולהיגלל בצורה נכונה מעל המקלדת
+          // פינצטה: משנים ל-false כדי למנוע מה-Scaffold להתכווץ, לקטוע את המסך לשניים ולהציג בור לבן בתחתית
+          resizeToAvoidBottomInset: false,
           appBar: AppBar(
             title: const Text('עריכת ועיצוב הברכה', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             centerTitle: true,
@@ -140,7 +141,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
               children: [
                 Expanded(
                   child: ListView(
-                    // ה-padding התחתון מתרחב דינמית בגובה המקלדת כדי לייצר את מרחב הגלילה המבוקש
+                    // ה-padding התחתון מתרחב דינמית בגובה המקלדת ומייצר את מרחב הגלילה המושלם והטבעי בתוך החלון היציב
                     padding: EdgeInsets.only(left: 20, right: 20, top: 10, bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? MediaQuery.of(context).viewInsets.bottom + 20 : 24.0),
                     children: [
                       // 1. הוספת קוביות תצוגת ההערות מטור E מול עיני המשתמש (בראש הרשימה)
@@ -215,7 +216,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                       TextFormField(
                         controller: _textController,
                         minLines: 3,
-                        maxLines: 5, // מונע מהשדה לגדול אינסופית ולדחוף את כל הרכיבים מהמסך, ומאפשר גלילה פנימית חלקה
+                        maxLines: null, // מונע מהשדה לגדול אינסופית ולדחוף את כל הרכיבים מהמסך, ומאפשר גלילה פנימית חלקה
                         scrollPadding: const EdgeInsets.all(40), // שומר על מרווח נשימה בטוח מהמקלדת בזמן הקלדה
                         textDirection: TextDirection.rtl,
                         keyboardType: TextInputType.multiline, // סוג קלט התומך בריבוי שורות
