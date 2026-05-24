@@ -164,7 +164,7 @@ class _AddClientSheetState extends State<AddClientSheet> {
               TextFormField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10), _PhoneNumberFormatter()],
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10), PhoneNumberFormatter()],
                 decoration: const InputDecoration(labelText: 'מספר טלפון *', border: OutlineInputBorder(), hintText: '050-000-0000', prefixIcon: Icon(Icons.phone_outlined)),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) return 'נא להזין מספר טלפון';
@@ -208,7 +208,7 @@ class _AddClientSheetState extends State<AddClientSheet> {
   }
 }
 
-class _PhoneNumberFormatter extends TextInputFormatter {
+class PhoneNumberFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
     final text = newValue.text;

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:holidays/data/models/client_model.dart';
 import 'package:holidays/data/repositories/client_repository.dart';
+import 'package:holidays/presentation/widgets/add_client_sheet.dart';
 
 class CbvModify {
   static void showEditDialog({required BuildContext context, required ClientModel client, required String spreadsheetId, required ClientRepository clientRepository, required Function(bool) onLoadingStatusChanged, required VoidCallback onClientUpdated}) {
@@ -42,6 +44,7 @@ class CbvModify {
                       controller: phoneController,
                       decoration: const InputDecoration(labelText: 'טלפון *'),
                       keyboardType: TextInputType.phone,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10), PhoneNumberFormatter()],
                       validator: (v) => v == null || v.trim().isEmpty ? 'שדה חובה' : null,
                     ),
                     const SizedBox(height: 8),
