@@ -100,6 +100,10 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
           throw Exception('לא ניתן לפתוח את אפליקציית המייל במכשיר זה');
         }
       }
+
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('שגיאה בתהליך השמירה והשליחה: ${e.toString().replaceAll('Exception:', '').trim()}'), backgroundColor: Colors.redAccent));
@@ -173,7 +177,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                                         children: [
                                           // פינצטה: המלל קוצר ל"הערות ללקוח:" להתאמה מושלמת לשאר הכותרות בקובייה
                                           Text(
-                                            'הערות ללקוח:',
+                                            'הערות ללקוח - ${widget.client.fullName}:',
                                             style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade700, decoration: TextDecoration.underline),
                                           ),
                                           const SizedBox(height: 2),
@@ -203,7 +207,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            'הערות לאירוע:',
+                                            'הערות לאירוע - ${widget.event.eventType}:',
                                             style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade700, decoration: TextDecoration.underline),
                                           ),
                                           const SizedBox(height: 2),
@@ -258,14 +262,14 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
 
                       // 2. כותרת ותיבת עריכת הטקסט (מוצבת גבוה בשביל נגישות מקלדת)
                       const Text(
-                        'עריכת תוכן המלל:',
+                        'תוכן הברכה:',
                         style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 0, 0, 0)),
                       ),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _textController,
                         minLines: 3,
-                        maxLines: null, // מונע מהשדה לגדול אינסופית ולדחוף את כל הרכיבים מהמסך, ומאפשר גלילה פנימית חלקה
+                        maxLines: 5,
                         scrollPadding: const EdgeInsets.all(40), // שומר על מרווח נשימה בטוח מהמקלדת בזמן הקלדה
                         textDirection: TextDirection.rtl,
                         keyboardType: TextInputType.multiline, // סוג קלט התומך בריבוי שורות
@@ -288,64 +292,52 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                       // 3. קנבס ה-Preview החזותי של הברכה (הועבר למטה)
                       Center(
                         child: Container(
-                          width: 270, // צומצם מ-320
-                          height: 220, // צומצם מ-320 למבנה מלבני קומפקטי
+                          width: 270,
+                          height: 220,
                           decoration: BoxDecoration(
-                            color: _lightBgColor,
-                            borderRadius: BorderRadius.circular(12), // הותאם מעט מ-16
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 3))],
+                            color: Colors.white, // רקע לבן בוהק למראה פרימיום
+                            borderRadius: BorderRadius.circular(16), // פינות מעט רכות יותר
+                            border: Border.all(color: _goldColor, width: 1.5), // מסגרת מוזהבת דקה
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.15), // צל כהה יותר
+                                blurRadius: 12, // צל מטושטש ורך
+                                offset: const Offset(0, 6), // צל ש"מפיל" את הגלויה קדימה
+                              ),
+                            ],
                           ),
                           child: Stack(
                             children: [
                               Positioned.fill(
                                 child: Padding(
-                                  padding: const EdgeInsets.all(12.0), // צומצם מ-24.0
+                                  padding: const EdgeInsets.all(20.0), // ריווח נדיב ליוקרה
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Image.asset(
-                                        widget.logoAssetPath,
-                                        height: 40, // צומצם מ-65
-                                        errorBuilder: (context, error, stackTrace) => Icon(
-                                          Icons.insert_emoticon_rounded,
-                                          size: 35, // צומצם מ-50
-                                          color: _goldColor,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 10), // צומצם מ-20
+                                      Image.asset(widget.logoAssetPath, height: 40, errorBuilder: (context, error, stackTrace) => Icon(Icons.insert_emoticon_rounded, size: 35, color: _goldColor)),
+                                      const SizedBox(height: 12),
                                       Text(
                                         'היי ${widget.client.firstName},',
                                         textAlign: TextAlign.center,
-                                        style: const TextStyle(
-                                          fontSize: 16, // צומצם מ-20
-                                          fontWeight: FontWeight.bold,
-                                          // פינצטה: שילוב צבע הטורקיז/טיל המרכזי של המותג שלכם להקפצת השם בקנבס
-                                          color: Color(0xFF1B5565),
-                                        ),
+                                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _tealColor),
                                       ),
-                                      const SizedBox(height: 10), // צומצם מ-20
+                                      const SizedBox(height: 8),
                                       Expanded(
                                         child: SingleChildScrollView(
                                           child: Text(
                                             _currentGreetingText,
                                             textAlign: TextAlign.center,
-                                            style: const TextStyle(
-                                              fontSize: 13, // צומצם מ-16
-                                              height: 1.4, // עודכן מ-1.5
-                                              color: Color.fromARGB(255, 0, 0, 0),
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                            style: const TextStyle(fontSize: 10, height: 1.4, color: Colors.black87, fontWeight: FontWeight.w500),
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(height: 8), // צומצם מ-12
+                                      const Padding(
+                                        padding: EdgeInsets.symmetric(vertical: 8.0),
+                                        child: Divider(color: Color(0xFFC5A880), thickness: 0.5),
+                                      ),
                                       Text(
                                         'לי - תיווך וייעוץ נדל"ן',
-                                        style: TextStyle(
-                                          fontSize: 12, // צומצם מ-14
-                                          color: _goldColor,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                        style: TextStyle(fontSize: 12, color: _goldColor, fontWeight: FontWeight.bold),
                                       ),
                                     ],
                                   ),
