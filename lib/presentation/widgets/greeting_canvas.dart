@@ -117,6 +117,84 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
     }
   }
 
+  Widget _buildInfoSection() {
+    // בודקים אם יש מידע בכלל, אם לא - מחזירים ווידג'ט ריק
+    if (widget.event.notes.trim().isEmpty && widget.event.address.trim().isEmpty && widget.client.notes.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // משתנה עזר למונה (כמו שסיכמנו)
+    int noteCount = 0;
+    if (widget.client.notes.isNotEmpty) noteCount++;
+    if (widget.event.notes.trim().isNotEmpty) noteCount++;
+    if (widget.event.address.trim().isNotEmpty) noteCount++;
+
+    return ExpansionTile(
+      // עיצוב הרקע של האקורדיון לפי המצב (סגור/פתוח)
+      backgroundColor: Colors.white,
+      collapsedBackgroundColor: _lightBgColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Row(
+        children: [
+          Text(
+            'פרטי לקוח ואירוע',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _tealColor),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(color: _goldColor.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+            child: Text(
+              '$noteCount',
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _goldColor),
+            ),
+          ),
+        ],
+      ),
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (widget.client.notes.isNotEmpty) ...[_buildInfoRow(Icons.person_pin_rounded, Colors.purple.shade600, 'הערות ללקוח - ${widget.client.fullName}:', widget.client.notes), const SizedBox(height: 12)],
+              if (widget.event.notes.trim().isNotEmpty) ...[_buildInfoRow(Icons.notes_rounded, Colors.amber.shade700, 'הערות לאירוע - ${widget.event.eventType}:', widget.event.notes), const SizedBox(height: 12)],
+              if (widget.event.address.trim().isNotEmpty) _buildInfoRow(Icons.location_on_rounded, Colors.red.shade600, 'נכס:', widget.event.address),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // מתודה עזר קטנה כדי לחסוך כפילות קוד ולמנוע שגיאות
+  Widget _buildInfoRow(IconData icon, Color color, String title, String content) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Icon(icon, size: 16, color: color),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, decoration: TextDecoration.underline),
+              ),
+              const SizedBox(height: 4),
+              Text(content, style: const TextStyle(fontSize: 14, color: Colors.black87)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -158,104 +236,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.grey.shade200, width: 1), // שונה מ-amber.shade200 לגבול אפור עדין ומודרני
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (widget.client.notes.isNotEmpty) ...[
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 2),
-                                      // פינצטה: צבע אייקון סגול-מידע עדין המייצג פרטי פרופיל קבועים
-                                      child: Icon(Icons.person_pin_rounded, size: 16, color: Colors.purple.shade600),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          // פינצטה: המלל קוצר ל"הערות ללקוח:" להתאמה מושלמת לשאר הכותרות בקובייה
-                                          Text(
-                                            'הערות ללקוח - ${widget.client.fullName}:',
-                                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade700, decoration: TextDecoration.underline),
-                                          ),
-                                          const SizedBox(height: 2),
-                                          // פינצטה: מוצג כטקסט נקי הזורם באותו פונט וגודל מדויק של שאר הבלוקים בקובייה
-                                          Text(widget.client.notes, style: const TextStyle(fontSize: 14, color: Colors.black87)),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                if (widget.event.notes.trim().isNotEmpty || widget.client.notes.isNotEmpty) const SizedBox(height: 10),
-                              ],
-
-                              // ב. בלוק הצגת ההערות לאירוע - מוצג רק אם ההערות לא ריקות
-                              if (widget.event.notes.trim().isNotEmpty) ...[
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 2),
-                                      // פינצטה: שינוי צבע אייקון ההערות לאירוע לכתום-אזהרה עדין וממוקד
-                                      child: Icon(Icons.notes_rounded, size: 16, color: Colors.amber.shade700),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'הערות לאירוע - ${widget.event.eventType}:',
-                                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade700, decoration: TextDecoration.underline),
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(widget.event.notes, style: const TextStyle(fontSize: 14, color: Colors.black87)),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                // מרווח נשימה קבוע ואחיד במידה ויש את בלוק רקע הלקוח מתחתיו
-                                if (widget.client.notes.isNotEmpty) const SizedBox(height: 10),
-                              ],
-
-                              if (widget.event.address.trim().isNotEmpty) ...[
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // פינצטה: אייקון המיקום האדום נשאר מקובע בצד ימין למעלה
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 2),
-                                      child: Icon(Icons.location_on_rounded, size: 16, color: Colors.red.shade600),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          // פינצטה: כותרת הבלוק מופרדת עם קו תחתי ואחידה בגודל 12 לשאר הכותרות
-                                          Text(
-                                            'נכס:',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.grey.shade700,
-                                              decoration: TextDecoration.underline, // קו תחתי לכותרת בלבד
-                                            ),
-                                          ),
-                                          const SizedBox(height: 2),
-                                          // פינצטה: תוכן הכתובת זורם בצורה נקייה וקריאה מתחת לכותרת בגודל 14
-                                          Text(widget.event.address, style: const TextStyle(fontSize: 14, color: Colors.black87)),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ],
-                          ),
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildInfoSection()]),
                         ),
                         const SizedBox(height: 16),
                       ],
