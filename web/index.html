@@ -60,7 +60,7 @@
 
         .card {
             position: absolute;
-            bottom: 10;
+            bottom: 10px;
             left: 50%;
             transform: translateX(-50%);
             width: 90%;
@@ -159,6 +159,7 @@
             cursor: pointer;
             z-index: 3;
             transition: background-color 1s ease;
+            animation: pulse 3s infinite ease-in-out;
         }
 
         .envelope::before {
@@ -257,7 +258,7 @@
         @keyframes elasticFlyOut {
             0% { bottom: 0; transform: translateX(-50%) scale(0.8); z-index: 2; }
             40% { z-index: 10; }
-            75% { bottom: 35%; transform: translateX(-50%) scale(1.04); z-index: 10; }
+            75% { bottom: 35%; transform: translateX(-50%) scale(1.04) rotate(-3deg); z-index: 10; }
             100% { bottom: 10%; transform: translateX(-50%) scale(1); z-index: 10; }
         }
 
@@ -267,8 +268,21 @@
         }
 
         @keyframes emojiFountain {
-            0% { opacity: 1; transform: translate(-50%, 0) scale(0.3) rotate(0deg); }
-            100% { opacity: 0; transform: translate(var(--x-dest), var(--y-dest)) scale(var(--final-scale)) rotate(var(--rot-dest)); }
+            0% { 
+                opacity: 1; 
+                transform: translate(-50%, 0) scale(0.2) rotate(0deg); /* מתחילים קטנים מאוד */
+            }
+            100% { 
+                opacity: 0; 
+                /* משלבים את התזוזה עם הגדלה משמעותית */
+                transform: translate(var(--x-dest), var(--y-dest)) scale(2.0) rotate(var(--rot-dest)); 
+            }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
         }
     </style>
 
@@ -318,6 +332,9 @@
         }
 
         function openEnvelope() {
+            document.getElementById('holidayBackdrop').style.transition = "filter 1s ease";
+            document.getElementById('holidayBackdrop').style.filter = "blur(8px)";
+
             document.getElementById('envelopeWrapper').classList.add('open');
             setTimeout(() => {
                 document.getElementById('cardElement').classList.add('open');
@@ -345,14 +362,20 @@
             const container = document.getElementById('confetti-container');
             if (!container) return;
             container.innerHTML = ''; 
-            let emojiPool = ['✨', '🌸', '😊', '⭐', '💖', '💐', '🏡', '🥂'];
+            let emojiPool = ['✨', '🌸', '😊', '⭐', '💖', '💐', '🏡', '🥂', '🎉', '🌟', '🌷', '🧡', '🌞'];
+
+            // יום הולדת - חגיגי וצבעוני
             if (text && (text.includes('יום הולדת') || text.includes('יומולדת'))) {
-                emojiPool = ['🌸', '🎂', '🎉', '🎈', '💐', '😊', '✨', '💖'];
+                emojiPool = ['🎂', '🎉', '🎈', '🎁', '🎊', '🥳', '✨', '💖', '👑', '🥂', '💐', '🌟', '🧁'];
+
+            // תודה והערכה - רך, חם ומכבד
             } else if (text && (text.includes('תודה') || text.includes('מעריכה'))) {
-                emojiPool = ['💖', '🙏', '🌸', '🌷', '😊', '✨', '⭐'];
+                emojiPool = ['💖', '🙏', '🌸', '🌷', '😊', '✨', '⭐', '🧡', '💐', '🎀', '💌', '🍃', '💫'];
+
+            // בית, מפתח, נדל"ן - חגיגי, בונה ומזמין
             } else if (text && (text.includes('בית') || text.includes('מפתח') || text.includes('דירה'))) {
-                emojiPool = ['🏡', '🔑', '🥂', '✨', '🌸', '⭐'];
-            }
+                emojiPool = ['🏡', '🔑', '🥂', '✨', '🌸', '⭐', '🗝️', '🏗️', '📦', '💖', '🥂', '🪴', '☀️'];
+            }            
             const numberOfEmojis = 45;
             for (let i = 0; i < numberOfEmojis; i++) {
                 const emojiItem = document.createElement('div');
@@ -368,7 +391,7 @@
                 emojiItem.style.setProperty('--y-dest', yDest + 'px');
                 emojiItem.style.setProperty('--rot-dest', rotDest);
                 emojiItem.style.setProperty('--final-scale', finalScale);
-                emojiItem.style.animationDuration = (Math.random() * 1.5 + 1.2) + 's';
+                emojiItem.style.animationDuration = (Math.random() * 3.0 + 3.0) + 's';
                 emojiItem.style.animationDelay = (Math.random() * 0.3) + 's';
                 container.appendChild(emojiItem);
                 setTimeout(() => { emojiItem.remove(); }, 3000);
