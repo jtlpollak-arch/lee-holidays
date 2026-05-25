@@ -27,7 +27,8 @@
 
         body {
             font-family: 'Assistant', sans-serif;
-            background: var(--bg-gradient);
+            background-image: url('https://www.transparenttextures.com/patterns/stardust.png'), var(--bg-gradient);
+            background-attachment: fixed;
             height: 100vh;
             overflow: hidden;
             display: flex;
@@ -83,6 +84,7 @@
         }
 
         .card.open {
+            box-shadow: 0 30px 60px rgba(0,0,0,0.3) !important;
             animation: elasticFlyOut 1.0s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
 
@@ -136,7 +138,11 @@
             max-height: 150px;
             overflow-y: auto;
             width: 100%;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
+
+        .greeting-text::-webkit-scrollbar { display: none; }
 
         .brand-footer {
             font-size: 12px;
