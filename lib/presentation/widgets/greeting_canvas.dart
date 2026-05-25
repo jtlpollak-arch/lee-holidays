@@ -157,40 +157,33 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // א. בלוק הצגת הנכס - מוצג רק אם הכתובת לא ריקה
-                              if (widget.event.address.trim().isNotEmpty) ...[
+                              if (widget.client.notes.isNotEmpty) ...[
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    // פינצטה: אייקון המיקום האדום נשאר מקובע בצד ימין למעלה
                                     Padding(
                                       padding: const EdgeInsets.only(top: 2),
-                                      child: Icon(Icons.location_on_rounded, size: 16, color: Colors.red.shade600),
+                                      // פינצטה: צבע אייקון סגול-מידע עדין המייצג פרטי פרופיל קבועים
+                                      child: Icon(Icons.person_pin_rounded, size: 16, color: Colors.purple.shade600),
                                     ),
                                     const SizedBox(width: 6),
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          // פינצטה: כותרת הבלוק מופרדת עם קו תחתי ואחידה בגודל 12 לשאר הכותרות
+                                          // פינצטה: המלל קוצר ל"הערות ללקוח:" להתאמה מושלמת לשאר הכותרות בקובייה
                                           Text(
-                                            'נכס:',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.grey.shade700,
-                                              decoration: TextDecoration.underline, // קו תחתי לכותרת בלבד
-                                            ),
+                                            'הערות ללקוח:',
+                                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade700, decoration: TextDecoration.underline),
                                           ),
                                           const SizedBox(height: 2),
-                                          // פינצטה: תוכן הכתובת זורם בצורה נקייה וקריאה מתחת לכותרת בגודל 14
-                                          Text(widget.event.address, style: const TextStyle(fontSize: 14, color: Colors.black87)),
+                                          // פינצטה: מוצג כטקסט נקי הזורם באותו פונט וגודל מדויק של שאר הבלוקים בקובייה
+                                          Text(widget.client.notes, style: const TextStyle(fontSize: 14, color: Colors.black87)),
                                         ],
                                       ),
                                     ),
                                   ],
                                 ),
-                                // מרווח נשימה קבוע ואחיד במידה ויש עוד אלמנטים מתחתיו
                                 if (widget.event.notes.trim().isNotEmpty || widget.client.notes.isNotEmpty) const SizedBox(height: 10),
                               ],
 
@@ -224,29 +217,33 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                                 if (widget.client.notes.isNotEmpty) const SizedBox(height: 10),
                               ],
 
-                              // ג. פינצטה חזותית: הצגת הערות קבועות ללקוח במבנה סימטרי, אחיד וצבעוני
-                              if (widget.client.notes.isNotEmpty) ...[
+                              if (widget.event.address.trim().isNotEmpty) ...[
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
+                                    // פינצטה: אייקון המיקום האדום נשאר מקובע בצד ימין למעלה
                                     Padding(
                                       padding: const EdgeInsets.only(top: 2),
-                                      // פינצטה: צבע אייקון סגול-מידע עדין המייצג פרטי פרופיל קבועים
-                                      child: Icon(Icons.person_pin_rounded, size: 16, color: Colors.purple.shade600),
+                                      child: Icon(Icons.location_on_rounded, size: 16, color: Colors.red.shade600),
                                     ),
                                     const SizedBox(width: 6),
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          // פינצטה: המלל קוצר ל"הערות ללקוח:" להתאמה מושלמת לשאר הכותרות בקובייה
+                                          // פינצטה: כותרת הבלוק מופרדת עם קו תחתי ואחידה בגודל 12 לשאר הכותרות
                                           Text(
-                                            'הערות ללקוח:',
-                                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade700, decoration: TextDecoration.underline),
+                                            'נכס:',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.grey.shade700,
+                                              decoration: TextDecoration.underline, // קו תחתי לכותרת בלבד
+                                            ),
                                           ),
                                           const SizedBox(height: 2),
-                                          // פינצטה: מוצג כטקסט נקי הזורם באותו פונט וגודל מדויק של שאר הבלוקים בקובייה
-                                          Text(widget.client.notes, style: const TextStyle(fontSize: 14, color: Colors.black87)),
+                                          // פינצטה: תוכן הכתובת זורם בצורה נקייה וקריאה מתחת לכותרת בגודל 14
+                                          Text(widget.event.address, style: const TextStyle(fontSize: 14, color: Colors.black87)),
                                         ],
                                       ),
                                     ),
