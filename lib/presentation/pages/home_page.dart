@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:holidays/presentation/widgets/client_events_view.dart';
 import 'package:holidays/presentation/widgets/daily_events_list.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/spreadsheet_manager.dart';
 import '../../data/datasources/google_sheets_data_source.dart';
@@ -163,12 +164,16 @@ class _HomePageState extends State<HomePage> {
         textDirection: TextDirection.rtl,
         child: BottomNavigationBar(
           currentIndex: _selectedIndex,
-          onTap: (index) {
+          // הוספת מילת המפתח async כדי לאפשר פעולות אסינכרוניות בזמן הלחיצה
+          onTap: (index) async {
             setState(() {
               _selectedIndex = index;
             });
-            if (index == 0 && _spreadsheetId != null) {
-              widget.cubit.loadDailyOverview(spreadsheetId: _spreadsheetId!, forceRefresh: true);
+
+            // כאשר חוזרים למסך הבית (אינדקס 0)
+            if (index == 0) {
+              // 1. ניקוי מוחלט של קבצי ה-JSON המקומיים מהמכשיר (מחיקת ה-Cache הפיזי)
+              await refresh();
             }
           },
           selectedItemColor: const Color(0xFF1B5565),
@@ -176,12 +181,30 @@ class _HomePageState extends State<HomePage> {
           showUnselectedLabels: true,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.auto_awesome_outlined), activeIcon: Icon(Icons.auto_awesome), label: 'משימות להיום'),
-            BottomNavigationBarItem(icon: Icon(Icons.contact_phone_outlined), activeIcon: Icon(Icons.contact_phone), label: 'ספר לקוחות'),
-            BottomNavigationBarItem(icon: Icon(Icons.calendar_month_outlined), activeIcon: Icon(Icons.calendar_month), label: 'אירועים ועסקאות'),
+            BottomNavigationBarItem(icon: Icon(Icons.contact_phone_outlined), activeIcon: Icon(Icons.contact_phone), label: 'לקוחות'),
+            BottomNavigationBarItem(icon: Icon(Icons.calendar_month_outlined), activeIcon: Icon(Icons.calendar_month), label: 'אירועים'),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> refresh() async {
+    // 1. ניקוי מוחלט של קבצי ה-JSON המקומיים מהמכשיר (מחיקת ה-Cache הפיזי)
+    await _spreadsheetManager.clearLocalCache();
+
+    // 2. קריאה אקטיבית ל-SharedPreferences לקבלת ה-ID המעודכן ביותר
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? latestId = prefs.getString("google_spreadsheet_id");
+
+    if (latestId != null) {
+      setState(() {
+        _spreadsheetId = latestId; // עדכון מזהה ה-Spreadsheet המקומי של הדף
+      });
+
+      // 3. אילוץ ה-Cubit למשוך את הנתונים החדשים ישירות מהשרת ללא קש'
+      widget.cubit.loadDailyOverview(spreadsheetId: latestId, forceRefresh: true);
+    }
   }
 
   Widget _buildBody() {

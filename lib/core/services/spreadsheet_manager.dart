@@ -116,6 +116,12 @@ class SpreadsheetManager {
     return newId;
   }
 
+  Future<void> clearLocalCache() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_clientsCacheKey);
+    await prefs.remove(_eventsCacheKey);
+  }
+
   Future<void> clearLocalCachedSpreadsheetId() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove(_prefsKey);

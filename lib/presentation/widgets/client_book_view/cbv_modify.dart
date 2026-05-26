@@ -47,7 +47,11 @@ class CbvModify {
                       decoration: const InputDecoration(labelText: 'טלפון'),
                       keyboardType: TextInputType.phone,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly, PhoneNumberFormatter()],
-                      validator: (value) => value == null || value.trim().isEmpty ? 'חובה להזין מספר טלפון' : null,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) return 'נא להזין מספר טלפון';
+                        if (value.length < 12) return 'נא להזין מספר טלפון מלא כולל קידומת';
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 8),
                     TextFormField(
