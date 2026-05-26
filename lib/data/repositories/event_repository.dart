@@ -301,6 +301,8 @@ class EventRepositoryImpl implements EventRepository {
     for (int i = 0; i < cloudEvents.length; i++) {
       final event = cloudEvents[i];
 
+      if (!event.isActive) continue;
+
       if (event.clientId == clientId) {
         final int sheetRowNumber = i + 2; // חישוב השורה הפיזית בגיליון (+2)
         targetSheetRowNumbers.add(sheetRowNumber);
