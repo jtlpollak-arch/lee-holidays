@@ -318,6 +318,8 @@ class EventRepositoryImpl implements EventRepository {
           descBuilder.writeln('הערות: ${event.notes}');
         }
 
+        descBuilder.writeln(GoogleCalendarApiImpl.appSignature);
+
         calendarEventsToCreate.add({
           'title': eventTitle,
           'description': descBuilder.toString().trim(),

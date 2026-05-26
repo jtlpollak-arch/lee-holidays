@@ -89,7 +89,9 @@ class DailyEventsList extends StatelessWidget {
               contentPadding: const EdgeInsets.all(12),
               title: Row(
                 children: [
-                  Text(e.client.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Expanded(
+                    child: Text(e.client.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
                   const SizedBox(width: 10),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),

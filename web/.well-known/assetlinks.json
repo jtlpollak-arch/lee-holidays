@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.example.holidays",
+      "sha256_cert_fingerprints": [
+        "F2:9B:48:30:95:B3:F7:23:28:46:16:F9:0B:C6:0A:D0:0B:92:73:1A:1F:CA:CD:FA:53:69:DE:2A:83:40:0B:4E",
+        "6A:E9:40:61:6F:7C:8C:CE:5E:7A:A9:4A:CC:0A:58:30:66:B8:63:72:49:93:72:FA:F9:98:26:F7:1E:44:AB:48"
+      ]
+    }
+  }
+]

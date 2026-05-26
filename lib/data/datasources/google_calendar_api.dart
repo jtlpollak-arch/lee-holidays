@@ -25,6 +25,12 @@ class GoogleCalendarApiImpl implements GoogleCalendarApi {
   // נשתמש ביומן הראשי והברירת מחדל של המשתמשת
   static const String _primaryCalendarId = 'primary';
 
+  static const String appSignature =
+      '\n\n---\n'
+      'אירוע זה נוצר ע"י האפליקציה "הברכות של לי".\n'
+      'לחצי כאן לפתיחת האפליקציה:\n'
+      'https://lee-greetings.web.app/open';
+
   GoogleCalendarApiImpl([this._authenticatedClient]);
 
   @override
@@ -44,21 +50,22 @@ class GoogleCalendarApiImpl implements GoogleCalendarApi {
     final calendar.CalendarApi api = _getCalendarApi();
 
     // תיקון: הגדרת אובייקט ה-DateTime מראש כ-UTC בשעה 05:00
-    final DateTime startDateTime = DateTime.utc(date.year, date.month, date.day, 5, 0);
-    // הגדרת זמן סיום ל-05:15 UTC (אירוע ממוקד של 15 דקות)
+    final DateTime startDateTime = DateTime(date.year, date.month, date.day, 9, 0);
     final DateTime endDateTime = startDateTime.add(const Duration(minutes: 15));
+
+    final fullDescription = '$description$appSignature';
 
     // בניית אובייקט האירוע לפי המפרט של גוגל
     final calendar.Event event = calendar.Event(
       summary: title,
-      description: description,
+      description: fullDescription,
       start: calendar.EventDateTime(
         dateTime: startDateTime, // תיקון: מעבירים את ה-DateTime כפי שהוא, הוא כבר ב-UTC
-        timeZone: 'UTC', // עבודה ב-UTC מונעת בעיות של שעון קיץ/חורף במכשירים שונים
+        timeZone: 'Asia/Jerusalem', // עבודה ב-UTC מונעת בעיות של שעון קיץ/חורף במכשירים שונים
       ),
       end: calendar.EventDateTime(
         dateTime: endDateTime, // תיקון: מעבירים את ה-DateTime כפי שהוא, הוא כבר ב-UTC
-        timeZone: 'UTC',
+        timeZone: 'Asia/Jerusalem',
       ),
       // אם מדובר ביום הולדת, נוסיף חוק מחזוריות שנתי ליומן
       recurrence: isRecurring ? ['RRULE:FREQ=YEARLY'] : null,
