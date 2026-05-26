@@ -196,17 +196,13 @@ class DailyEventsList extends StatelessWidget {
                     )
                   : ElevatedButton.icon(
                       onPressed: () {
-                        if (spreadsheetId != null) {
-                          cubit.markEventAsSent(spreadsheetId: spreadsheetId!, event: e.event);
-                        }
-
                         showModalBottomSheet(
                           context: context,
                           isScrollControlled: true,
                           shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
                           builder: (context) => Padding(
                             padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-                            child: GreetingCanvas(client: e.client, event: e.event, defaultGreetingText: defaultText, logoAssetPath: 'assets/images/logo.png'),
+                            child: GreetingCanvas(client: e.client, event: e.event, defaultGreetingText: defaultText, logoAssetPath: 'assets/images/logo.png', cubit: cubit, spreadsheetId: spreadsheetId ?? ''),
                           ),
                         );
                       },

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // ייבוא רשמי לעבודה מול בסיס הנתונים בענן
 import '../../data/models/client_model.dart';
-import '../../data/models/event_model.dart'; // ייבוא מודל האירוע עבור טור E
+import '../../data/models/event_model.dart';
+import '../bloc_or_provider/home_cubit.dart';
 
 class GreetingCanvas extends StatefulWidget {
   final ClientModel client;
@@ -10,7 +11,10 @@ class GreetingCanvas extends StatefulWidget {
   final String defaultGreetingText;
   final String logoAssetPath;
 
-  const GreetingCanvas({super.key, required this.client, required this.event, required this.logoAssetPath, required this.defaultGreetingText});
+  final HomeCubit cubit;
+  final String spreadsheetId;
+
+  const GreetingCanvas({super.key, required this.client, required this.event, required this.logoAssetPath, required this.defaultGreetingText, required this.cubit, required this.spreadsheetId});
 
   @override
   State<GreetingCanvas> createState() => _GreetingCanvasState();
@@ -102,6 +106,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
       }
 
       if (mounted) {
+        widget.cubit.markEventAsSent(spreadsheetId: widget.spreadsheetId, event: widget.event);
         Navigator.of(context).pop();
       }
     } catch (e) {
@@ -128,10 +133,41 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
           Icon(Icons.info_outline_rounded, size: 18, color: _tealColor),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              'שם: ${widget.client.firstName} | אירוע: ${widget.event.eventType}',
-              style: TextStyle(fontSize: 12, color: _tealColor, fontWeight: FontWeight.bold),
-              overflow: TextOverflow.ellipsis,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: 'שם: ',
+                        style: TextStyle(fontSize: 12, color: Color(0xFF1B5565), fontWeight: FontWeight.bold),
+                      ),
+                      TextSpan(
+                        text: widget.client.fullName,
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF1B5565)),
+                      ),
+                    ],
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2), // מרווח קטן בין השורות
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: 'אירוע: ',
+                        style: TextStyle(fontSize: 12, color: Color(0xFF1B5565), fontWeight: FontWeight.bold),
+                      ),
+                      TextSpan(
+                        text: widget.event.eventType,
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF1B5565)),
+                      ),
+                    ],
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ),
           // כאן מתבצעת הלוגיקה: הצג את הכפתור רק אם יש נתונים
@@ -144,9 +180,25 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                   builder: (_) => _buildFullDetailsSheet(),
                 );
               },
-              child: Text(
-                'פרטים',
-                style: TextStyle(fontSize: 12, color: _goldColor, decoration: TextDecoration.underline),
+              child: Row(
+                // שינינו ל-Row כדי להכניס אייקון וטקסט יחד
+                children: [
+                  Text(
+                    'פרטים',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _goldColor,
+                      fontWeight: FontWeight.bold, // הוספנו Bold
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                  const SizedBox(width: 2), // מרווח קטן מאוד בין הטקסט לאייקון
+                  Icon(
+                    Icons.visibility_outlined, // אייקון של עין או חץ למטה
+                    size: 14,
+                    color: _goldColor,
+                  ),
+                ],
               ),
             ),
         ],
