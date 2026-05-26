@@ -118,53 +118,62 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
   }
 
   Widget _buildInfoSection() {
-    // בודקים אם יש מידע בכלל, אם לא - מחזירים ווידג'ט ריק
-    if (widget.event.notes.trim().isEmpty && widget.event.address.trim().isEmpty && widget.client.notes.isEmpty) {
-      return const SizedBox.shrink();
-    }
+    // בודק אם יש תוכן שמצדיק כפתור "פרטים"
+    bool hasExtraDetails = widget.client.notes.trim().isNotEmpty || widget.event.notes.trim().isNotEmpty || widget.event.address.trim().isNotEmpty;
 
-    // משתנה עזר למונה (כמו שסיכמנו)
-    int noteCount = 0;
-    if (widget.client.notes.isNotEmpty) noteCount++;
-    if (widget.event.notes.trim().isNotEmpty) noteCount++;
-    if (widget.event.address.trim().isNotEmpty) noteCount++;
-
-    return ExpansionTile(
-      // עיצוב הרקע של האקורדיון לפי המצב (סגור/פתוח)
-      backgroundColor: Colors.white,
-      collapsedBackgroundColor: _lightBgColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Row(
+    return Container(
+      // ... העיצוב שלך נשאר זהה ...
+      child: Row(
         children: [
-          Text(
-            'פרטי לקוח ואירוע',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _tealColor),
-          ),
+          Icon(Icons.info_outline_rounded, size: 18, color: _tealColor),
           const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(color: _goldColor.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+          Expanded(
             child: Text(
-              '$noteCount',
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _goldColor),
+              'שם: ${widget.client.firstName} | אירוע: ${widget.event.eventType}',
+              style: TextStyle(fontSize: 12, color: _tealColor, fontWeight: FontWeight.bold),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
+          // כאן מתבצעת הלוגיקה: הצג את הכפתור רק אם יש נתונים
+          if (hasExtraDetails)
+            GestureDetector(
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                  builder: (_) => _buildFullDetailsSheet(),
+                );
+              },
+              child: Text(
+                'פרטים',
+                style: TextStyle(fontSize: 12, color: _goldColor, decoration: TextDecoration.underline),
+              ),
+            ),
         ],
       ),
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (widget.client.notes.isNotEmpty) ...[_buildInfoRow(Icons.person_pin_rounded, Colors.purple.shade600, 'הערות ללקוח - ${widget.client.fullName}:', widget.client.notes), const SizedBox(height: 12)],
-              if (widget.event.notes.trim().isNotEmpty) ...[_buildInfoRow(Icons.notes_rounded, Colors.amber.shade700, 'הערות לאירוע - ${widget.event.eventType}:', widget.event.notes), const SizedBox(height: 12)],
-              if (widget.event.address.trim().isNotEmpty) _buildInfoRow(Icons.location_on_rounded, Colors.red.shade600, 'נכס:', widget.event.address),
-            ],
+    );
+  }
+
+  Widget _buildFullDetailsSheet() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'פרטים',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _tealColor),
           ),
-        ),
-      ],
+          const Divider(),
+          const SizedBox(height: 10),
+          if (widget.client.notes.isNotEmpty) _buildInfoRow(Icons.person, Colors.purple, 'הערות לקוח:', widget.client.notes),
+          const SizedBox(height: 10),
+          if (widget.event.notes.isNotEmpty) _buildInfoRow(Icons.notes, Colors.amber, 'הערות אירוע:', widget.event.notes),
+          const SizedBox(height: 10),
+          if (widget.event.address.isNotEmpty) _buildInfoRow(Icons.location_on, Colors.red, 'כתובת:', widget.event.address),
+        ],
+      ),
     );
   }
 
@@ -227,7 +236,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                     padding: EdgeInsets.only(left: 20, right: 20, top: 10, bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? MediaQuery.of(context).viewInsets.bottom + 20 : 24.0),
                     children: [
                       // 1. הוספת קוביות תצוגת ההערות מטור E ומודל הלקוח מול עיני המשתמש (בראש הרשימה)
-                      if (widget.event.notes.trim().isNotEmpty || widget.event.address.trim().isNotEmpty || widget.client.notes.isNotEmpty) ...[
+                      if (true) ...[
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(12),
