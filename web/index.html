@@ -18,11 +18,11 @@
 
         :root {
             --bg-gradient: radial-gradient(circle, #246A7D 0%, #15434F 100%);
-            --card-bg: #ffffff;
-            --card-border: 2px solid #c5a880;
+            --card-bg: #fcfaf4;
             --card-backdrop: none;
             --envelope-bg: #1a3a44;
             --envelope-paper: #112830;
+            --gold-gradient: linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fbf5b7 75%, #aa771c 100%);
         }
 
         body {
@@ -59,6 +59,7 @@
             z-index: 1;
         }
 
+        /* גלויה פנימית פרימיום עם שוליים קרועים וסיבי נייר */
         .card {
             position: absolute;
             bottom: 10px;
@@ -68,8 +69,8 @@
             max-width: 380px;
             height: 300px;
             background: var(--card-bg);
-            border: var(--card-border);
-            border-radius: 12px;
+            background-image: url('https://www.transparenttextures.com/patterns/handmade-paper.png');
+            border-radius: 2px;
             padding: 25px 20px;
             z-index: 2;
             transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -81,11 +82,106 @@
             justify-content: flex-start;
             text-align: center;
             overflow: hidden;
+            filter: url(#deckled-edge-filter);
+            touch-action: pan-y;
         }
 
         .card.open {
             box-shadow: 0 30px 60px rgba(0,0,0,0.3) !important;
             animation: elasticFlyOut 1.0s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* מסגרת זהב כפולה ודקיקה בתוך הנייר */
+        .gold-double-border {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            border: 1px solid #c5a880;
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .gold-double-border::after {
+            content: '';
+            position: absolute;
+            top: 3px; left: 3px; right: 3px; bottom: 3px;
+            border: 0.5px solid rgba(197, 168, 128, 0.5);
+        }
+
+        /* אשליה אופטית יציבה: מתאר של בית מוזהב עדין שממסגר חרישית את פנים הכרטיס */
+        .gold-double-border::before {
+            content: '';
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70%;
+            height: 80px;
+            border: 1px solid rgba(197, 168, 128, 0.25);
+            border-top: none;
+            pointer-events: none;
+        }
+
+        /* אלמנטים של אימוג'ים בצבעי מים קבועים ברקע הנייר */
+        .watercolor-emoji {
+            position: absolute;
+            opacity: 0.12;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .watercolor-emoji.top-left-branch {
+            top: 15px;
+            left: 15px;
+            width: 55px;
+            height: 55px;
+            transform: rotate(-10deg);
+        }
+
+        .watercolor-emoji.bottom-right-house {
+            bottom: 15px;
+            right: 15px;
+            width: 45px;
+            height: 45px;
+        }
+
+        /* סימן מים בוטני מרכזי חרישי */
+        .card-watermark {
+            position: absolute;
+            bottom: -10px;
+            right: -10px;
+            width: 160px;
+            height: 160px;
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 1;
+            transform: rotate(15deg);
+        }
+
+        /* אטב נייר מוזהב תלת-ממדי בראש הגלויה */
+        .gold-paper-clip {
+            position: absolute;
+            top: 8px;
+            left: 25px;
+            width: 14px;
+            height: 35px;
+            border: 2px solid #c5a880;
+            border-radius: 10px;
+            background: transparent;
+            z-index: 4;
+            pointer-events: none;
+            box-shadow: 1px 2px 3px rgba(0,0,0,0.15);
+            transform: rotate(-5deg);
+        }
+        
+        .gold-paper-clip::before {
+            content: '';
+            position: absolute;
+            top: 4px; left: 2px; right: 2px; bottom: 8px;
+            border: 1.5px solid #e2cbab;
+            border-radius: 6px;
         }
 
         .card::after {
@@ -95,9 +191,10 @@
             left: -150%;
             width: 50%;
             height: 200%;
-            background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0) 100%);
+            background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.4) 50%, rgba(255, 255, 255, 0) 100%);
             transform: rotate(30deg);
             pointer-events: none;
+            z-index: 5;
         }
 
         .card.open::after {
@@ -110,6 +207,7 @@
             display: flex; 
             justify-content: center; 
             align-items: center;
+            z-index: 3;
         }
         
         .logo-img { 
@@ -122,38 +220,86 @@
             font-size: 24px;
             font-weight: 800;
             color: #1B5565;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             letter-spacing: -0.5px;
-            transition: color 0.5s ease;
+            z-index: 3;
         }
 
-        .greeting-text {
-            font-size: 16px;
+        /* קונטיינר העמודים בסלולר */
+        .pages-container {
+            position: relative;
+            width: 82%;
+            height: 125px;
+            overflow: hidden;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        .page-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            font-size: 15px;
             line-height: 1.6;
             color: #333333;
             font-weight: 500;
             white-space: pre-line;
             text-align: center;
             padding: 0 5px;
-            max-height: 150px;
-            overflow-y: auto;
-            width: 100%;
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-            mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+            opacity: 0;
+            transform: translateX(15px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
         }
 
-        .greeting-text::-webkit-scrollbar { display: none; }
+        .page-content.active {
+            display: flex;
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* נקודות החיווי התחתונות */
+        .page-dots {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: auto;
+            margin-bottom: 5px;
+            height: 14px;
+            z-index: 30;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: rgba(197, 168, 128, 0.4);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .dot.active {
+            background: #1B5565;
+            transform: scale(1.3);
+        }
 
         .brand-footer {
             font-size: 12px;
             font-weight: 700;
             color: #c5a880;
-            margin-top: auto;
+            margin-top: 0;
             letter-spacing: 1px;
-            transition: color 0.5s ease;
+            z-index: 3;
         }
 
+        /* --- רכיבי המעטפה החיצונית --- */
         .envelope {
             position: absolute;
             top: 0;
@@ -162,13 +308,14 @@
             height: 100%;
             background-color: var(--envelope-bg);
             border-radius: 0 0 8px 8px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.35);
             cursor: pointer;
             z-index: 3;
             transition: background-color 1s ease;
             animation: pulse 3s infinite ease-in-out;
         }
 
+        /* צד ימין של המעטפה */
         .envelope::before {
             content: '';
             position: absolute;
@@ -179,8 +326,10 @@
             border-top: 175px solid transparent;
             border-right: 200px solid var(--envelope-paper);
             border-radius: 0 0 8px 0;
+            z-index: 3;
         }
 
+        /* צד שמאל של המעטפה */
         .envelope::after {
             content: '';
             position: absolute;
@@ -191,29 +340,110 @@
             border-top: 175px solid transparent;
             border-left: 200px solid var(--envelope-paper);
             border-radius: 0 0 0 8px;
-        }
-
-        .flap {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 0;
-            height: 0;
-            border-left: 150px solid transparent;
-            border-right: 150px solid transparent;
-            border-top: 150px solid var(--envelope-bg);
-            transform-origin: top;
-            transition: transform 0.4s ease, border-top-color 1s ease;
-            z-index: 4;
-        }
-
-        .envelope-wrapper.open .flap {
-            transform: rotateX(180deg);
-            z-index: 1;
+            z-index: 3;
         }
 
         .envelope-wrapper.open .envelope {
+            animation: none !important;
+        }
+
+        .gold-botanical {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: 65px;
+            height: 65px;
+            z-index: 6;
             pointer-events: none;
+            opacity: 0.95;
+            transition: opacity 0.4s ease;
+            filter: drop-shadow(1px 2px 3px rgba(0,0,0,0.4));
+            animation: shining-gold 6s infinite ease-in-out;
+        }
+
+        .vintage-stamp {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 50px;
+            height: 58px;
+            background: #f4efe2;
+            z-index: 6;
+            pointer-events: none;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.35));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 4px;
+            transition: opacity 0.4s ease;
+            
+            background-image: 
+                radial-gradient(circle at 0px 0px, transparent 4px, #f4efe2 5px),
+                radial-gradient(circle at 50px 0px, transparent 4px, #f4efe2 5px),
+                radial-gradient(circle at 0px 58px, transparent 4px, #f4efe2 5px),
+                radial-gradient(circle at 50px 58px, transparent 4px, #f4efe2 5px);
+            border: 1px dashed #c5a880;
+            border-radius: 2px;
+        }
+
+        .stamp-inner-icon {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .postmark {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            width: 110px;
+            height: 110px;
+            z-index: 7;
+            pointer-events: none;
+            opacity: 0.4;
+            transition: opacity 0.4s ease;
+        }
+
+        .center-postmark {
+            position: absolute;
+            top: 142px;
+            left: 102px;
+            width: 80px;
+            height: 80px;
+            z-index: 6;
+            pointer-events: none;
+            opacity: 0.35;
+            transition: opacity 0.4s ease;
+        }
+
+        .digital-twine {
+            position: absolute;
+            bottom: 45px;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            z-index: 6;
+            pointer-events: none;
+            opacity: 0.9;
+            transition: opacity 0.4s ease;
+            
+            background: linear-gradient(
+                45deg, 
+                #aa771c 0%, 
+                #fcf6ba 25%, 
+                transparent 25%, 
+                transparent 50%, 
+                #b38728 50%, 
+                #fbf5b7 75%, 
+                transparent 75%, 
+                transparent
+            );
+            background-size: 8px 8px;
+            box-shadow: 
+                0px 1px 2px rgba(0, 0, 0, 0.4),
+                0px 4px 8px rgba(0, 0, 0, 0.25);
         }
 
         .stamp {
@@ -239,6 +469,70 @@
             width: 100%;
             height: auto;
             object-fit: contain;
+        }
+
+        @keyframes shining-gold {
+            0% { filter: drop-shadow(1px 2px 3px rgba(0,0,0,0.4)) brightness(1); }
+            50% { filter: drop-shadow(2px 3px 5px rgba(0,0,0,0.5)) brightness(1.2); }
+            100% { filter: drop-shadow(1px 2px 3px rgba(0,0,0,0.4)) brightness(1); }
+        }
+
+        /* הסתרה חלקה בעת פתיחת המעטפה */
+        .envelope-wrapper.open .gold-botanical,
+        .envelope-wrapper.open .vintage-stamp,
+        .envelope-wrapper.open .postmark,
+        .envelope-wrapper.open .center-postmark,
+        .envelope-wrapper.open .digital-twine {
+            opacity: 0;
+        }
+
+        /* ------------------------------------------------ */
+
+        /* משולש המעטפה (Flap) */
+        .flap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-left: 150px solid transparent;
+            border-right: 150px solid transparent;
+            border-top: 150px solid var(--envelope-bg);
+            transform-origin: top;
+            transition: transform 0.4s ease, border-top-color 1s ease;
+            z-index: 4;
+            transform-style: preserve-3d;
+        }
+
+        /* בטנת הזהב הפנימית שתהפוך לגג הבית המנצנץ ברגע ה-Flip למעלה */
+        .flap::after {
+            content: '';
+            position: absolute;
+            top: -150px;
+            left: -150px;
+            width: 0;
+            height: 0;
+            border-left: 150px solid transparent;
+            border-right: 150px solid transparent;
+            border-top: 150px solid transparent;
+            transform: rotateY(180deg) translateZ(-1px);
+            border-top-color: #bf953f;
+            background-image: var(--gold-gradient);
+            background-size: 300px 150px;
+            mask-image: linear-gradient(to bottom, black, transparent);
+            -webkit-mask-image: linear-gradient(to bottom, black, transparent);
+        }
+
+        .envelope-wrapper.open .flap {
+            transform: rotateX(180deg);
+            z-index: 1;
+            border-top-color: #bf953f !important;
+            background-image: var(--gold-gradient) !important;
+            background-size: 300px 150px;
+        }
+
+        .envelope-wrapper.open .envelope {
+            pointer-events: none;
         }
 
         .envelope-wrapper.open .stamp {
@@ -277,11 +571,10 @@
         @keyframes emojiFountain {
             0% { 
                 opacity: 1; 
-                transform: translate(-50%, 0) scale(0.2) rotate(0deg); /* מתחילים קטנים מאוד */
+                transform: translate(-50%, 0) scale(0.2) rotate(0deg);
             }
             100% { 
                 opacity: 0; 
-                /* משלבים את התזוזה עם הגדלה משמעותית */
                 transform: translate(var(--x-dest), var(--y-dest)) scale(2.0) rotate(var(--rot-dest)); 
             }
         }
@@ -293,6 +586,13 @@
         }
     </style>
 
+    <svg style="position: absolute; width: 0; height: 0;">
+        <filter id="deckled-edge-filter">
+            <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+    </svg>
+
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
@@ -302,17 +602,97 @@
     <div id="confetti-container"></div>
 
     <div class="envelope-wrapper" id="envelopeWrapper">
-        <div class="card" id="cardElement">
+        
+        <div class="card" id="cardElement" ontouchstart="handleTouchStart(event)" ontouchend="handleTouchEnd(event)">
+            <div class="gold-double-border"></div>
+            <div class="gold-paper-clip"></div>
+            
+            <!-- אימוג'י צבע מים 1: ענף עלים בפינה השמאלית העליונה -->
+            <svg class="watercolor-emoji top-left-branch" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 80C35 65 50 40 75 20" stroke="#7D8C6A" stroke-width="2" stroke-linecap="round"/>
+                <path d="M35 60C30 52 22 50 15 54C20 46 28 46 32 52" fill="#7D8C6A" opacity="0.7"/>
+                <path d="M48 48C44 38 35 36 28 42C34 34 42 36 45 42" fill="#7D8C6A" opacity="0.7"/>
+                <path d="M60 35C56 25 48 24 42 30C48 22 56 24 58 30" fill="#7D8C6A" opacity="0.7"/>
+            </svg>
+
+            <!-- אימוג'י צבע מים 2: בית קטן בפינה הימנית התחתונה -->
+            <svg class="watercolor-emoji bottom-right-house" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 10.5L12 3L21 10.5V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V10.5Z" fill="#C5A880" opacity="0.75"/>
+                <path d="M9 21V14H15V21" fill="#fcfaf4"/>
+            </svg>
+            
+            <svg class="card-watermark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 90C25 75 45 45 80 15" stroke="#c5a880" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M30 65C25 55 20 52 12 55C15 48 22 46 28 52" stroke="#c5a880" stroke-width="1" stroke-linejoin="round"/>
+                <path d="M45 50C42 38 35 34 26 38C32 30 40 32 44 40" stroke="#c5a880" stroke-width="1" stroke-linejoin="round"/>
+                <path d="M62 33C62 21 55 15 46 18C54 12 62 16 63 24" stroke="#c5a880" stroke-width="1" stroke-linejoin="round"/>
+                <path d="M50 55C58 52 64 56 68 64C62 62 55 58 48 56" stroke="#c5a880" stroke-width="1" stroke-linejoin="round"/>
+                <path d="M68 38C76 38 80 44 82 52C76 48 70 44 66 40" stroke="#c5a880" stroke-width="1" stroke-linejoin="round"/>
+            </svg>
+
             <div class="logo-wrapper">
                 <img src="logo.png" class="logo-img" alt="לי תיווך וייעוץ נדל״ן">
             </div>
             
             <div class="client-name" id="clientName">טוען...</div>
-            <div class="greeting-text" id="greetingText">אנא המתן, הגלויה האישית שלך מתעדכנת ברגע זה...</div>
+            
+            <div class="pages-container" id="pagesContainer">
+                <div class="page-content active" id="initialLoadingPage">אנא המתן, הגלויה האישית שלך מתעדכנת ברגע זה...</div>
+            </div>
+            
+            <div class="page-dots" id="pageDots"></div>
+            
             <div class="brand-footer">לי אטדגי | תיווך וייעוץ נדל"ן</div>
         </div>
 
         <div class="envelope" onclick="openEnvelope()"></div>
+        
+        <svg class="gold-botanical" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 90C25 75 45 45 80 15" stroke="url(#goldGradientFill)" stroke-width="2" stroke-linecap="round"/>
+            <path d="M30 65C25 55 20 52 12 55C15 48 22 46 28 52" stroke="url(#goldGradientFill)" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M45 50C42 38 35 34 26 38C32 30 40 32 44 40" stroke="url(#goldGradientFill)" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M62 33C62 21 55 15 46 18C54 12 62 16 63 24" stroke="url(#goldGradientFill)" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M50 55C58 52 64 56 68 64C62 62 55 58 48 56" stroke="url(#goldGradientFill)" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M68 38C76 38 80 44 82 52C76 48 70 44 66 40" stroke="url(#goldGradientFill)" stroke-width="1.5" stroke-linejoin="round"/>
+            <defs>
+                <linearGradient id="goldGradientFill" x1="0" y1="100" x2="100" y2="0" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="#bf953f"/>
+                    <stop offset="25%" stop-color="#fcf6ba"/>
+                    <stop offset="50%" stop-color="#b38728"/>
+                    <stop offset="75%" stop-color="#fbf5b7"/>
+                    <stop offset="100%" stop-color="#aa771c"/>
+                </linearGradient>
+            </defs>
+        </svg>
+
+        <div class="vintage-stamp">
+            <div class="stamp-inner-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 10.5L12 3L21 10.5V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V10.5Z" stroke="#c5a880" stroke-width="1.8" stroke-linejoin="round"/>
+                    <path d="M12 15.45C11.85 15.45 11.7 15.4 11.6 15.3C10.75 14.5 9.5 13.25 9.5 11.95C9.5 10.6 10.55 9.5 11.85 9.5C12.65 9.5 13.15 10 13.5 10.4C13.85 10 14.35 9.5 15.15 9.5C16.45 9.5 17.5 10.6 17.5 11.95C17.5 13.25 16.25 14.5 15.4 15.3C15.3 15.4 15.15 15.45 15 15.45H12Z" fill="#c5a880"/>
+                </svg>
+            </div>
+        </div>
+
+        <svg class="postmark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 40 Q 25 35, 40 40 T 70 40 T 100 40" stroke="#222" stroke-width="1" fill="none" />
+            <path d="M8 48 Q 23 43, 38 48 T 68 48 T 98 48" stroke="#222" stroke-width="1" fill="none" />
+            <path d="M12 32 Q 27 27, 42 32 T 72 32 T 102 32" stroke="#222" stroke-width="1" fill="none" />
+            <circle cx="45" cy="55" r="32" stroke="#222" stroke-width="1.2" fill="none" stroke-dasharray="140 3 2 3" />
+            <circle cx="45" cy="55" r="28" stroke="#222" stroke-width="0.7" fill="none" />
+            <path id="postmarkTextPath" d="M 20 55 A 25 25 0 0 1 70 55" fill="none" />
+            <text font-family="'Assistant', sans-serif" font-size="5" fill="#222" letter-spacing="0.5" text-anchor="middle">
+                <textPath href="#postmarkTextPath" startOffset="50%">LEE ATADGI • PREMIUM</textPath>
+            </text>
+        </svg>
+
+        <svg class="center-postmark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 45 Q 20 40, 40 45 T 80 45 T 120 45" stroke="#222" stroke-width="1" fill="none" />
+            <path d="M0 55 Q 20 50, 40 55 T 80 55 T 120 55" stroke="#222" stroke-width="1" fill="none" />
+            <circle cx="25" cy="45" r="32" stroke="#222" stroke-width="1.1" fill="none" stroke-dasharray="8 4 35 4" />
+        </svg>
+
+        <div class="digital-twine"></div>
         <div class="flap"></div>
         
         <div class="stamp" onclick="openEnvelope()" title="לחצו לפתיחת הברכה">
@@ -321,6 +701,13 @@
     </div>
 
     <script>
+        let currentActivePage = 0;
+        let totalCreatedPages = 0;
+        let rawGreetingTextGlobal = "";
+
+        let touchStartXCoordinate = 0;
+        let touchEndXCoordinate = 0;
+
         const firebaseConfig = {
             apiKey: "AIzaSyBCfo3DoB1fY8BUo-pcWlImmIAANaok9Eo",
             appId: "1:201464711048:web:fcff4852a31703fb345c3d",
@@ -345,8 +732,7 @@
             document.getElementById('envelopeWrapper').classList.add('open');
             setTimeout(() => {
                 document.getElementById('cardElement').classList.add('open');
-                const text = document.getElementById('greetingText').innerText;
-                launchContextualConfetti(text);
+                launchContextualConfetti(rawGreetingTextGlobal);
             }, 400);
         }
 
@@ -356,8 +742,103 @@
             root.style.setProperty('--bg-gradient', 'radial-gradient(circle, #246A7D 0%, #15434F 100%)');
             root.style.setProperty('--envelope-bg', '#1a3a44');
             root.style.setProperty('--envelope-paper', '#112830');
-            root.style.setProperty('--card-border', '2px solid #c5a880');
             backdrop.style.backgroundImage = 'none';
+        }
+
+        function paginateTextAndRender(text) {
+            const container = document.getElementById('pagesContainer');
+            container.innerHTML = '';
+            
+            const lines = text.split('\n');
+            let pages = [];
+            let currentChunk = "";
+            let linesCount = 0;
+
+            for (let i = 0; i < lines.length; i++) {
+                currentChunk += lines[i] + "\n";
+                linesCount++;
+                
+                if (linesCount >= 4 || lines[i].trim() === "" || i === lines.length - 1) {
+                    if (currentChunk.trim() !== "") {
+                        pages.push(currentChunk);
+                    }
+                    currentChunk = "";
+                    linesCount = 0;
+                }
+            }
+            
+            if (pages.length === 0 && text.trim() !== "") {
+                pages.push(text);
+            }
+
+            totalCreatedPages = pages.length;
+            
+            pages.forEach((pageText, index) => {
+                const pageDiv = document.createElement('div');
+                pageDiv.classList.add('page-content');
+                if (index === 0) pageDiv.classList.add('active');
+                pageDiv.id = `page-idx-${index}`;
+                pageDiv.innerText = pageText.trim();
+                container.appendChild(pageDiv);
+            });
+
+            const dotsContainer = document.getElementById('pageDots');
+            dotsContainer.innerHTML = '';
+            if (totalCreatedPages > 1) {
+                for (let i = 0; i < totalCreatedPages; i++) {
+                    const dot = document.createElement('div');
+                    dot.classList.add('dot');
+                    if (i === 0) dot.classList.add('active');
+                    dot.id = `dot-idx-${i}`;
+                    dot.setAttribute('onclick', `switchToTargetPage(${i}); event.stopPropagation();`);
+                    dotsContainer.appendChild(dot);
+                }
+            }
+        }
+
+        function navigatePage(direction) {
+            const newPage = currentActivePage - direction;
+            if (newPage >= 0 && newPage < totalCreatedPages) {
+                switchToTargetPage(newPage);
+            }
+        }
+
+        function switchToTargetPage(pageIndex) {
+            if (pageIndex >= 0 && pageIndex < totalCreatedPages) {
+                document.getElementById(`page-idx-${currentActivePage}`).classList.remove('active');
+                const prevDot = document.getElementById(`dot-idx-${currentActivePage}`);
+                if (prevDot) prevDot.classList.remove('active');
+                
+                currentActivePage = pageIndex;
+                document.getElementById(`page-idx-${currentActivePage}`).classList.add('active');
+                const nextDot = document.getElementById(`dot-idx-${currentActivePage}`);
+                if (nextDot) nextDot.classList.add('active');
+            }
+        }
+
+        function handleTouchStart(event) {
+            touchStartXCoordinate = event.touches[0].clientX;
+        }
+
+        function handleTouchEnd(event) {
+            touchEndXCoordinate = event.changedTouches[0].clientX;
+            handleSwipeGestureLogic();
+        }
+
+        function handleSwipeGestureLogic() {
+            const minimumSwipeDistancePixels = 45;
+            const swipeDistance = touchEndXCoordinate - touchStartXCoordinate;
+            
+            if (totalCreatedPages <= 1) return;
+
+            // גרירה משמאל לימין -> דוחף את הדף לאחור ומקדם לעמוד הבא
+            if (swipeDistance > minimumSwipeDistancePixels) {
+                navigatePage(-1);
+            } 
+            // משיכה מימין לשמאל -> מחזיר לעמוד הקודם
+            else if (swipeDistance < -minimumSwipeDistancePixels) {
+                navigatePage(1);
+            }
         }
 
         function getGreetingIdFromUrl() {
@@ -369,17 +850,14 @@
             const container = document.getElementById('confetti-container');
             if (!container) return;
             container.innerHTML = ''; 
-            let emojiPool = ['✨', '🌸', '😊', '⭐', '💖', '💐', '🏡', '🥂', '🎉', '🌟', '🌷', '🧡', '🌞'];
+            let emojiPool = ['✨', '🌸', '😊', '⭐', '💖', '💐', '🏡', '🔑', '🎉', '🌟', '🌷', '🧡', '🌞'];
 
-            // יום הולדת - חגיגי וצבעוני
-            if (text && (text.includes('יום הולדת') || text.includes('יומולדת'))) {
+            if (text && (text.includes('***'))) {
+                emojiPool = ['😎','​🥸','​🤠','​🧐','​🤪'];
+            } else if (text && (text.includes('יום הולדת') || text.includes('יומולדת'))) {
                 emojiPool = ['🎂', '🎉', '🎈', '🎁', '🎊', '🥳', '✨', '💖', '👑', '🥂', '💐', '🌟', '🧁'];
-
-            // תודה והערכה - רך, חם ומכבד
             } else if (text && (text.includes('תודה') || text.includes('מעריכה'))) {
                 emojiPool = ['💖', '🙏', '🌸', '🌷', '😊', '✨', '⭐', '🧡', '💐', '🎀', '💌', '🍃', '💫'];
-
-            // בית, מפתח, נדל"ן - חגיגי, בונה ומזמין
             } else if (text && (text.includes('בית') || text.includes('מפתח') || text.includes('דירה'))) {
                 emojiPool = ['🏡', '🔑', '🥂', '✨', '🌸', '⭐', '🗝️', '🏗️', '📦', '💖', '🥂', '🪴', '☀️'];
             }            
@@ -409,7 +887,7 @@
             const id = getGreetingIdFromUrl();
             if (!id) {
                 document.getElementById('clientName').innerText = "שלום לך 👋";
-                document.getElementById('greetingText').innerText = "הקישור אינו מכיל מזהה גלויה תקין.";
+                document.getElementById('initialLoadingPage').innerText = "הקישור אינו מכיל מזהה גלויה תקין.";
                 return;
             }
             try {
@@ -417,12 +895,14 @@
                 db.collection("greetings").doc(id).get().then((docSnap) => {
                     if (docSnap.exists) {
                         const data = docSnap.data();
+                        rawGreetingTextGlobal = data.text || "";
                         document.getElementById('clientName').innerText = `היי ${data.clientName || "לקוח יקר"},`;
-                        document.getElementById('greetingText').innerText = data.text || "";
-                        applyDynamicTheme(data.text || "");
+                        
+                        paginateTextAndRender(rawGreetingTextGlobal);
+                        applyDynamicTheme(rawGreetingTextGlobal);
                     } else {
                         document.getElementById('clientName').innerText = "יום נפלא ומבורך ✨";
-                        document.getElementById('greetingText').innerText = "הגלויה לא נמצאה.";
+                        document.getElementById('initialLoadingPage').innerText = "הגלויה לא נמצאה.";
                     }
                 });
             } catch (error) { console.error(error); }
