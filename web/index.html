@@ -4,12 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>גלויה דיגיטלית אישית | לי אטדגי - תיווך וייעוץ נדל"ן</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
+        @font-face {
+        font-family: 'DanaYad';
+        src: url('fonts/DanaYadAlefAlefAlef-Normal.woff') format('woff');
+        font-weight: normal;
+        font-style: normal;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -164,16 +167,27 @@
         .gold-paper-clip {
             position: absolute;
             top: 8px;
-            left: 25px;
-            width: 14px;
-            height: 35px;
+            right: 25px;            /* העברה לצד ימין */
+            width: 25px;            
+            height: 45px;           
             border: 2px solid #c5a880;
-            border-radius: 10px;
+            border-radius: 12px;
             background: transparent;
             z-index: 4;
             pointer-events: none;
             box-shadow: 1px 2px 3px rgba(0,0,0,0.15);
-            transform: rotate(-5deg);
+            transform: rotate(5deg); /* שינוי כיוון הנטייה לימין */
+            display: block; 
+        }
+
+        .gold-paper-clip::after {
+            content: '🗝️';
+            position: absolute;     
+            bottom: 8px;            /* מפתח מוצמד לתחתית הלולאה */
+            left: 50%;              
+            transform: translateX(-50%); 
+            font-size: 20px;        
+            line-height: 1;
         }
         
         .gold-paper-clip::before {
@@ -205,13 +219,14 @@
             margin-bottom: 5px; 
             transform: translateZ(20px); 
             display: flex; 
-            justify-content: center; 
+            justify-content: flex-end; /* ב-RTL, זה דוחף את התוכן לצד שמאל */
             align-items: center;
             z-index: 3;
+            width: 100%; /* מוודא שהוא תופס את כל הרוחב כדי שהיישור ישפיע */
         }
         
         .logo-img { 
-            max-width: 90px; 
+            max-width: 70px; 
             height: auto; 
             object-fit: contain; 
         }
@@ -223,6 +238,7 @@
             margin-bottom: 8px;
             letter-spacing: -0.5px;
             z-index: 3;
+            font-family: 'DanaYad', sans-serif;
         }
 
         /* קונטיינר העמודים בסלולר */
@@ -236,29 +252,35 @@
         }
 
         .page-content {
-            position: absolute;
-            top: 0;
-            left: 0;
+            position: relative;
             width: 100%;
-            height: 100%;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            font-size: 15px;
+            display: none; 
+            
+            font-family: 'DanaYad', sans-serif;
+            font-size: 19px;
             line-height: 1.6;
             color: #333333;
-            font-weight: 500;
-            white-space: pre-line;
+            font-weight: 600;
+            
+            /* התיקון לזרימת טקסט נכונה */
+            white-space: pre-wrap;
+            word-wrap: break-word;        /* יבצע ירידת שורה במילים ארוכות בלבד */
+            word-break: normal;         /* יבטל את השבירה האגרסיבית של המילים */
+            
+            /* מוחקים את word-spacing כדי לתת לדפדפן לנהל רווחים טבעיים */
             text-align: center;
-            padding: 0 5px;
+            padding: 0 15px;
+            
+            /* מונע חיתוך פיזי של שורות בסוף */
+            overflow-y: visible; 
+            
             opacity: 0;
             transform: translateX(15px);
             transition: opacity 0.4s ease, transform 0.4s ease;
         }
 
         .page-content.active {
-            display: flex;
+            display: block;
             opacity: 1;
             transform: translateX(0);
         }
@@ -556,6 +578,24 @@
             animation: emojiFountain ease-out forwards;
         }
 
+        .signature-box {
+            margin-top: auto;
+            text-align: center;
+            padding-top: 15px;
+            padding-bottom: 5px; /* מרווח קטן מה-footer */
+            font-family: 'DanaYad', sans-serif;
+            display: none; 
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        .gold-brush {
+            width: 100px; height: 3px;
+            background: var(--gold-gradient);
+            margin: 2px auto;
+        }
+        .support-line { font-size: 12px; color: #888; }
+
         @keyframes elasticFlyOut {
             0% { bottom: 0; transform: translateX(-50%) scale(0.8); z-index: 2; }
             40% { z-index: 10; }
@@ -641,7 +681,13 @@
             </div>
             
             <div class="page-dots" id="pageDots"></div>
-            
+
+<!--            <div class="signature-box" id="signatureBox" style="display:none;">
+                <div>לי אטדגי</div>
+                <div class="gold-brush"></div>
+                <div class="support-line">זמינה לכל שאלה</div>
+            </div>
+-->            
             <div class="brand-footer">לי אטדגי | תיווך וייעוץ נדל"ן</div>
         </div>
 
@@ -733,6 +779,7 @@
             setTimeout(() => {
                 document.getElementById('cardElement').classList.add('open');
                 launchContextualConfetti(rawGreetingTextGlobal);
+                runTypingEffect();
             }, 400);
         }
 
@@ -749,26 +796,20 @@
             const container = document.getElementById('pagesContainer');
             container.innerHTML = '';
             
-            const lines = text.split('\n');
-            let pages = [];
-            let currentChunk = "";
-            let linesCount = 0;
-
-            for (let i = 0; i < lines.length; i++) {
-                currentChunk += lines[i] + "\n";
-                linesCount++;
-                
-                if (linesCount >= 4 || lines[i].trim() === "" || i === lines.length - 1) {
-                    if (currentChunk.trim() !== "") {
-                        pages.push(currentChunk);
-                    }
-                    currentChunk = "";
-                    linesCount = 0;
-                }
-            }
+            // חלוקה לפי שורות וניקוי רווחים מכל שורה בנפרד
+            const lines = text.split('\n').map(line => line.trim()).filter(line => line !== "");
             
-            if (pages.length === 0 && text.trim() !== "") {
-                pages.push(text);
+            let pages = [];
+            let currentChunk = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                currentChunk.push(lines[i]);
+                
+                // יצירת עמוד כל 4 שורות או בסיום הטקסט
+                if (currentChunk.length >= 4 || i === lines.length - 1) {
+                    pages.push(currentChunk.join("\n"));
+                    currentChunk = [];
+                }
             }
 
             totalCreatedPages = pages.length;
@@ -778,7 +819,7 @@
                 pageDiv.classList.add('page-content');
                 if (index === 0) pageDiv.classList.add('active');
                 pageDiv.id = `page-idx-${index}`;
-                pageDiv.innerText = pageText.trim();
+                pageDiv.setAttribute('data-full-text', pageText.trim());
                 container.appendChild(pageDiv);
             });
 
@@ -804,15 +845,21 @@
         }
 
         function switchToTargetPage(pageIndex) {
+//            document.getElementById('signatureBox').style.display = 'none';
+
             if (pageIndex >= 0 && pageIndex < totalCreatedPages) {
                 document.getElementById(`page-idx-${currentActivePage}`).classList.remove('active');
                 const prevDot = document.getElementById(`dot-idx-${currentActivePage}`);
                 if (prevDot) prevDot.classList.remove('active');
                 
                 currentActivePage = pageIndex;
-                document.getElementById(`page-idx-${currentActivePage}`).classList.add('active');
+                const newPage = document.getElementById(`page-idx-${currentActivePage}`);
+                newPage.classList.add('active');
                 const nextDot = document.getElementById(`dot-idx-${currentActivePage}`);
                 if (nextDot) nextDot.classList.add('active');
+                
+                // 2. מפעילים את אפקט הכתיבה מחדש לעמוד החדש
+                runTypingEffect(); 
             }
         }
 
@@ -845,6 +892,40 @@
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get('id');
         }
+
+        function runTypingEffect() {
+    const activePage = document.querySelector('.page-content.active');
+    if (!activePage) return;
+
+    const rawText = activePage.getAttribute('data-full-text');
+    // ניקוי ירידות שורה וטיפול ברווחים
+    const text = rawText.replace(/\n/g, ' '); 
+    
+    activePage.style.fontFamily = "'DanaYad', sans-serif";
+    
+    // הכנת המבנה בזיכרון
+    let i = 0;
+    let output = "";
+    
+    function type() {
+        if (i < text.length) {
+            // הוספת התו הנוכחי למחרוזת בזיכרון
+            const char = text.charAt(i);
+            output += (char === ' ') ? "&nbsp;" : char;
+            
+            // עדכון ה-DOM רק פעם אחת בכל איטרציה
+            activePage.innerHTML = output;
+            
+            i++;
+            // השהיה אקראית קלה לאפקט טבעי
+            setTimeout(type, Math.random() * 50 + 80);
+        }
+    }
+    
+    // איפוס לפני התחלה
+    activePage.innerHTML = "";
+    type();
+}
 
         function launchContextualConfetti(text) {
             const container = document.getElementById('confetti-container');
@@ -896,7 +977,7 @@
                     if (docSnap.exists) {
                         const data = docSnap.data();
                         rawGreetingTextGlobal = data.text || "";
-                        document.getElementById('clientName').innerText = `היי ${data.clientName || "לקוח יקר"},`;
+                        document.getElementById('clientName').innerText = `היי ${data.clientName || "לקוח יקר"} !`;
                         
                         paginateTextAndRender(rawGreetingTextGlobal);
                         applyDynamicTheme(rawGreetingTextGlobal);
