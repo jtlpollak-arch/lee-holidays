@@ -241,7 +241,6 @@
         .page-content {
             position: relative;
             width: 100%;
-            /* משלבים את הכל ל-display אחד */
             display: none; 
             
             font-family: 'DanaYad', sans-serif;
@@ -252,19 +251,16 @@
             -webkit-font-smoothing: antialiased;
             font-weight: 600;
             
-            white-space: pre-wrap; 
-            word-wrap: normal;
-            word-break: keep-all;
-            overflow-wrap: normal;
+            /* השינוי הקריטי כאן: */
+            white-space: pre-line;   /* שובר שורות רק איפה שיש \n ונותן לטקסט לזרום */
+            word-wrap: break-word;   /* שובר מילים ארוכות כדי שלא יחרגו מהרוחב */
+            word-break: break-word;  /* מאפשר שבירה חכמה בתוך מילים */
             
             text-align: center;
             padding: 0 15px;
-            overflow-y: visible; 
             
-            /* איחוד האנימציות */
             opacity: 0;
             transition: opacity 0.4s ease, transform 0.6s ease-out;
-            transform-origin: center center;
         }
 
         .page-content.active {
@@ -853,6 +849,11 @@
             backdrop.style.backgroundImage = 'none';
         }
 
+function getVisualLength(str) {
+    // Array.from מפרק את המחרוזת לפי "תווי Unicode" ולא לפי "יחידות זיכרון"
+    return Array.from(str).length;
+}        
+
         // קבוע שתוכל לכוון עדין לפי הצורך
 const MAX_CHARS_PER_LINE = 20;
 const MAX_LINES_PER_PAGE = 4;
@@ -860,23 +861,36 @@ const MAX_LINES_PER_PAGE = 4;
 function paginateTextAndRender(text) {
     const container = document.getElementById('pagesContainer');
     container.innerHTML = '';
+
+    // 1. הגנה על ירידות שורה: צמצום רצפים ל-@@@ בודד ושמירה על מבנה
+    let processedText = text.replace(/\n+/g, '@@@');
     
-    // שלב 1: פירוק הטקסט למילים תוך שמירה על רווחים
-    const words = text.split(/(\s+)/);
+    // 2. פיצול אימוג'ים לנרמול, וטיפול ברווחים (מבלי למחוק את ה-@@@)
+    processedText = processedText.replace(/([\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}])/gu, ' $1 ')
+                                .replace(/\s+/g, ' ') 
+                                .trim();
+    
+    // 3. פיצול למילים (כולל ה-@@@ כאיבר במערך כדי לשמור עליו)
+    const words = processedText.split(/(\s+|@@@)/);
     let lines = [];
     let currentLine = "";
 
     words.forEach(word => {
-        // טיפול בירידות שורה יזומות בטקסט המקור
-        if (word.includes('\n')) {
+        // אם זה המפריד שלנו, שבור שורה מיד
+        if (word === '@@@') {
             lines.push(currentLine.trim());
             currentLine = "";
             return;
         }
 
-        // בדיקה אם המילה הבאה נכנסת בשורה
-        // אם המילה עצמה ארוכה מהשורה, נכניס אותה בכל זאת כדי לא לחתוך
-        if ((currentLine + word).length > MAX_CHARS_PER_LINE && currentLine.length > 0) {
+        const cleanWord = word.replace(/\*/g, ''); 
+        const visualLength = Array.from(cleanWord).length;
+
+        const currentLen = getVisualLength(currentLine.replace(/\*/g, ''));
+        const wordLen = visualLength;
+
+        // לוגיקת הפיצול: שבירת שורה רק כשחורגים מהגבול
+        if ((currentLen + wordLen) > MAX_CHARS_PER_LINE && currentLine.length > 0) {
             lines.push(currentLine.trim());
             currentLine = word;
         } else {
@@ -885,38 +899,40 @@ function paginateTextAndRender(text) {
     });
     if (currentLine.trim()) lines.push(currentLine.trim());
 
-    // שלב 2: קיבוץ שורות לעמודים
+    // 4. שלב הקיבוץ לעמודים ורינדור
     let pages = [];
     let currentPageLines = [];
 
     lines.forEach(line => {
+        // החזרת @@ ל- \n בתוך השורות לפני הרינדור
+        const formattedLine = line.replace(/@@@/g, '\n');
+        
         if (currentPageLines.length >= MAX_LINES_PER_PAGE) {
             pages.push(currentPageLines.join('\n'));
-            currentPageLines = [line];
+            currentPageLines = [formattedLine];
         } else {
-            currentPageLines.push(line);
+            currentPageLines.push(formattedLine);
         }
     });
     if (currentPageLines.length > 0) pages.push(currentPageLines.join('\n'));
 
-    // שלב 3: רינדור ה-DOM
+    // 5. שלב הרינדור ל-DOM
     pages.forEach((pageText, index) => {
         const pageDiv = document.createElement('div');
         pageDiv.classList.add('page-content');
         if (index === 0) pageDiv.classList.add('active');
         pageDiv.id = `page-idx-${index}`;
         
-        // שימוש ב-innerText בטוח יותר לעיבוד טקסט
         pageDiv.innerText = pageText;
         container.appendChild(pageDiv);
 
-        pageDiv.setAttribute('data-full-text', pageText); // תוספת חובה!
+        pageDiv.setAttribute('data-full-text', pageText);
         pageDiv.innerText = "";
         
         console.log(`Page #${index + 1} rendered with ${pageText.split('\n').length} lines`);
     });
 
-    // שלב 4: יצירת הנקודות למטה
+    // 6. יצירת הנקודות למטה
     const dotsContainer = document.getElementById('pageDots');
     dotsContainer.innerHTML = '';
     totalCreatedPages = pages.length;
