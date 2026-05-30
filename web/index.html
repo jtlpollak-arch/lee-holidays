@@ -241,6 +241,7 @@
         .page-content {
             position: relative;
             width: 100%;
+            /* משלבים את הכל ל-display אחד */
             display: none; 
             
             font-family: 'DanaYad', sans-serif;
@@ -251,27 +252,26 @@
             -webkit-font-smoothing: antialiased;
             font-weight: 600;
             
-            /* התיקון למניעת שבירת מילים */
-            white-space: pre-wrap;    /* שומר על המבנה של הטקסט שלך */
-            word-wrap: normal;        /* מבטל את החיתוך הכפוי */
-            word-break: keep-all;     /* מנחה את הדפדפן להעדיף העברת מילה שלמה לשורה הבאה */
-            overflow-wrap: normal;    /* מונע מהדפדפן לשבור מילים ארוכות מדי בתוך המיכל */
+            white-space: pre-wrap; 
+            word-wrap: normal;
+            word-break: keep-all;
+            overflow-wrap: normal;
             
             text-align: center;
             padding: 0 15px;
-            
-            /* מונע חיתוך פיזי של שורות בסוף */
             overflow-y: visible; 
             
+            /* איחוד האנימציות */
             opacity: 0;
-            transform: translateX(15px);
-            transition: opacity 0.4s ease, transform 0.4s ease;
+            transition: opacity 0.4s ease, transform 0.6s ease-out;
+            transform-origin: center center;
         }
 
         .page-content.active {
-            display: block;
+            display: block; /* הופך לבלוק כשהוא פעיל */
             opacity: 1;
-            transform: translateX(0);
+            /* משלבים את שני הטרנספורמציות יחד */
+            transform: translateX(0) rotate(0.5deg); 
         }
 
         /* נקודות החיווי התחתונות */
@@ -640,6 +640,59 @@
             50% { transform: scale(1.03); }
             100% { transform: scale(1); }
         }
+
+
+
+
+
+/* סמן הכתיבה (Caret) */
+.caret {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background-color: #1B5565; /* צבע הדיו שלך */
+    margin-left: 2px;
+    vertical-align: middle;
+    animation: blink 0.7s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+/* הדגשת מילות מפתח (אופציה 3 - היררכיה) */
+.emphasized-word {
+    font-size: 22px; /* גדול משמעותית מהטקסט הרגיל */
+    font-weight: 1500;
+    color: #1B5565;
+    text-shadow: 1px 1px 2px rgba(27, 85, 101, 0.3); /* אפקט Ink Bleed */
+    display: inline-block;
+    transform: rotate(-20deg); /* נטייה קלה לאותיות הגדולות */
+}
+
+/* אנימציית הטיה של העמוד (אופציה 2 - חומריות) */
+.page-content {
+    transition: transform 0.6s ease-out;
+}
+
+.page-content.active {
+    /* הטיה קלה מאוד כדי שזה ייראה כמו נייר מונח */
+    transform: rotate(0.5deg); 
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
     </style>
 
     <svg style="position: absolute; width: 0; height: 0;">
@@ -944,44 +997,58 @@ function paginateTextAndRender(text) {
 
             if (typingTimeoutId) clearTimeout(typingTimeoutId);
 
+            // נמשוך את הטקסט וננקה ממנו את תווי הסימון לצורך החישובים
             const rawText = activePage.getAttribute('data-full-text');
             if (!rawText) return;
 
             const pipeIndex = rawText.indexOf('|');
+            // ננקה את ה-pipe מהטקסט שיוצג, אבל נשמור את המיקום
             const text = rawText.replace('|', '');
             
             let i = 0;
             let output = "";
-            
-            // נפריד את השם מהטקסט הרגיל מראש
-            const namePart = text.substring(0, pipeIndex);
-            const restPart = text.substring(pipeIndex);
+            let isInsideEmphasis = false; // משתנה למעקב אחרי מילים מודגשות (*...*)
 
             function type() {
                 if (i < text.length) {
                     const char = text.charAt(i);
                     
-                    // בונים את התו
+                    // 1. טיפול במילות הדגשה (*)
+                    if (char === '*') {
+                        isInsideEmphasis = !isInsideEmphasis;
+                        output += isInsideEmphasis ? '<span class="emphasized-word">' : '</span>';
+                        i++;
+                        type();
+                        return;
+                    }
+
+                    // 2. טיפול בתווים רגילים
                     let charToAppend = (char === '\n') ? "<br>" : ((char === ' ') ? "&nbsp;" : char);
 
-                    // אם אנחנו בטווח של השם
+                    // לוגיקת עיצוב השם (החלק שלפני ה-|)
                     if (i < pipeIndex) {
-                        // רק אם זו האות הראשונה של השם, נפתח את ה-span
                         if (i === 0) output += '<span class="client-name">';
                         output += charToAppend;
-                        // אם זו האות האחרונה של השם, נסגור את ה-span
                         if (i === pipeIndex - 1) output += '</span>';
                     } else {
                         output += charToAppend;
                     }
                     
-                    activePage.innerHTML = output;
+                    // 3. עדכון ה-DOM עם ה-Caret בסוף
+                    activePage.innerHTML = output + '<span class="caret"></span>';
+                    
                     i++;
-                    typingTimeoutId = setTimeout(type, Math.random() * 50 + 80);
+                    typingTimeoutId = setTimeout(type, Math.random() * 50 + 70);
+                } else {
+                    // בסיום - העלמת הסמן אחרי השהיה
+                    setTimeout(() => {
+                        const caret = activePage.querySelector('.caret');
+                        if (caret) caret.style.display = 'none';
+                    }, 2000);
                 }
             }
             
-            activePage.innerHTML = "";
+            activePage.innerHTML = '<span class="caret"></span>';
             type();
         }
 
@@ -1038,7 +1105,7 @@ function paginateTextAndRender(text) {
                     const clientName = data.clientName || "לקוח יקר";
                     const messageContent = data.text || "";
                     
-                    const fullMessage = ` ${clientName} ! מזל-טוב !|\n\n${messageContent}`;
+                    const fullMessage = `${clientName} ! מזל-טוב !|\n\n${messageContent}`;
                     
                     rawGreetingTextGlobal = fullMessage;
 
