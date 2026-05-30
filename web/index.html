@@ -529,25 +529,20 @@
         .flap::after {
             content: '';
             position: absolute;
-            top: -150px; /* ממרכז את תיבת הרעפים עם ה-flap */
+            top: -150px; 
             left: -150px;
-            width: 300px; /* גודל מלא לתיבה */
+            width: 300px;
             height: 150px;
             
-            /* חותך את התיבה למשולש מושלם */
             clip-path: polygon(50% 100%, 0 0, 100% 0);
-            
             transform: rotateY(180deg) translateZ(-1px);
             
-            /* מאחדים את הרקע והרעפים בקוד אחד תקין */
-            background-image: var(--gold-gradient), 
-                            url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q 5 0 10 10 T 20 10 L 20 20 L 0 20 Z' fill='%23bf953f' fill-opacity='0.2'/%3E%3C/svg%3E");
-            
-            /* מגדלי הרעפים הקטנים: 15px ייתן מראה מאוד צפוף וקטן */
+            /* התיקון: קידוד ה-% וערך אטימות תקין (0.3) */
+            background: var(--gold-gradient);
+
             background-size: 300px 150px, 15px 15px; 
             background-repeat: no-repeat, repeat;
             
-            /* שאר ההגדרות */
             mask-image: linear-gradient(to bottom, black, transparent);
             -webkit-mask-image: linear-gradient(to bottom, black, transparent);
         }
@@ -555,9 +550,19 @@
         .envelope-wrapper.open .flap {
             transform: rotateX(180deg);
             z-index: 1;
-            border-top-color: #bf953f !important;
-            background-image: var(--gold-gradient) !important;
-            background-size: 300px 150px;
+            
+            /* מוחקים את ה-border-top-color כי אנחנו עוברים לרקע גרפי */
+            border-top-color: transparent !important; 
+            
+            /* כאן אנחנו טוענים את הזהב והרעפים כרקע אחד שחתוך לצורת משולש */
+            background-image: var(--gold-gradient), 
+                            url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q 5 0 10 10 T 20 10 L 20 20 L 0 20 Z' fill='%23bf953f' fill-opacity='0.7'/%3E%3C/svg%3E");
+            
+            background-size: 300px 150px, 15px 15px;
+            background-repeat: no-repeat, repeat;
+            
+            /* זה הסוד: חותך את הרקע החדש בדיוק לצורת המשולש המקורית */
+            clip-path: polygon(50% 100%, 0 0, 100% 0);
         }
 
         .envelope-wrapper.open .envelope {
@@ -726,7 +731,8 @@
         </svg>
 
         <div class="digital-twine"></div>
-        <div class="flap"></div>
+        <div class="flap">
+        </div>
         
         <div class="stamp" onclick="openEnvelope()" title="לחצו לפתיחת הברכה">
             <img src="logo.png" alt="Lee Logo">
