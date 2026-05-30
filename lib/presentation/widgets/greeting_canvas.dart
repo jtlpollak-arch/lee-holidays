@@ -164,6 +164,21 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: 'שם לברכה: ',
+                        style: TextStyle(fontSize: 12, color: Color(0xFF1B5565), fontWeight: FontWeight.bold),
+                      ),
+                      TextSpan(
+                        text: widget.client.firstName,
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF1B5565)),
+                      ),
+                    ],
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 2), // מרווח קטן בין השורות
                 Text.rich(
                   TextSpan(
@@ -325,8 +340,8 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                       // עטוף את ה-TextFormField שלך בתוך ה-Actions הבא:
                       TextFormField(
                         controller: _textController,
-                        minLines: 3,
-                        maxLines: 5,
+                        minLines: 12,
+                        maxLines: 12,
                         scrollPadding: const EdgeInsets.all(40),
                         textDirection: TextDirection.rtl,
                         keyboardType: TextInputType.multiline,
@@ -359,8 +374,14 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                             style: TextStyle(fontSize: 14, color: Color(0xFF1B5565), fontWeight: FontWeight.bold),
                           ),
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFF1B5565)),
+                            // הוספת רקע עדין בצבע ה-Teal שלך (באופסיטי נמוך) כדי לתת לו נפח
+                            backgroundColor: const Color(0xFF1B5565).withOpacity(0.05),
+                            // הדגשת המסגרת בעזרת עובי מעט עבה יותר
+                            side: const BorderSide(color: Color(0xFF1B5565), width: 1.2),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                            // הוספת צל קטן מאוד שנותן לכפתור "להתרומם" מהדף
+                            elevation: 0.5,
+                            shadowColor: const Color.fromARGB(255, 126, 173, 185),
                           ),
                         ),
                       ),
