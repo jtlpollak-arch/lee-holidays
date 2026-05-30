@@ -228,16 +228,6 @@
             display: block;
         }
         
-        .client-name {
-            font-size: 24px;
-            font-weight: 800;
-            color: #1B5565;
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
-            z-index: 3;
-            font-family: 'DanaYad', sans-serif;
-        }
-
         /* קונטיינר העמודים בסלולר */
         .pages-container {
             position: relative;
@@ -256,7 +246,7 @@
             font-family: 'DanaYad', sans-serif;
             font-size: 19px;
             line-height: 1.6;
-            color: #1a2a3a; 
+            color: #2c3e50; 
             text-shadow: 0.5px 0.5px 0.5px rgba(0,0,0,0.15);
             -webkit-font-smoothing: antialiased;
             font-weight: 600;
@@ -597,6 +587,31 @@
         }
         .support-line { font-size: 12px; color: #888; }
 
+        .client-name {
+            /* נשתמש ב-inline-block כדי שזה יתנהג כגוש אחד, 
+            אבל יישאר בתוך זרימת הטקסט */
+            display: inline-block; 
+            
+            font-size: 24px;
+            font-weight: 800;
+            color: #1B5565;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+            font-family: 'DanaYad', sans-serif;
+            
+            /* מוודא שזה לא דוחף שורות בצורה מוזרה */
+            line-height: 1.2; 
+            
+            /* מונע מהאפקט של הטקסט הרגיל להשפיע על העיצוב כאן */
+            z-index: 3;
+            position: relative;
+
+            text-decoration: underline; /* קו תחתון */
+            text-decoration-thickness: 2px; /* עובי הקו התחתון */
+            text-underline-offset: 4px; /* מרחק הקו מהאותיות */
+            font-style: italic; /* נטייה (Italic) */
+        }
+
         @keyframes elasticFlyOut {
             0% { bottom: 0; transform: translateX(-50%) scale(0.8); z-index: 2; }
             40% { z-index: 10; }
@@ -787,7 +802,7 @@
 
         // קבוע שתוכל לכוון עדין לפי הצורך
 const MAX_CHARS_PER_LINE = 20;
-const MAX_LINES_PER_PAGE = 3;
+const MAX_LINES_PER_PAGE = 4;
 
 function paginateTextAndRender(text) {
     const container = document.getElementById('pagesContainer');
@@ -927,44 +942,45 @@ function paginateTextAndRender(text) {
             const activePage = document.querySelector('.page-content.active');
             if (!activePage) return;
 
-            // 1. עצירת כל אפקט קודם שרץ
-            if (typingTimeoutId) {
-                clearTimeout(typingTimeoutId);
-            }
+            if (typingTimeoutId) clearTimeout(typingTimeoutId);
 
             const rawText = activePage.getAttribute('data-full-text');
-            if (!rawText) { 
-                console.warn("No text found on active page");
-                return; 
-            }
-            // כאן אנחנו לא מוחקים ירידות שורה! נשאיר אותן כדי שנוכל לזהות אותן
-            const text = rawText; 
-            
-            activePage.style.fontFamily = "'DanaYad', sans-serif";
+            if (!rawText) return;
+
+            const pipeIndex = rawText.indexOf('|');
+            const text = rawText.replace('|', '');
             
             let i = 0;
             let output = "";
             
+            // נפריד את השם מהטקסט הרגיל מראש
+            const namePart = text.substring(0, pipeIndex);
+            const restPart = text.substring(pipeIndex);
+
             function type() {
                 if (i < text.length) {
                     const char = text.charAt(i);
                     
-                    // 2. טיפול בתווי ירידת שורה במקום ברווחים
-                    if (char === '\n') {
-                        output += "<br>";
+                    // בונים את התו
+                    let charToAppend = (char === '\n') ? "<br>" : ((char === ' ') ? "&nbsp;" : char);
+
+                    // אם אנחנו בטווח של השם
+                    if (i < pipeIndex) {
+                        // רק אם זו האות הראשונה של השם, נפתח את ה-span
+                        if (i === 0) output += '<span class="client-name">';
+                        output += charToAppend;
+                        // אם זו האות האחרונה של השם, נסגור את ה-span
+                        if (i === pipeIndex - 1) output += '</span>';
                     } else {
-                        output += (char === ' ') ? "&nbsp;" : char;
+                        output += charToAppend;
                     }
                     
                     activePage.innerHTML = output;
-                    
                     i++;
-                    // השהיה לאפקט כתיבה
                     typingTimeoutId = setTimeout(type, Math.random() * 50 + 80);
                 }
             }
             
-            // איפוס לפני התחלה
             activePage.innerHTML = "";
             type();
         }
@@ -1015,20 +1031,30 @@ function paginateTextAndRender(text) {
             }
             try {
                 const db = firebase.firestore();
-                db.collection("greetings").doc(id).get().then((docSnap) => {
-                    if (docSnap.exists) {
-                        const data = docSnap.data();
-                        rawGreetingTextGlobal = data.text || "";
-                        document.getElementById('clientName').innerText = `היי ${data.clientName || "לקוח יקר"} !`;
-                        
-                        paginateTextAndRender(rawGreetingTextGlobal);
-                        applyDynamicTheme(rawGreetingTextGlobal);
-                    } else {
-                        document.getElementById('clientName').innerText = "יום נפלא ומבורך ✨";
-                        document.getElementById('initialLoadingPage').innerText = "הגלויה לא נמצאה.";
-                    }
-                });
-            } catch (error) { console.error(error); }
+                const docSnap = await db.collection("greetings").doc(id).get(); // שינינו ל-await לנוחות
+
+                if (docSnap.exists) {
+                    const data = docSnap.data();
+                    const clientName = data.clientName || "לקוח יקר";
+                    const messageContent = data.text || "";
+                    
+                    const fullMessage = ` ${clientName} ! מזל-טוב !|\n\n${messageContent}`;
+                    
+                    rawGreetingTextGlobal = fullMessage;
+
+                    // מכיוון שהעברנו את השם לתוך הטקסט, אנחנו מרוקנים את הכותרת החיצונית
+                    document.getElementById('clientName').innerText = ""; 
+                    
+                    // שליחה לעיבוד המאוחד
+                    paginateTextAndRender(rawGreetingTextGlobal);
+                    applyDynamicTheme(messageContent);
+                } else {
+                    document.getElementById('clientName').innerText = "יום נפלא ומבורך ✨";
+                    document.getElementById('initialLoadingPage').innerText = "הגלויה לא נמצאה.";
+                }
+            } catch (error) { 
+                console.error("Error loading greeting:", error); 
+            }
         }
         window.addEventListener('DOMContentLoaded', loadGreetingCard);
     </script>
