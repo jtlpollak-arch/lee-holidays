@@ -1090,31 +1090,42 @@ function paginateTextAndRender(text) {
         }
 
         async function loadGreetingCard() {
+            console.log("--- loadGreetingCard started ---");
+            const urlParams = new URLSearchParams(window.location.search);
+            const previewData = urlParams.get('preview');
+
+            // 1. בדיקת Preview - זה חייב להיות לפני הכל!
+            if (previewData) {
+                try {
+                    // ב-JS אנחנו מפענחים את ה-Base64 בחזרה ל-JSON
+                    const decodedString = atob(previewData.replace(/-/g, '+').replace(/_/g, '/'));
+                    const decoded = JSON.parse(decodeURIComponent(escape(decodedString)));
+                    
+                    handleGreetingDisplay(decoded.clientName, decoded.text);
+                    return;
+                } catch (e) {
+                    console.error("Error parsing base64 preview data:", e);
+                }
+            }
+
+            // 2. לוגיקה רגילה מול Firebase (רק אם אין preview)
             const id = getGreetingIdFromUrl();
             if (!id) {
                 document.getElementById('clientName').innerText = "שלום לך 👋";
                 document.getElementById('initialLoadingPage').innerText = "הקישור אינו מכיל מזהה גלויה תקין.";
                 return;
             }
+            
             try {
                 const db = firebase.firestore();
-                const docSnap = await db.collection("greetings").doc(id).get(); // שינינו ל-await לנוחות
+                const docSnap = await db.collection("greetings").doc(id).get(); 
 
                 if (docSnap.exists) {
                     const data = docSnap.data();
                     const clientName = data.clientName || "לקוח יקר";
                     const messageContent = data.text || "";
                     
-                    const fullMessage = `${clientName} ! מזל-טוב !|\n\n${messageContent}`;
-                    
-                    rawGreetingTextGlobal = fullMessage;
-
-                    // מכיוון שהעברנו את השם לתוך הטקסט, אנחנו מרוקנים את הכותרת החיצונית
-                    document.getElementById('clientName').innerText = ""; 
-                    
-                    // שליחה לעיבוד המאוחד
-                    paginateTextAndRender(rawGreetingTextGlobal);
-                    applyDynamicTheme(messageContent);
+                    handleGreetingDisplay(clientName, messageContent);
                 } else {
                     document.getElementById('clientName').innerText = "יום נפלא ומבורך ✨";
                     document.getElementById('initialLoadingPage').innerText = "הגלויה לא נמצאה.";
@@ -1123,6 +1134,15 @@ function paginateTextAndRender(text) {
                 console.error("Error loading greeting:", error); 
             }
         }
+
+        function handleGreetingDisplay(clientName, messageContent) {
+            const fullMessage = `${clientName} !| \n\n${messageContent}`;
+            rawGreetingTextGlobal = fullMessage;
+            document.getElementById('clientName').innerText = ""; 
+            paginateTextAndRender(rawGreetingTextGlobal);
+            applyDynamicTheme(messageContent);
+        }
+
         window.addEventListener('DOMContentLoaded', loadGreetingCard);
     </script>
 </body>

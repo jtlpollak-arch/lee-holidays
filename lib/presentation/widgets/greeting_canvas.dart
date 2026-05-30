@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart'; // ייבוא רשמי ל
 import '../../data/models/client_model.dart';
 import '../../data/models/event_model.dart';
 import '../bloc_or_provider/home_cubit.dart';
+import 'dart:convert';
 
 class GreetingCanvas extends StatefulWidget {
   final ClientModel client;
@@ -46,6 +47,18 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
   void dispose() {
     _textController.dispose();
     super.dispose();
+  }
+
+  void _openPreview() {
+    final previewMap = {'clientName': widget.client.firstName, 'text': _textController.text};
+
+    // הופכים את ה-JSON למחרוזת של בתים ומקודדים ל-Base64 בטוח ל-URL
+    final jsonString = jsonEncode(previewMap);
+    final bytes = utf8.encode(jsonString);
+    final base64String = base64UrlEncode(bytes);
+
+    final url = 'https://lee-greetings.web.app/?preview=$base64String';
+    launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
 
   Future<void> _processAndSend({required String channelType}) async {
@@ -308,14 +321,16 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                         style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 0, 0, 0)),
                       ),
                       const SizedBox(height: 8),
+
+                      // עטוף את ה-TextFormField שלך בתוך ה-Actions הבא:
                       TextFormField(
                         controller: _textController,
                         minLines: 3,
                         maxLines: 5,
-                        scrollPadding: const EdgeInsets.all(40), // שומר על מרווח נשימה בטוח מהמקלדת בזמן הקלדה
+                        scrollPadding: const EdgeInsets.all(40),
                         textDirection: TextDirection.rtl,
-                        keyboardType: TextInputType.multiline, // סוג קלט התומך בריבוי שורות
-                        textInputAction: TextInputAction.newline, // מאלץ את המקלדת להישאר במצב קלט טקסט עשיר עם מקש אנטר
+                        keyboardType: TextInputType.multiline,
+                        textInputAction: TextInputAction.newline,
                         decoration: InputDecoration(
                           hintText: 'הקלידו את הברכה שלכם כאן...',
                           fillColor: _lightBgColor,
@@ -329,63 +344,23 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                         ),
                         style: const TextStyle(fontSize: 15, height: 1.4, color: Colors.black87),
                       ),
+
                       const SizedBox(height: 24),
 
-                      // 3. קנבס ה-Preview החזותי של הברכה (הועבר למטה)
-                      Center(
-                        child: Container(
-                          width: 270,
-                          height: 220,
-                          decoration: BoxDecoration(
-                            color: Colors.white, // רקע לבן בוהק למראה פרימיום
-                            borderRadius: BorderRadius.circular(16), // פינות מעט רכות יותר
-                            border: Border.all(color: _goldColor, width: 1.5), // מסגרת מוזהבת דקה
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.15), // צל כהה יותר
-                                blurRadius: 12, // צל מטושטש ורך
-                                offset: const Offset(0, 6), // צל ש"מפיל" את הגלויה קדימה
-                              ),
-                            ],
+                      // הוסף את הכפתור הזה ליד הכפתורים הקיימים
+                      SizedBox(
+                        width: 140,
+                        height: 48,
+                        child: OutlinedButton.icon(
+                          onPressed: _openPreview, // כאן אנחנו קוראים לפונקציה שיצרנו
+                          icon: const Icon(Icons.visibility_rounded, color: Color(0xFF1B5565), size: 18),
+                          label: const Text(
+                            'תצוגה מקדימה',
+                            style: TextStyle(fontSize: 14, color: Color(0xFF1B5565), fontWeight: FontWeight.bold),
                           ),
-                          child: Stack(
-                            children: [
-                              Positioned.fill(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(20.0), // ריווח נדיב ליוקרה
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Image.asset(widget.logoAssetPath, height: 40, errorBuilder: (context, error, stackTrace) => Icon(Icons.insert_emoticon_rounded, size: 35, color: _goldColor)),
-                                      const SizedBox(height: 12),
-                                      Text(
-                                        'היי ${widget.client.firstName},',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _tealColor),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Expanded(
-                                        child: SingleChildScrollView(
-                                          child: Text(
-                                            _currentGreetingText,
-                                            textAlign: TextAlign.center,
-                                            style: const TextStyle(fontSize: 10, height: 1.4, color: Colors.black87, fontWeight: FontWeight.w500),
-                                          ),
-                                        ),
-                                      ),
-                                      const Padding(
-                                        padding: EdgeInsets.symmetric(vertical: 8.0),
-                                        child: Divider(color: Color(0xFFC5A880), thickness: 0.5),
-                                      ),
-                                      Text(
-                                        'לי - תיווך וייעוץ נדל"ן',
-                                        style: TextStyle(fontSize: 12, color: _goldColor, fontWeight: FontWeight.bold),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFF1B5565)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                           ),
                         ),
                       ),
