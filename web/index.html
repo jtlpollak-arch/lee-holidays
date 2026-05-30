@@ -157,14 +157,12 @@
             z-index: 4;
             
             opacity: 0;
-            filter: drop-shadow(0px 0px 0px transparent); 
-            mix-blend-mode: multiply; /* עוזר לאלמנט "להיבלע" בטקסטורת הנייר */
-            pointer-events: none; /* שלא יפריע ללחיצות */
-            transition: opacity 0.3s ease;
         }
         
         .lee-signature.show-signature {
             opacity: 0.8; /* הערך שרצית */
+            fill: #856526 !important; 
+            filter: drop-shadow(0 0 5px rgba(133, 101, 38, 0.3));
         }
 
         .wooden-docks{
