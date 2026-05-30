@@ -167,8 +167,8 @@
 
         .wax-seal {
             position: absolute;
-            top: 20px;
-            right: 25px;
+            bottom: 20px;
+            right: 10px;
             width: 60px;
             height: 60px;
             z-index: 4;
@@ -256,17 +256,17 @@
             font-family: 'DanaYad', sans-serif;
             font-size: 19px;
             line-height: 1.6;
-            color: #1a2a3a; /* הצבע החם יותר */
+            color: #1a2a3a; 
             text-shadow: 0.5px 0.5px 0.5px rgba(0,0,0,0.15);
             -webkit-font-smoothing: antialiased;
             font-weight: 600;
             
-            /* התיקון לזרימת טקסט נכונה */
-            white-space: pre-wrap;
-            word-wrap: break-word;        /* יבצע ירידת שורה במילים ארוכות בלבד */
-            word-break: normal;         /* יבטל את השבירה האגרסיבית של המילים */
+            /* התיקון למניעת שבירת מילים */
+            white-space: pre-wrap;    /* שומר על המבנה של הטקסט שלך */
+            word-wrap: normal;        /* מבטל את החיתוך הכפוי */
+            word-break: keep-all;     /* מנחה את הדפדפן להעדיף העברת מילה שלמה לשורה הבאה */
+            overflow-wrap: normal;    /* מונע מהדפדפן לשבור מילים ארוכות מדי בתוך המיכל */
             
-            /* מוחקים את word-spacing כדי לתת לדפדפן לנהל רווחים טבעיים */
             text-align: center;
             padding: 0 15px;
             
@@ -655,7 +655,7 @@
                 <path d="M9 21V14H15V21" fill="#fcfaf4"/>
             </svg>
         -->            
-            <svg class="card-watermark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!--            <svg class="card-watermark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10 90C25 75 45 45 80 15" stroke="#c5a880" stroke-width="1.5" stroke-linecap="round"/>
                 <path d="M30 65C25 55 20 52 12 55C15 48 22 46 28 52" stroke="#c5a880" stroke-width="1" stroke-linejoin="round"/>
                 <path d="M45 50C42 38 35 34 26 38C32 30 40 32 44 40" stroke="#c5a880" stroke-width="1" stroke-linejoin="round"/>
@@ -663,7 +663,7 @@
                 <path d="M50 55C58 52 64 56 68 64C62 62 55 58 48 56" stroke="#c5a880" stroke-width="1" stroke-linejoin="round"/>
                 <path d="M68 38C76 38 80 44 82 52C76 48 70 44 66 40" stroke="#c5a880" stroke-width="1" stroke-linejoin="round"/>
             </svg>
-
+-->
             <div class="logo-wrapper">
                 <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 154.000000 102.000000" preserveAspectRatio="xMidYMid meet">
                     <g transform="translate(0.000000,102.000000) scale(0.100000,-0.100000)" fill="#000000" stroke="none">
@@ -785,50 +785,85 @@
             backdrop.style.backgroundImage = 'none';
         }
 
-        function paginateTextAndRender(text) {
-            const container = document.getElementById('pagesContainer');
-            container.innerHTML = '';
-            
-            // חלוקה לפי שורות וניקוי רווחים מכל שורה בנפרד
-            const lines = text.split('\n').map(line => line.trim()).filter(line => line !== "");
-            
-            let pages = [];
-            let currentChunk = [];
-            
-            for (let i = 0; i < lines.length; i++) {
-                currentChunk.push(lines[i]);
-                
-                // יצירת עמוד כל 4 שורות או בסיום הטקסט
-                if (currentChunk.length >= 4 || i === lines.length - 1) {
-                    pages.push(currentChunk.join("\n"));
-                    currentChunk = [];
-                }
-            }
+        // קבוע שתוכל לכוון עדין לפי הצורך
+const MAX_CHARS_PER_LINE = 20;
+const MAX_LINES_PER_PAGE = 3;
 
-            totalCreatedPages = pages.length;
-            
-            pages.forEach((pageText, index) => {
-                const pageDiv = document.createElement('div');
-                pageDiv.classList.add('page-content');
-                if (index === 0) pageDiv.classList.add('active');
-                pageDiv.id = `page-idx-${index}`;
-                pageDiv.setAttribute('data-full-text', pageText.trim());
-                container.appendChild(pageDiv);
-            });
+function paginateTextAndRender(text) {
+    const container = document.getElementById('pagesContainer');
+    container.innerHTML = '';
+    
+    // שלב 1: פירוק הטקסט למילים תוך שמירה על רווחים
+    const words = text.split(/(\s+)/);
+    let lines = [];
+    let currentLine = "";
 
-            const dotsContainer = document.getElementById('pageDots');
-            dotsContainer.innerHTML = '';
-            if (totalCreatedPages > 1) {
-                for (let i = 0; i < totalCreatedPages; i++) {
-                    const dot = document.createElement('div');
-                    dot.classList.add('dot');
-                    if (i === 0) dot.classList.add('active');
-                    dot.id = `dot-idx-${i}`;
-                    dot.setAttribute('onclick', `switchToTargetPage(${i}); event.stopPropagation();`);
-                    dotsContainer.appendChild(dot);
-                }
-            }
+    words.forEach(word => {
+        // טיפול בירידות שורה יזומות בטקסט המקור
+        if (word.includes('\n')) {
+            lines.push(currentLine.trim());
+            currentLine = "";
+            return;
         }
+
+        // בדיקה אם המילה הבאה נכנסת בשורה
+        // אם המילה עצמה ארוכה מהשורה, נכניס אותה בכל זאת כדי לא לחתוך
+        if ((currentLine + word).length > MAX_CHARS_PER_LINE && currentLine.length > 0) {
+            lines.push(currentLine.trim());
+            currentLine = word;
+        } else {
+            currentLine += word;
+        }
+    });
+    if (currentLine.trim()) lines.push(currentLine.trim());
+
+    // שלב 2: קיבוץ שורות לעמודים
+    let pages = [];
+    let currentPageLines = [];
+
+    lines.forEach(line => {
+        if (currentPageLines.length >= MAX_LINES_PER_PAGE) {
+            pages.push(currentPageLines.join('\n'));
+            currentPageLines = [line];
+        } else {
+            currentPageLines.push(line);
+        }
+    });
+    if (currentPageLines.length > 0) pages.push(currentPageLines.join('\n'));
+
+    // שלב 3: רינדור ה-DOM
+    pages.forEach((pageText, index) => {
+        const pageDiv = document.createElement('div');
+        pageDiv.classList.add('page-content');
+        if (index === 0) pageDiv.classList.add('active');
+        pageDiv.id = `page-idx-${index}`;
+        
+        // שימוש ב-innerText בטוח יותר לעיבוד טקסט
+        pageDiv.innerText = pageText;
+        container.appendChild(pageDiv);
+
+        pageDiv.setAttribute('data-full-text', pageText); // תוספת חובה!
+        pageDiv.innerText = "";
+        
+        console.log(`Page #${index + 1} rendered with ${pageText.split('\n').length} lines`);
+    });
+
+    // שלב 4: יצירת הנקודות למטה
+    const dotsContainer = document.getElementById('pageDots');
+    dotsContainer.innerHTML = '';
+    totalCreatedPages = pages.length;
+
+    if (totalCreatedPages > 1) {
+        for (let i = 0; i < totalCreatedPages; i++) {
+            const dot = document.createElement('div');
+            dot.classList.add('dot');
+            if (i === 0) dot.classList.add('active');
+            dot.id = `dot-idx-${i}`;
+            dot.setAttribute('onclick', `switchToTargetPage(${i}); event.stopPropagation();`);
+            dotsContainer.appendChild(dot);
+        }
+    }
+}
 
         function navigatePage(direction) {
             const newPage = currentActivePage - direction;
@@ -886,39 +921,53 @@
             return urlParams.get('id');
         }
 
-        function runTypingEffect() {
-    const activePage = document.querySelector('.page-content.active');
-    if (!activePage) return;
+        let typingTimeoutId = null;
 
-    const rawText = activePage.getAttribute('data-full-text');
-    // ניקוי ירידות שורה וטיפול ברווחים
-    const text = rawText.replace(/\n/g, ' '); 
-    
-    activePage.style.fontFamily = "'DanaYad', sans-serif";
-    
-    // הכנת המבנה בזיכרון
-    let i = 0;
-    let output = "";
-    
-    function type() {
-        if (i < text.length) {
-            // הוספת התו הנוכחי למחרוזת בזיכרון
-            const char = text.charAt(i);
-            output += (char === ' ') ? "&nbsp;" : char;
+        function runTypingEffect() {
+            const activePage = document.querySelector('.page-content.active');
+            if (!activePage) return;
+
+            // 1. עצירת כל אפקט קודם שרץ
+            if (typingTimeoutId) {
+                clearTimeout(typingTimeoutId);
+            }
+
+            const rawText = activePage.getAttribute('data-full-text');
+            if (!rawText) { 
+                console.warn("No text found on active page");
+                return; 
+            }
+            // כאן אנחנו לא מוחקים ירידות שורה! נשאיר אותן כדי שנוכל לזהות אותן
+            const text = rawText; 
             
-            // עדכון ה-DOM רק פעם אחת בכל איטרציה
-            activePage.innerHTML = output;
+            activePage.style.fontFamily = "'DanaYad', sans-serif";
             
-            i++;
-            // השהיה אקראית קלה לאפקט טבעי
-            setTimeout(type, Math.random() * 50 + 80);
+            let i = 0;
+            let output = "";
+            
+            function type() {
+                if (i < text.length) {
+                    const char = text.charAt(i);
+                    
+                    // 2. טיפול בתווי ירידת שורה במקום ברווחים
+                    if (char === '\n') {
+                        output += "<br>";
+                    } else {
+                        output += (char === ' ') ? "&nbsp;" : char;
+                    }
+                    
+                    activePage.innerHTML = output;
+                    
+                    i++;
+                    // השהיה לאפקט כתיבה
+                    typingTimeoutId = setTimeout(type, Math.random() * 50 + 80);
+                }
+            }
+            
+            // איפוס לפני התחלה
+            activePage.innerHTML = "";
+            type();
         }
-    }
-    
-    // איפוס לפני התחלה
-    activePage.innerHTML = "";
-    type();
-}
 
         function launchContextualConfetti(text) {
             const container = document.getElementById('confetti-container');
