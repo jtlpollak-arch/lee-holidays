@@ -5,6 +5,7 @@ import '../../data/models/client_model.dart';
 import '../../data/models/event_model.dart';
 import '../bloc_or_provider/home_cubit.dart';
 import 'dart:convert';
+import 'greeting_templates.dart';
 
 class GreetingCanvas extends StatefulWidget {
   final ClientModel client;
@@ -284,6 +285,55 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
     );
   }
 
+  void _showTemplatesDialog(String eventType) {
+    final categories = eventCategories[eventType] ?? [];
+
+    if (categories.isEmpty) return; // אם אין ברכות לאירוע הזה, לא עושים כלום
+
+    showDialog(
+      context: context,
+      builder: (context) => DefaultTabController(
+        length: categories.length,
+        child: Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Container(
+            height: 400, // גובה נוח לסלולר
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                TabBar(
+                  isScrollable: true,
+                  labelColor: const Color(0xFF1B5565),
+                  indicatorColor: const Color(0xFF1B5565),
+                  tabs: categories.map((c) => Tab(text: c.name)).toList(),
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: TabBarView(
+                    children: categories.map((category) {
+                      return ListView(
+                        children: category.templates.map((template) {
+                          return ListTile(
+                            title: Text(template.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            subtitle: Text(template.content, maxLines: 2, overflow: TextOverflow.ellipsis),
+                            onTap: () {
+                              setState(() => _textController.text = template.content);
+                              Navigator.pop(context);
+                            },
+                          );
+                        }).toList(),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -327,63 +377,77 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                           ),
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildInfoSection()]),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
                       ],
 
-                      // 2. כותרת ותיבת עריכת הטקסט (מוצבת גבוה בשביל נגישות מקלדת)
                       const Text(
                         'תוכן הברכה:',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 0, 0, 0)),
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
                       ),
                       const SizedBox(height: 8),
 
-                      // עטוף את ה-TextFormField שלך בתוך ה-Actions הבא:
-                      TextFormField(
-                        controller: _textController,
-                        minLines: 12,
-                        maxLines: 12,
-                        scrollPadding: const EdgeInsets.all(40),
-                        textDirection: TextDirection.rtl,
-                        keyboardType: TextInputType.multiline,
-                        textInputAction: TextInputAction.newline,
-                        decoration: InputDecoration(
-                          hintText: 'הקלידו את הברכה שלכם כאן...',
-                          fillColor: _lightBgColor,
-                          filled: true,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: _tealColor, width: 1.5),
+                      Stack(
+                        children: [
+                          // 1. תיבת הטקסט
+                          TextFormField(
+                            controller: _textController,
+                            autocorrect: false,
+                            enableSuggestions: false,
+                            enableIMEPersonalizedLearning: false,
+                            smartDashesType: SmartDashesType.disabled,
+                            smartQuotesType: SmartQuotesType.disabled,
+                            minLines: 12,
+                            maxLines: 12,
+                            textDirection: TextDirection.rtl,
+                            keyboardType: TextInputType.multiline,
+                            textInputAction: TextInputAction.newline,
+                            style: const TextStyle(fontSize: 15, height: 1.4, color: Colors.black87),
+                            decoration: InputDecoration(
+                              hintText: 'הקלידי את הברכה כאן...',
+                              fillColor: _lightBgColor,
+                              filled: true,
+                              // *** כאן מוחקים את ה-suffixIcon ***
+                              contentPadding: const EdgeInsets.only(top: 16, bottom: 16, left: 16, right: 48),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: _tealColor, width: 1.5),
+                              ),
+                            ),
                           ),
-                          contentPadding: const EdgeInsets.all(16),
-                        ),
-                        style: const TextStyle(fontSize: 15, height: 1.4, color: Colors.black87),
+
+                          // 2. הכפתור ממוקם ידנית בפינה
+                          Positioned(
+                            top: 8,
+                            right: 8, // ב-RTL, right הוא הפינה העליונה של ההתחלה
+                            child: IconButton(
+                              icon: const Icon(Icons.auto_awesome, color: Color(0xFF1B5565)),
+                              onPressed: () => _showTemplatesDialog(widget.event.eventType),
+                              tooltip: 'מחולל ברכות',
+                            ),
+                          ),
+                        ],
                       ),
 
                       const SizedBox(height: 24),
 
-                      // הוסף את הכפתור הזה ליד הכפתורים הקיימים
-                      SizedBox(
-                        width: 140,
-                        height: 48,
-                        child: OutlinedButton.icon(
-                          onPressed: _openPreview, // כאן אנחנו קוראים לפונקציה שיצרנו
-                          icon: const Icon(Icons.visibility_rounded, color: Color(0xFF1B5565), size: 18),
-                          label: const Text(
-                            'תצוגה מקדימה',
-                            style: TextStyle(fontSize: 14, color: Color(0xFF1B5565), fontWeight: FontWeight.bold),
+                      // במקום SizedBox, השתמש ב-Alignment או ב-Row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center, // מרכז את הכפתור
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: _openPreview,
+                            icon: const Icon(Icons.visibility_rounded, size: 18),
+                            label: const Text('תצוגה מקדימה'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF1B5565), // צבע טקסט ואייקון אוטומטי
+                              side: const BorderSide(color: Color(0xFF1B5565), width: 1.2),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                              padding: const EdgeInsets.symmetric(horizontal: 20), // ריווח נקי
+                              minimumSize: const Size(140, 48), // גודל מינימלי נוח ללחיצה
+                            ),
                           ),
-                          style: OutlinedButton.styleFrom(
-                            // הוספת רקע עדין בצבע ה-Teal שלך (באופסיטי נמוך) כדי לתת לו נפח
-                            backgroundColor: const Color(0xFF1B5565).withOpacity(0.05),
-                            // הדגשת המסגרת בעזרת עובי מעט עבה יותר
-                            side: const BorderSide(color: Color(0xFF1B5565), width: 1.2),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                            // הוספת צל קטן מאוד שנותן לכפתור "להתרומם" מהדף
-                            elevation: 0.5,
-                            shadowColor: const Color.fromARGB(255, 126, 173, 185),
-                          ),
-                        ),
+                        ],
                       ),
                       const SizedBox(height: 24), // הוגדל מעט מ-20 לרווח נקי לפני הכפתורים
                       // 4. אזור לחצני הפעולה - ממוקם בתחתית הרשימה
