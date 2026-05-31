@@ -198,13 +198,11 @@ class DailyEventsList extends StatelessWidget {
                     )
                   : ElevatedButton.icon(
                       onPressed: () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-                          builder: (context) => Padding(
-                            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-                            child: GreetingCanvas(client: e.client, event: e.event, defaultGreetingText: defaultText, logoAssetPath: 'assets/images/logo.png', cubit: cubit, spreadsheetId: spreadsheetId ?? ''),
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => Scaffold(
+                              body: GreetingCanvas(client: e.client, event: e.event, defaultGreetingText: defaultText, logoAssetPath: 'assets/images/logo.png', cubit: cubit, spreadsheetId: spreadsheetId ?? ''),
+                            ),
                           ),
                         );
                       },
