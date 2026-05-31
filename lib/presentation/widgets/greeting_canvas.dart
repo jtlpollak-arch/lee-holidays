@@ -288,7 +288,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
   void _showTemplatesDialog(String eventType) {
     final categories = eventCategories[eventType] ?? [];
 
-    if (categories.isEmpty) return; // אם אין ברכות לאירוע הזה, לא עושים כלום
+    if (categories.isEmpty) return;
 
     showDialog(
       context: context,
@@ -296,19 +296,19 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
         length: categories.length,
         child: Dialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          // משתמשים ב-ConstrainedBox במקום גובה קבוע
           child: ConstrainedBox(
             constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.7),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // צמצום פדינג
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Column(
-                mainAxisSize: MainAxisSize.min, // הדיאלוג יתכווץ לתוכן
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   TabBar(
                     isScrollable: true,
+                    tabAlignment: TabAlignment.start,
                     labelColor: const Color(0xFF1B5565),
                     indicatorColor: const Color(0xFF1B5565),
-                    labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold), // פונט קטן בטאבים
+                    labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                     tabs: categories.map((c) => Tab(text: c.name)).toList(),
                   ),
                   const SizedBox(height: 12),
@@ -320,15 +320,42 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                           itemCount: category.templates.length,
                           itemBuilder: (context, index) {
                             final template = category.templates[index];
-                            return ListTile(
-                              dense: true, // הופך את השורה לקומפקטית יותר
-                              visualDensity: VisualDensity.compact, // מצמצם ריווחים
-                              title: Text(template.title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                              subtitle: Text(template.content, style: const TextStyle(fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
-                              onTap: () {
-                                setState(() => _textController.text = template.content);
-                                Navigator.pop(context);
-                              },
+                            return Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  setState(() => _textController.text = template.content);
+                                  Navigator.pop(context);
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // הכותרת
+                                      Text(
+                                        template.title,
+                                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1B5565)),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      // קו ההדגשה המוזהב
+                                      Container(
+                                        height: 2,
+                                        width: 40,
+                                        decoration: BoxDecoration(color: const Color(0xFF8B7355), borderRadius: BorderRadius.circular(2)),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      // התוכן
+                                      Text(
+                                        template.content,
+                                        style: const TextStyle(fontSize: 12, color: Colors.black87, height: 1.4),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             );
                           },
                         );
@@ -402,13 +429,10 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                           TextFormField(
                             controller: _textController,
                             autocorrect: false,
-                            enableSuggestions: false,
-                            enableIMEPersonalizedLearning: false,
-                            smartDashesType: SmartDashesType.disabled,
-                            smartQuotesType: SmartQuotesType.disabled,
                             minLines: 12,
                             maxLines: 12,
                             textDirection: TextDirection.rtl,
+                            textCapitalization: TextCapitalization.sentences,
                             keyboardType: TextInputType.multiline,
                             textInputAction: TextInputAction.newline,
                             style: const TextStyle(fontSize: 15, height: 1.4, color: Colors.black87),
