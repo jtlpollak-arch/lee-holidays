@@ -6,6 +6,7 @@ import '../../data/models/event_model.dart';
 import '../bloc_or_provider/home_cubit.dart';
 import 'dart:convert';
 import 'greeting_templates.dart';
+import 'emoji_space_fix_formatter.dart';
 
 class GreetingCanvas extends StatefulWidget {
   final ClientModel client;
@@ -428,7 +429,11 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                           // 1. תיבת הטקסט
                           TextFormField(
                             controller: _textController,
+                            enableSuggestions: true,
                             autocorrect: false,
+                            inputFormatters: [
+                              EmojiSpaceFixFormatter(), // הפילטר שיפתור את סימני השאלה
+                            ],
                             minLines: 12,
                             maxLines: 12,
                             textDirection: TextDirection.rtl,
