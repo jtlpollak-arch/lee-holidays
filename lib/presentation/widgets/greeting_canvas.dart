@@ -296,37 +296,47 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
         length: categories.length,
         child: Dialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Container(
-            height: 400, // גובה נוח לסלולר
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                TabBar(
-                  isScrollable: true,
-                  labelColor: const Color(0xFF1B5565),
-                  indicatorColor: const Color(0xFF1B5565),
-                  tabs: categories.map((c) => Tab(text: c.name)).toList(),
-                ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: TabBarView(
-                    children: categories.map((category) {
-                      return ListView(
-                        children: category.templates.map((template) {
-                          return ListTile(
-                            title: Text(template.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Text(template.content, maxLines: 2, overflow: TextOverflow.ellipsis),
-                            onTap: () {
-                              setState(() => _textController.text = template.content);
-                              Navigator.pop(context);
-                            },
-                          );
-                        }).toList(),
-                      );
-                    }).toList(),
+          // משתמשים ב-ConstrainedBox במקום גובה קבוע
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.7),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // צמצום פדינג
+              child: Column(
+                mainAxisSize: MainAxisSize.min, // הדיאלוג יתכווץ לתוכן
+                children: [
+                  TabBar(
+                    isScrollable: true,
+                    labelColor: const Color(0xFF1B5565),
+                    indicatorColor: const Color(0xFF1B5565),
+                    labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold), // פונט קטן בטאבים
+                    tabs: categories.map((c) => Tab(text: c.name)).toList(),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: TabBarView(
+                      children: categories.map((category) {
+                        return ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: category.templates.length,
+                          itemBuilder: (context, index) {
+                            final template = category.templates[index];
+                            return ListTile(
+                              dense: true, // הופך את השורה לקומפקטית יותר
+                              visualDensity: VisualDensity.compact, // מצמצם ריווחים
+                              title: Text(template.title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                              subtitle: Text(template.content, style: const TextStyle(fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
+                              onTap: () {
+                                setState(() => _textController.text = template.content);
+                                Navigator.pop(context);
+                              },
+                            );
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
