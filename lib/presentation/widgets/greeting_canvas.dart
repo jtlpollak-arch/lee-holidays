@@ -287,7 +287,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
   }
 
   void _showTemplatesDialog(String eventType) {
-    final categories = eventCategories[eventType] ?? [];
+    final List<Category> categories = eventCategories[widget.event.eventType] ?? eventCategories['אחר'] ?? [];
 
     if (categories.isEmpty) return;
 
@@ -350,7 +350,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                                       Text(
                                         template.content,
                                         style: const TextStyle(fontSize: 12, color: Colors.black87, height: 1.4),
-                                        maxLines: 2,
+                                        maxLines: 3,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ],
@@ -442,7 +442,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                             textInputAction: TextInputAction.newline,
                             style: const TextStyle(fontSize: 15, height: 1.4, color: Colors.black87),
                             decoration: InputDecoration(
-                              hintText: 'הקלידי את הברכה כאן...',
+                              hintText: 'הקלידי ברכה חופשית או בחרי מחולל ברכות... ✨',
                               fillColor: _lightBgColor,
                               filled: true,
                               // *** כאן מוחקים את ה-suffixIcon ***

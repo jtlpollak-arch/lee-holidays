@@ -54,7 +54,7 @@ class DailyEventsList extends StatelessWidget {
         final e = sortedEvents[index];
 
         // תיקון כפילות הפתיח: מתחילים ישירות מגוף האיחול
-        final String defaultText = 'רציתי לאחל לך המון מזל טוב לרגל ${e.event.eventType}! ✨';
+        final String defaultText = '';
 
         final isBirthday = e.event.eventType.trim() == 'יום הולדת';
         final Color eventColor = isBirthday ? const Color(0xFF8B1E3F) : const Color(0xFFC5A880);
