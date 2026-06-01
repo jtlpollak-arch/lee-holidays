@@ -106,28 +106,68 @@ class _ClientEventsViewState extends State<ClientEventsView> {
                       alignment: Alignment.centerRight, // יישור לצד ימין
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 350), // הגבלת רוחב ל-300 פיקסלים
-                        child: DropdownButtonFormField<ClientModel>(
-                          isExpanded: true, // משאירים את זה רק כדי שהטקסט יסתדר בתוך ה-300 פיקסלים
-                          menuMaxHeight: 300, // הגבלת גובה הפתיחה
-                          decoration: InputDecoration(
-                            labelText: 'בחרי לקוח',
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                            filled: true,
-                            fillColor: Colors.white,
-                          ),
-                          value: _selectedClient,
-                          items: _allClients
-                              .map(
-                                (c) => DropdownMenuItem(
-                                  value: c,
-                                  child: Text(c.fullName, textAlign: TextAlign.right),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (val) {
-                            setState(() => _selectedClient = val);
+                        child: Autocomplete<ClientModel>(
+                          displayStringForOption: (ClientModel option) => option.fullName,
+                          // לוגיקת הסינון: מה מציגים ברגע שהמשתמש מקליד
+                          optionsBuilder: (TextEditingValue textEditingValue) {
+                            // אם התיבה ריקה - תציג את כל הלקוחות
+                            if (textEditingValue.text.isEmpty) {
+                              return _allClients;
+                            }
+                            // אם יש טקסט - תסנן את הרשימה
+                            return _allClients.where((ClientModel client) {
+                              return client.fullName.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                            });
+                          },
+
+                          // מה קורה כשבוחרים לקוח מהרשימה
+                          onSelected: (ClientModel selection) {
+                            setState(() {
+                              _selectedClient = selection;
+                            });
                             _loadEventsForSelectedClient();
+                          },
+
+                          // איך שדה הטקסט נראה (שמירה על העיצוב שלך)
+                          fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                            return TextFormField(
+                              controller: controller,
+                              focusNode: focusNode,
+                              decoration: InputDecoration(
+                                labelText: 'חיפוש לקוח...',
+                                prefixIcon: const Icon(Icons.search_rounded),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                                filled: true,
+                                fillColor: Colors.white,
+                              ),
+                            );
+                          },
+
+                          // איך כל תוצאה ברשימה נראית
+                          optionsViewBuilder: (context, onSelected, options) {
+                            return Align(
+                              alignment: Alignment.topRight,
+                              child: Material(
+                                elevation: 4,
+                                borderRadius: BorderRadius.circular(16),
+                                child: SizedBox(
+                                  width: MediaQuery.of(context).size.width - 32, // התאמה לרוחב המסך
+                                  child: ListView.builder(
+                                    padding: EdgeInsets.zero,
+                                    shrinkWrap: true,
+                                    itemCount: options.length,
+                                    itemBuilder: (context, index) {
+                                      final client = options.elementAt(index);
+                                      return ListTile(
+                                        title: Text(client.fullName, textAlign: TextAlign.right),
+                                        onTap: () => onSelected(client),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
                           },
                         ),
                       ),

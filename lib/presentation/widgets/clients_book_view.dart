@@ -120,7 +120,7 @@ class ClientsBookViewState extends State<ClientsBookView> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'חפש לקוח לפי שם או מספר טלפון...',
+                hintText: 'חפשי לקוח לפי שם או מספר טלפון...',
                 prefixIcon: const Icon(Icons.search, color: Color(0xFF1B5565)),
                 filled: true,
                 fillColor: Colors.white,

@@ -442,7 +442,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                             textInputAction: TextInputAction.newline,
                             style: const TextStyle(fontSize: 15, height: 1.4, color: Colors.black87),
                             decoration: InputDecoration(
-                              hintText: 'הקלידי ברכה חופשית או בחרי מחולל ברכות... ✨',
+                              hintText: 'הקלידי ברכה אישית, או בחרי מהמאגר ✨',
                               fillColor: _lightBgColor,
                               filled: true,
                               // *** כאן מוחקים את ה-suffixIcon ***
