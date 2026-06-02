@@ -187,8 +187,8 @@
             position: absolute;
             bottom: 50px;
             left: 60px;
-            width: 60px;
-            height: 60px;
+            width: 30px;
+            height: 30px;
             z-index: 4;
             
             opacity: 0;
@@ -766,19 +766,18 @@
 }
 
 .signature-wrapper {
-    display: inline-block; /* הופך אותה ל"מילה" בסוף הפסקה */
-    margin-right: 15px;
-    margin-top: 10px;
+    display: block; /* במקום inline-block */
+    width: 100px;
+    text-align: left; /* או center, תלוי איפה אתה רוצה שהיא תהיה */
     opacity: 0;
     transition: opacity 2s ease;
-    vertical-align: middle;
 }
 
 /* 3. הגדרת החתימה בתוך השרשור */
 .signature-wrapper .lee-signature {
     position: static; /* מבטל את ה-absolute הקודם */
-    width: 60px;
-    height: 60px;
+    width: 45px;
+    height: 45px;
     opacity: 1 !important; /* האטימות נשלטת ע"י ה-wrapper */
     fill: #856526 !important;
 }
@@ -1039,8 +1038,12 @@ function paginateTextAndRender(text) {
         if (index === pages.length - 1) {
             const signatureDiv = document.createElement('div');
             signatureDiv.className = 'signature-wrapper';
-            signatureDiv.innerHTML = document.querySelector('.lee-signature').outerHTML;
-            pageDiv.appendChild(signatureDiv);
+            // שימוש ב-cloneNode כדי להעתיק את ה-SVG עם כל המאפיינים שלו
+            const sigSvg = document.querySelector('.lee-signature').cloneNode(true);
+            signatureDiv.appendChild(sigSvg);
+            
+            // הוספת החתימה ישירות ל-pageDiv כבלוק נפרד מהטקסט
+            pageDiv.appendChild(signatureDiv); 
         }
 
         pageDiv.setAttribute('data-full-text', pageText);
