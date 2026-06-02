@@ -298,7 +298,7 @@
         .pages-container {
             position: relative;
             width: 82%;
-            height: auto;
+            height: 100%;
             overflow: hidden;
             z-index: 3;
             pointer-events: auto;
@@ -765,6 +765,28 @@
     transform: rotate(0.5deg); 
 }
 
+.signature-wrapper {
+    display: inline-block; /* הופך אותה ל"מילה" בסוף הפסקה */
+    margin-right: 15px;
+    margin-top: 10px;
+    opacity: 0;
+    transition: opacity 2s ease;
+    vertical-align: middle;
+}
+
+/* 3. הגדרת החתימה בתוך השרשור */
+.signature-wrapper .lee-signature {
+    position: static; /* מבטל את ה-absolute הקודם */
+    width: 60px;
+    height: 60px;
+    opacity: 1 !important; /* האטימות נשלטת ע"י ה-wrapper */
+    fill: #856526 !important;
+}
+
+.signature-wrapper.show-signature {
+    opacity: 0.8;
+}
+
     </style>
 
     <svg style="position: absolute; width: 0; height: 0;">
@@ -1009,13 +1031,20 @@ function paginateTextAndRender(text) {
         if (index === 0) pageDiv.classList.add('active');
         pageDiv.id = `page-idx-${index}`;
         
-        pageDiv.innerText = pageText;
-        container.appendChild(pageDiv);
+        // קונטיינר לטקסט בלבד
+        const textContainer = document.createElement('div');
+        textContainer.className = 'text-container';
+        pageDiv.appendChild(textContainer);
+        
+        if (index === pages.length - 1) {
+            const signatureDiv = document.createElement('div');
+            signatureDiv.className = 'signature-wrapper';
+            signatureDiv.innerHTML = document.querySelector('.lee-signature').outerHTML;
+            pageDiv.appendChild(signatureDiv);
+        }
 
         pageDiv.setAttribute('data-full-text', pageText);
-        pageDiv.innerText = "";
-        
-        console.log(`Page #${index + 1} rendered with ${pageText.split('\n').length} lines`);
+        container.appendChild(pageDiv);
     });
 
     // 6. יצירת הנקודות למטה
@@ -1106,80 +1135,67 @@ function paginateTextAndRender(text) {
         }
 
         function runTypingEffect() {
-            const activePage = document.querySelector('.page-content.active');
-            if (!activePage) return;
+    const activePage = document.querySelector('.page-content.active');
+    if (!activePage) return;
+    
+    // מוצאים את הקונטיינר הספציפי לטקסט
+        const textContainer = activePage.querySelector('.text-container');
+        if (typingTimeoutId) clearTimeout(typingTimeoutId);
 
-            if (typingTimeoutId) clearTimeout(typingTimeoutId);
+        const rawText = activePage.getAttribute('data-full-text');
+        if (!rawText) return;
 
-            // נמשוך את הטקסט וננקה ממנו את תווי הסימון לצורך החישובים
-            const rawText = activePage.getAttribute('data-full-text');
-            if (!rawText) return;
+        const pipeIndex = rawText.indexOf('|');
+        const text = rawText.replace('|', '');
+        
+        let i = 0;
+        let output = "";
+        let isInsideEmphasis = false;
 
-            const pipeIndex = rawText.indexOf('|');
-            // ננקה את ה-pipe מהטקסט שיוצג, אבל נשמור את המיקום
-            const text = rawText.replace('|', '');
-            
-            let i = 0;
-            let output = "";
-            let isInsideEmphasis = false; // משתנה למעקב אחרי מילים מודגשות (*...*)
-
-            function type() {
-                if (i < text.length) {
-                    const char = text.charAt(i);
-                    
-                    // 1. טיפול במילות הדגשה (*)
-                    if (char === '*') {
-                        isInsideEmphasis = !isInsideEmphasis;
-                        output += isInsideEmphasis ? '<span class="emphasized-word">' : '</span>';
-                        i++;
-                        type();
-                        return;
-                    }
-
-                    // 2. טיפול בתווים רגילים
-                    let charToAppend = (char === '\n') ? "<br>" : ((char === ' ') ? "&nbsp;" : char);
-
-                    // לוגיקת עיצוב השם (החלק שלפני ה-|)
-                    if (i < pipeIndex) {
-                        if (i === 0) output += '<span class="client-name">';
-                        output += charToAppend;
-                        if (i === pipeIndex - 1) output += '</span>';
-                    } else {
-                        output += charToAppend;
-                    }
-                    
-                    // 3. עדכון ה-DOM עם ה-Caret בסוף
-                    activePage.innerHTML = output + '<span class="caret"></span>';
-                    
+        function type() {
+            if (i < text.length) {
+                const char = text.charAt(i);
+                if (char === '*') {
+                    isInsideEmphasis = !isInsideEmphasis;
+                    output += isInsideEmphasis ? '<span class="emphasized-word">' : '</span>';
                     i++;
-                    typingTimeoutId = setTimeout(type, Math.random() * 50 + 70);
+                    type();
+                    return;
+                }
+
+                let charToAppend = (char === '\n') ? "<br>" : ((char === ' ') ? "&nbsp;" : char);
+
+                if (i < pipeIndex) {
+                    if (i === 0) output += '<span class="client-name">';
+                    output += charToAppend;
+                    if (i === pipeIndex - 1) output += '</span>';
                 } else {
-                    // בסיום - העלמת הסמן אחרי השהיה
-                    setTimeout(() => {
-                        const caret = activePage.querySelector('.caret');
-                        if (caret) caret.style.display = 'none';
-                    }, 2000);
+                    output += charToAppend;
+                }
+                
+                // כותבים רק לקונטיינר של הטקסט
+                textContainer.innerHTML = output + '<span class="caret"></span>';
+                i++;
+                typingTimeoutId = setTimeout(type, Math.random() * 50 + 70);
+            } else {
+                // סיום - העלמת סמן
+                const caret = textContainer.querySelector('.caret');
+                if (caret) caret.style.display = 'none';
 
-                    // במקום התנאי עם המשתנים שלא מוגדרים:
-                    const hasNextPage = activePage.nextElementSibling !== null;
-                    console.log("Next page exists:", hasNextPage);
-
-                    if (hasNextPage) {
-                        // אם יש דף הבא - הפעל אוטומציה
-                        autoNavigateTimeout = setTimeout(() => {
-                            navigatePage(-1);
-                        }, 1000);
-                    } else {
-                        // אנחנו בעמוד האחרון - רק עכשיו מציגים את החתימה
-                        const signature = document.querySelector('.lee-signature');
-                        if (signature) signature.classList.add('show-signature');
-                    }
+                const hasNextPage = activePage.nextElementSibling !== null;
+                if (hasNextPage) {
+                    autoNavigateTimeout = setTimeout(() => { navigatePage(-1); }, 1000);
+                } else {
+                    // הצגת החתימה שנמצאת מחוץ לקונטיינר הטקסט
+                    const signatureWrapper = activePage.querySelector('.signature-wrapper');
+                    if (signatureWrapper) signatureWrapper.classList.add('show-signature');
                 }
             }
-            
-            activePage.innerHTML = '<span class="caret"></span>';
-            type();
         }
+        
+        textContainer.innerHTML = '<span class="caret"></span>';
+        type();
+    }
 
         function launchContextualConfetti(text) {
             const container = document.getElementById('confetti-container');
