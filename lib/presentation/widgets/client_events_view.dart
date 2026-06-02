@@ -26,6 +26,7 @@ class _ClientEventsViewState extends State<ClientEventsView> {
   List<EventModel> _clientEvents = [];
   bool _isLoadingClients = true;
   bool _isLoadingEvents = false;
+  Map<String, int> _clientEventCounts = {};
 
   @override
   void initState() {
@@ -36,6 +37,10 @@ class _ClientEventsViewState extends State<ClientEventsView> {
   Future<void> _loadInitialClients() async {
     setState(() => _isLoadingClients = true);
     final clients = await widget.clientRepository.getAllClients(widget.spreadsheetId);
+
+    final allEvents = await widget.eventRepository.getAllEvents(widget.spreadsheetId);
+    _updateEventCounts(allEvents);
+
     setState(() {
       _allClients = clients.where((c) => c.status == 'פעיל').toList();
       _isLoadingClients = false;
@@ -50,6 +55,8 @@ class _ClientEventsViewState extends State<ClientEventsView> {
       _clientEvents = allEvents.where((e) => e.clientId == _selectedClient!.id && e.status != 'מחוק').toList();
       _isLoadingEvents = false;
     });
+
+    _updateEventCounts(allEvents);
   }
 
   String _getEventEmoji(String type) {
@@ -156,15 +163,50 @@ class _ClientEventsViewState extends State<ClientEventsView> {
                                 elevation: 4,
                                 borderRadius: BorderRadius.circular(16),
                                 child: SizedBox(
-                                  width: MediaQuery.of(context).size.width - 32, // התאמה לרוחב המסך
+                                  width: MediaQuery.of(context).size.width - 32,
                                   child: ListView.builder(
                                     padding: EdgeInsets.zero,
                                     shrinkWrap: true,
                                     itemCount: options.length,
                                     itemBuilder: (context, index) {
                                       final client = options.elementAt(index);
+                                      // שליפת מספר האירועים מהמיפוי שלנו
+                                      final eventCount = _clientEventCounts[client.id] ?? 0;
+
                                       return ListTile(
-                                        title: Text(client.fullName, textAlign: TextAlign.right),
+                                        title: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            // 1. השם - עם הגנה מפני התנגשות
+                                            Expanded(
+                                              flex: 1,
+                                              child: Text(
+                                                client.fullName,
+                                                textAlign: TextAlign.right,
+                                                overflow: TextOverflow.ellipsis, // אם השם ארוך מדי -> יסתיים ב-...
+                                                style: const TextStyle(fontWeight: FontWeight.w500),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12), // מרווח קבוע שנותן "אוויר"
+                                            // 2. הבאדג' - עם מגבלות גודל למראה יציב
+                                            Container(
+                                              constraints: const BoxConstraints(minWidth: 65), // רוחב מינימלי קבוע מונע קפיצות
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              decoration: BoxDecoration(color: eventCount > 0 ? const Color(0xFFE8F0F2) : Colors.grey[100], borderRadius: BorderRadius.circular(12)),
+                                              child: Center(
+                                                // מוודא שהמספר תמיד מיושר לאמצע הבאדג'
+                                                child: Text(
+                                                  '$eventCount אירועים',
+                                                  style: TextStyle(
+                                                    fontSize: 11, // טיפה קטן יותר למראה עדין ויוקרתי
+                                                    fontWeight: FontWeight.w700,
+                                                    color: eventCount > 0 ? const Color(0xFF1B5565) : Colors.grey,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                         onTap: () => onSelected(client),
                                       );
                                     },
@@ -247,5 +289,17 @@ class _ClientEventsViewState extends State<ClientEventsView> {
               ),
       ),
     );
+  }
+
+  void _updateEventCounts(List<EventModel> allEvents) {
+    final Map<String, int> counts = {};
+    for (var event in allEvents) {
+      if (event.status != 'מחוק') {
+        counts[event.clientId] = (counts[event.clientId] ?? 0) + 1;
+      }
+    }
+    setState(() {
+      _clientEventCounts = counts;
+    });
   }
 }
