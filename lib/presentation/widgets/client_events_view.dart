@@ -90,6 +90,7 @@ class _ClientEventsViewState extends State<ClientEventsView> {
                     onSubmit: (newEvent) async {
                       await widget.eventRepository.addNewEvent(widget.spreadsheetId, newEvent, _selectedClient!.fullName);
                       await _loadEventsForSelectedClient();
+                      if (mounted) FocusScope.of(context).unfocus();
                     },
                   ),
                 ),
@@ -126,6 +127,9 @@ class _ClientEventsViewState extends State<ClientEventsView> {
                               _selectedClient = selection;
                             });
                             _loadEventsForSelectedClient();
+
+                            // השורה הזו מחליפה הכל - היא פשוט אומרת לאפליקציה: "תוציאי את הפוקוס מכל שדה שפעיל כרגע"
+                            FocusManager.instance.primaryFocus?.unfocus();
                           },
 
                           // איך שדה הטקסט נראה (שמירה על העיצוב שלך)
@@ -206,7 +210,10 @@ class _ClientEventsViewState extends State<ClientEventsView> {
                                         onSubmit: (updated) async {
                                           await widget.eventRepository.updateEvent(widget.spreadsheetId, updated);
                                           await _loadEventsForSelectedClient();
-                                          if (mounted) Navigator.pop(context);
+                                          if (mounted) {
+                                            Navigator.pop(context);
+                                            FocusScope.of(context).unfocus();
+                                          }
                                         },
                                       ),
                                     ),
@@ -221,6 +228,8 @@ class _ClientEventsViewState extends State<ClientEventsView> {
                                         onDeleteConfirmed: () async {
                                           await widget.eventRepository.deleteEventSoft(widget.spreadsheetId, event);
                                           await _loadEventsForSelectedClient();
+
+                                          if (mounted) FocusScope.of(context).unfocus();
                                         },
                                       ),
                                     ),

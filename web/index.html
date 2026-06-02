@@ -157,6 +157,7 @@
             z-index: 4;
             
             opacity: 0;
+            pointer-events: none;
         }
         
         .lee-signature.show-signature {
@@ -255,7 +256,10 @@
             height: 125px;
             overflow: hidden;
             z-index: 3;
-            pointer-events: none;
+            pointer-events: auto;
+
+            -webkit-mask-image: linear-gradient(to left, transparent 0%, black 15%, black 85%, transparent 100%);
+            mask-image: linear-gradient(to left, transparent 0%, black 15%, black 85%, transparent 100%);
         }
 
         .page-content {
@@ -672,7 +676,11 @@
         }
 
 
-
+@media (max-width: 350px) {
+    .page-content {
+        font-size: 17px !important;
+    }
+}
 
 
 /* סמן הכתיבה (Caret) */
@@ -857,6 +865,26 @@
             root.style.setProperty('--envelope-paper', '#112830');
             backdrop.style.backgroundImage = 'none';
         }
+
+function setupClickNavigation() {
+    const container = document.getElementById('pagesContainer');
+    
+    if (!container) return;
+
+    container.addEventListener('click', function(event) {
+        const screenWidth = window.innerWidth;
+        const clickX = event.clientX;
+        const halfWidth = screenWidth / 2;
+
+        // חצי ימני -> דף קודם (-1)
+        // חצי שמאלי -> דף הבא (1)
+        if (clickX > halfWidth) {
+            navigatePage(1); 
+        } else {
+            navigatePage(-1);
+        }
+    });
+}
 
 function getVisualLength(str) {
     // Array.from מפרק את המחרוזת לפי "תווי Unicode" ולא לפי "יחידות זיכרון"
@@ -1173,6 +1201,7 @@ function paginateTextAndRender(text) {
             document.getElementById('clientName').innerText = ""; 
             paginateTextAndRender(rawGreetingTextGlobal);
             applyDynamicTheme(messageContent);
+            setupClickNavigation();
         }
 
         window.addEventListener('DOMContentLoaded', loadGreetingCard);
