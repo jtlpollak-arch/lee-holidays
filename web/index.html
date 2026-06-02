@@ -71,14 +71,29 @@
             width: 90%;
             max-width: 380px;
             height: 300px;
-            background: var(--card-bg);
-            background-image: url('https://www.transparenttextures.com/patterns/handmade-paper.png');
+            
+            /* הנה התיקון: נשתמש ב-opacity נמוך לטקסטורה ונסדר את השכבות */
+            background-color: var(--card-bg);
+            background-image: 
+                url('https://www.transparenttextures.com/patterns/stardust.png'), 
+                url('https://www.transparenttextures.com/patterns/handmade-paper.png');
+            
+            /* הוספנו opacity דרך ה-filter או פשוט להשאיר אותן עדינות */
+            background-blend-mode: multiply; /* גורם לנקודות "להיטמע" בנייר */
+
             border-radius: 2px;
             padding: 25px 20px;
             z-index: 2;
             transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08), 
-                        0 20px 40px rgba(0, 0, 0, 0.15);
+            
+            /* ה-box-shadow הנכון שמשלב הכל בשורה אחת */
+            box-shadow: 
+                inset 0 0 40px rgba(0,0,0,0.03), 
+                0 4px 10px rgba(0, 0, 0, 0.08), 
+                0 20px 40px rgba(0, 0, 0, 0.15);
+                
+            border: 1px solid rgba(197, 168, 128, 0.2);
+            
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -89,9 +104,16 @@
             touch-action: pan-y;
         }
 
+        @keyframes gentle-drift {
+            0%, 100% { transform: translateX(-50%) rotate(0.5deg); }
+            50% { transform: translateX(-50%) rotate(-0.2deg); }
+        }
+
         .card.open {
             box-shadow: 0 30px 60px rgba(0,0,0,0.3) !important;
-            animation: elasticFlyOut 1.0s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            animation: 
+                elasticFlyOut 1.0s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+                gentle-drift 6s 1.0s infinite ease-in-out;
         }
 
         /* מסגרת זהב כפולה ודקיקה בתוך הנייר */
@@ -148,6 +170,19 @@
             transform: rotate(15deg);
         }
 
+        @keyframes gold-materialize {
+            0% { 
+                opacity: 0; 
+                filter: drop-shadow(0 0 0px #bf953f) brightness(0.5); 
+                transform: scale(0.9);
+            }
+            100% { 
+                opacity: 0.8; 
+                filter: drop-shadow(0 0 10px #bf953f) brightness(1.2); 
+                transform: scale(1);
+            }
+        }
+
         .lee-signature{
             position: absolute;
             bottom: 50px;
@@ -162,8 +197,9 @@
         
         .lee-signature.show-signature {
             opacity: 0.8; /* הערך שרצית */
-            fill: #856526 !important; 
             filter: drop-shadow(0 0 5px rgba(133, 101, 38, 0.3));
+            animation: gold-materialize 2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            fill: #856526 !important;
         }
 
         .wooden-docks{
@@ -207,6 +243,15 @@
             -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
         }
 
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 50%);
+            pointer-events: none;
+            mix-blend-mode: overlay;
+        }
+
         .card::after {
             content: '';
             position: absolute;
@@ -233,12 +278,12 @@
             z-index: 3;
             width: 100%;
 
-            opacity: 0.5; 
-            filter: drop-shadow(0px 0px 0px transparent); 
-            mix-blend-mode: multiply; /* עוזר לאלמנט "להיבלע" בטקסטורת הנייר */
-            pointer-events: none; /* שלא יפריע ללחיצות */
+            /* שינויים: */
+            opacity: 0.7; /* העלינו מעט את האטימות כדי שיהיה נוכח אבל עדין */
+            filter: grayscale(20%) opacity(0.8); /* נותן מראה של דפוס ישן ולא "שחור דיגיטלי" */
+            mix-blend-mode: multiply; 
+            pointer-events: none; 
             transition: opacity 0.5s ease;
-
         }
 
         /* כאן אנחנו קובעים את הגודל ל-SVG שנמצא בתוך ה-Wrapper */
@@ -257,6 +302,7 @@
             overflow: hidden;
             z-index: 3;
             pointer-events: auto;
+            background-color: rgba(252, 250, 244, 0.4);
 
             -webkit-mask-image: linear-gradient(to left, transparent 0%, black 15%, black 85%, transparent 100%);
             mask-image: linear-gradient(to left, transparent 0%, black 15%, black 85%, transparent 100%);
@@ -872,6 +918,9 @@ function setupClickNavigation() {
     if (!container) return;
 
     container.addEventListener('click', function(event) {
+
+        clearAutoNavigation();
+
         const screenWidth = window.innerWidth;
         const clickX = event.clientX;
         const halfWidth = screenWidth / 2;
@@ -994,6 +1043,9 @@ function paginateTextAndRender(text) {
         }
 
         function switchToTargetPage(pageIndex) {
+
+            clearAutoNavigation();
+
             if (pageIndex >= 0 && pageIndex < totalCreatedPages) {
                 document.getElementById(`page-idx-${currentActivePage}`).classList.remove('active');
                 const prevDot = document.getElementById(`dot-idx-${currentActivePage}`);
@@ -1020,6 +1072,9 @@ function paginateTextAndRender(text) {
         }
 
         function handleSwipeGestureLogic() {
+
+            clearAutoNavigation();
+
             const minimumSwipeDistancePixels = 45;
             const swipeDistance = touchEndXCoordinate - touchStartXCoordinate;
             
@@ -1041,6 +1096,14 @@ function paginateTextAndRender(text) {
         }
 
         let typingTimeoutId = null;
+        let autoNavigateTimeout = null;
+
+        function clearAutoNavigation() {
+            if (autoNavigateTimeout) {
+                clearTimeout(autoNavigateTimeout);
+                autoNavigateTimeout = null;
+            }
+        }
 
         function runTypingEffect() {
             const activePage = document.querySelector('.page-content.active');
@@ -1099,13 +1162,17 @@ function paginateTextAndRender(text) {
 
                     // במקום התנאי עם המשתנים שלא מוגדרים:
                     const hasNextPage = activePage.nextElementSibling !== null;
+                    console.log("Next page exists:", hasNextPage);
 
-                    if (!hasNextPage) {
-                        // אנחנו בעמוד האחרון - מחפשים את החתימה
+                    if (hasNextPage) {
+                        // אם יש דף הבא - הפעל אוטומציה
+                        autoNavigateTimeout = setTimeout(() => {
+                            navigatePage(-1);
+                        }, 1000);
+                    } else {
+                        // אנחנו בעמוד האחרון - רק עכשיו מציגים את החתימה
                         const signature = document.querySelector('.lee-signature');
-                        if (signature) {
-                            signature.classList.add('show-signature');
-                        }
+                        if (signature) signature.classList.add('show-signature');
                     }
                 }
             }
