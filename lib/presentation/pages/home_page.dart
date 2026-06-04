@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:holidays/presentation/widgets/client_events_view.dart';
 import 'package:holidays/presentation/widgets/daily_events_list.dart';
+import 'package:holidays/presentation/widgets/free_greeting_tab.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/spreadsheet_manager.dart';
@@ -152,7 +153,7 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       body: _buildBody(),
-      floatingActionButton: _selectedIndex == 1 && _spreadsheetId != null
+      floatingActionButton: _selectedIndex == 2 && _spreadsheetId != null
           ? FloatingActionButton(
               onPressed: _showAddClientBottomSheet,
               backgroundColor: const Color(0xFF1B5565),
@@ -181,6 +182,7 @@ class _HomePageState extends State<HomePage> {
           showUnselectedLabels: true,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.auto_awesome_outlined), activeIcon: Icon(Icons.auto_awesome), label: 'משימות להיום'),
+            BottomNavigationBarItem(icon: Icon(Icons.edit_note), activeIcon: Icon(Icons.edit_note), label: 'שליחה חופשית'),
             BottomNavigationBarItem(icon: Icon(Icons.contact_phone_outlined), activeIcon: Icon(Icons.contact_phone), label: 'לקוחות'),
             BottomNavigationBarItem(icon: Icon(Icons.calendar_month_outlined), activeIcon: Icon(Icons.calendar_month), label: 'אירועים'),
           ],
@@ -253,6 +255,12 @@ class _HomePageState extends State<HomePage> {
       case 0:
         return _buildDailyTasksTab();
       case 1:
+        return FreeGreetingTab(
+          cubit: widget.cubit,
+          spreadsheetId: "",
+          logoAssetPath: 'assets/logo.png', // נתיב הלוגו שלך
+        );
+      case 2:
         return ClientsBookView(
           key: _clientsBookKey,
           spreadsheetId: _spreadsheetId!,
@@ -261,7 +269,7 @@ class _HomePageState extends State<HomePage> {
           googleCalendarApi: widget.googleCalendarApi,
           onRefreshRequired: () => widget.cubit.loadDailyOverview(spreadsheetId: _spreadsheetId!), // <--- התיקון המדויק ללא ניחושים
         );
-      case 2:
+      case 3:
         return ClientEventsView(spreadsheetId: _spreadsheetId!, clientRepository: widget.clientRepository, eventRepository: widget.eventRepository, homeCubit: widget.cubit);
       default:
         return _buildDailyTasksTab();

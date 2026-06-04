@@ -89,4 +89,8 @@ class EventModel {
   EventModel copyWith({String? id, String? clientId, DateTime? date, String? eventType, String? address, String? notes, String? status, String? sentTimestamp, String? calendarEventId}) {
     return EventModel(id: id ?? this.id, clientId: clientId ?? this.clientId, date: date ?? this.date, eventType: eventType ?? this.eventType, address: address ?? this.address, notes: notes ?? this.notes, status: status ?? this.status, sentTimestamp: sentTimestamp ?? this.sentTimestamp, calendarEventId: calendarEventId ?? this.calendarEventId);
   }
+
+  factory EventModel.mock(String clientId, String type) {
+    return EventModel(id: 'mock_${DateTime.now().millisecondsSinceEpoch}', clientId: clientId, date: DateTime.now(), eventType: type, address: '', notes: '', status: 'mock');
+  }
 }

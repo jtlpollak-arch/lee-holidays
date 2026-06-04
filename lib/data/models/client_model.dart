@@ -1,3 +1,5 @@
+enum ContactType { phone, email }
+
 class ClientModel {
   final String id; // המפתח הראשי הקבוע והחדש של הלקוח - טור A בגוגל שיטס
   final String fullName;
@@ -67,5 +69,10 @@ class ClientModel {
   /// יצירת עותק מעודכן של הלקוח (שימושי לצורכי השוואה או עדכונים מקומיים)
   ClientModel copyWith({String? id, String? fullName, String? firstName, String? phone, String? email, String? status, String? notes}) {
     return ClientModel(id: id ?? this.id, fullName: fullName ?? this.fullName, firstName: firstName ?? this.firstName, phone: phone ?? this.phone, email: email ?? this.email, status: status ?? this.status, notes: notes ?? this.notes);
+  }
+
+  // בתוך מחלקת ClientModel
+  factory ClientModel.mock(String name, String contactValue, ContactType type) {
+    return ClientModel(id: 'mock_${DateTime.now().millisecondsSinceEpoch}', fullName: 'לקוח פיקטיבי', firstName: name, phone: type == ContactType.phone ? contactValue : '', email: type == ContactType.email ? contactValue : '', status: 'mock');
   }
 }

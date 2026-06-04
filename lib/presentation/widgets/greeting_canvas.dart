@@ -16,8 +16,9 @@ class GreetingCanvas extends StatefulWidget {
 
   final HomeCubit cubit;
   final String spreadsheetId;
+  final bool isMock;
 
-  const GreetingCanvas({super.key, required this.client, required this.event, required this.logoAssetPath, required this.defaultGreetingText, required this.cubit, required this.spreadsheetId});
+  const GreetingCanvas({super.key, required this.client, required this.event, required this.logoAssetPath, required this.defaultGreetingText, required this.cubit, required this.spreadsheetId, this.isMock = false});
 
   @override
   State<GreetingCanvas> createState() => _GreetingCanvasState();
@@ -121,7 +122,9 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
       }
 
       if (mounted) {
-        widget.cubit.markEventAsSent(spreadsheetId: widget.spreadsheetId, event: widget.event);
+        if (!widget.isMock) {
+          widget.cubit.markEventAsSent(spreadsheetId: widget.spreadsheetId, event: widget.event);
+        }
         Navigator.of(context).pop();
       }
     } catch (e) {
@@ -374,6 +377,53 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
 
   @override
   Widget build(BuildContext context) {
+    List<Widget> actionButtons = [];
+    if (widget.client.phone.isNotEmpty) {
+      actionButtons.add(
+        SizedBox(
+          width: 140,
+          height: 48,
+          child: ElevatedButton.icon(
+            onPressed: _isProcessing ? null : () => _processAndSend(channelType: 'whatsapp'),
+            icon: const Icon(Icons.message, color: Colors.white, size: 18),
+            label: const Text(
+              'שלחי ב-WA',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _tealColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (widget.client.phone.isNotEmpty && widget.client.email.isNotEmpty) {
+      actionButtons.add(const SizedBox(width: 16));
+    }
+
+    if (widget.client.email.isNotEmpty) {
+      actionButtons.add(
+        SizedBox(
+          width: 140,
+          height: 48,
+          child: ElevatedButton.icon(
+            onPressed: _isProcessing ? null : () => _processAndSend(channelType: 'email'),
+            icon: const Icon(Icons.mail_outline_rounded, color: Colors.white, size: 18),
+            label: const Text(
+              'שלחי במייל',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _tealColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Container(
@@ -490,48 +540,10 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                       ),
                       const SizedBox(height: 24), // הוגדל מעט מ-20 לרווח נקי לפני הכפתורים
                       // 4. אזור לחצני הפעולה - ממוקם בתחתית הרשימה
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: 140,
-                              height: 48,
-                              child: ElevatedButton.icon(
-                                onPressed: _isProcessing ? null : () => _processAndSend(channelType: 'whatsapp'),
-                                icon: const Icon(Icons.share_rounded, color: Colors.white, size: 18),
-                                label: const Text(
-                                  'שלחי ב-WA',
-                                  style: TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF25D366),
-                                  elevation: 1,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            SizedBox(
-                              width: 140,
-                              height: 48,
-                              child: ElevatedButton.icon(
-                                onPressed: _isProcessing ? null : () => _processAndSend(channelType: 'email'),
-                                icon: const Icon(Icons.mail_outline_rounded, color: Colors.white, size: 18),
-                                label: const Text(
-                                  'שלחי במייל',
-                                  style: TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: _tealColor,
-                                  elevation: 1,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                      // לפני ה-return של ה-build או בתוכו, הגדר את הרשימה:
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: actionButtons, // זה הכל! הוא יציג רק מה שצריך.
                       ),
                     ],
                   ),
