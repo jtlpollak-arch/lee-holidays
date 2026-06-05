@@ -46,7 +46,7 @@ class _FreeGreetingTabState extends State<FreeGreetingTab> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => GreetingCanvas(client: mockClient, event: mockEvent, isMock: true, cubit: widget.cubit, spreadsheetId: widget.spreadsheetId, logoAssetPath: widget.logoAssetPath, defaultGreetingText: "שלום רב,"),
+          builder: (context) => GreetingCanvas(client: mockClient, event: mockEvent, isMock: true, cubit: widget.cubit, spreadsheetId: widget.spreadsheetId, logoAssetPath: widget.logoAssetPath, defaultGreetingText: ""),
         ),
       );
     }

@@ -7,6 +7,7 @@ import '../bloc_or_provider/home_cubit.dart';
 import 'dart:convert';
 import 'greeting_templates.dart';
 import 'emoji_space_fix_formatter.dart';
+import 'text_style_helper.dart';
 
 class GreetingCanvas extends StatefulWidget {
   final ClientModel client;
@@ -474,6 +475,29 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                       ),
                       const SizedBox(height: 8),
 
+                      // הוסף את זה בדיוק לפני ה-Stack של ה-TextFormField
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: // בתוך ה-Column של ה-build:
+                        SizedBox(
+                          height: 45,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: TextStyleHelper.styleMap.entries.map((entry) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 4),
+                                child: ActionChip(
+                                  avatar: Icon(entry.value['icon'], size: 16),
+                                  label: Text(entry.key, style: const TextStyle(fontSize: 12)),
+                                  onPressed: () => TextStyleHelper.applyStyle(_textController, entry.value['tag']),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ),
+
+                      // בתוך ה-build של GreetingCanvas, לפני ה-Stack של ה-TextField:
                       Stack(
                         children: [
                           // 1. תיבת הטקסט
@@ -484,18 +508,17 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                             inputFormatters: [
                               EmojiSpaceFixFormatter(), // הפילטר שיפתור את סימני השאלה
                             ],
-                            minLines: 12,
-                            maxLines: 12,
+                            minLines: 13,
+                            maxLines: 13,
                             textDirection: TextDirection.rtl,
                             textCapitalization: TextCapitalization.sentences,
                             keyboardType: TextInputType.multiline,
                             textInputAction: TextInputAction.newline,
                             style: const TextStyle(fontSize: 15, height: 1.4, color: Colors.black87),
                             decoration: InputDecoration(
-                              hintText: 'הקלידי ברכה אישית, או בחרי מהמאגר ✨',
+                              hintText: "הקלידי ברכה אישית או בחרי מהמאגר ✨",
                               fillColor: _lightBgColor,
                               filled: true,
-                              // *** כאן מוחקים את ה-suffixIcon ***
                               contentPadding: const EdgeInsets.only(top: 16, bottom: 16, left: 16, right: 48),
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                               focusedBorder: OutlineInputBorder(

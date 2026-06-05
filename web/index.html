@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>גלויה דיגיטלית אישית | לי אטדגי - תיווך וייעוץ נדל"ן</title>
 
+    <script src="text-effects.js" defer></script>
+    <link rel="stylesheet" href="text-effects.css">
+
     <style>
         @font-face {
         font-family: 'DanaYad';
@@ -218,29 +221,25 @@
             transition: opacity 0.3s ease;
         }
 
-        .olive-leaf {
+        .key-container {
             position: absolute;
-            bottom: 40px;
-            right: 20px;
-            width: 60px;
-            height: 180px;
-            z-index: 4;
+            /* במקום פיקסלים, נשתמש באחוזים כדי לשמור על יחסיות */
+            bottom: -50px; 
+            right: 40px;
             
-            /* הופך את האלמנט לחלק מהנייר ולא למשהו שמונח עליו */
-            opacity: 0.1; 
-            mix-blend-mode: multiply; /* גורם לענף "להיבלע" בטקסטורה */
+            /* הקטנה של המפתח */
+            width: 50px; 
             
-            /* מונע מהענף להראות "דיגיטלי" או חד מדי */
-            filter: blur(0.5px); 
+            /* סיבוב שיהיה יותר הרמוני עם פינת הדף */
+            transform: rotate(12deg); 
             
-            pointer-events: none;
-            transition: opacity 0.5s ease;
-            
-            /* מניעת עיוותים */
-            object-fit: contain; 
-            
-            mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+            /* שקיפות שתחבר אותו לנייר */
+            opacity: 0.2;
+        }
+
+        /* אפשרות נוספת: אם המפתח נראה עדיין "שחור" מדי, תוסיף את השורה הבאה */
+        .key-container svg {
+            stroke: #4a5d6a; /* תחליף את זה בקוד הצבע המדויק של הטקסט בגלויה */
         }
 
         .card::before {
@@ -808,7 +807,7 @@
         <div class="card" id="cardElement" ontouchstart="handleTouchStart(event)" ontouchend="handleTouchEnd(event)">
             <div class="gold-double-border"></div>
 
-            <svg version="1.0" xmlns="http://www.w3.org/2000/svg" class="olive-leaf"><g transform="translate(0.000000,181.000000) scale(0.100000,-0.100000)" fill="#000000" stroke="none"><path d="M287 1733 c-34 -87 -28 -209 16 -313 l15 -35 15 35 c8 19 18 56 21 81 7 45 4 61 -32 204 l-18 69 -17 -41z m34 -119 c2 2 3 -21 2 -52 -2 -79 -2 -79 -15 -58 -6 10 -12 48 -14 85 -3 58 -2 63 9 43 7 -12 15 -21 18 -18z"/><path d="M507 1411 c-69 -74 -113 -174 -132 -301 l-7 -45 40 39 c55 52 96 134 117 231 9 44 22 88 27 98 19 36 1 27 -45 -22z m-13 -84 c-3 -40 -46 -141 -64 -152 -9 -6 -11 -4 -5 4 4 7 8 28 10 47 1 18 8 40 15 49 7 8 9 15 5 15 -5 0 -1 8 7 18 8 9 18 25 21 35 10 26 14 20 11 -16z"/><path d="M324 1105 c1 -302 -1 -314 -85 -573 -22 -68 -51 -172 -65 -230 -17 -70 -39 -131 -65 -178 -43 -80 -45 -84 -25 -84 16 0 77 121 99 195 9 28 39 129 68 225 107 360 115 421 93 695 -8 105 -16 197 -18 205 -2 8 -3 -106 -2 -255z"/><path d="M222 1228 c-27 -27 -6 -68 35 -68 29 0 48 33 33 60 -12 22 -49 27 -68 8z"/><path d="M80 1155 c0 -3 6 -18 14 -33 8 -16 22 -57 31 -92 22 -87 57 -147 116 -206 42 -41 49 -45 49 -27 0 45 -52 183 -90 240 -33 50 -120 135 -120 118z m98 -122 c-3 -10 22 -56 34 -64 5 -3 -2 -14 -14 -25 -13 -10 -20 -15 -16 -10 4 5 3 17 -3 28 -14 25 -20 59 -13 69 6 11 15 12 12 2z m41 -105 c-12 -22 -11 -22 7 -8 10 8 16 11 12 6 -3 -4 -2 -20 2 -36 7 -23 5 -28 -6 -23 -9 3 -13 12 -10 20 3 8 2 12 -2 10 -4 -3 -13 1 -19 8 -10 11 -10 17 3 29 22 22 27 20 13 -6z"/><path d="M398 909 c-25 -14 -24 -66 2 -74 24 -8 60 11 60 31 0 23 -19 54 -33 54 -7 0 -20 -5 -29 -11z m23 -42 c-10 -9 -11 -8 -5 6 3 10 9 15 12 12 3 -3 0 -11 -7 -18z"/><path d="M444 700 c-34 -27 -70 -61 -81 -77 -29 -42 -103 -179 -103 -191 0 -15 88 35 128 72 18 17 42 45 53 63 18 29 72 173 66 179 -1 1 -30 -20 -63 -46z m-1 -52 c-4 -7 -8 -19 -9 -26 -5 -27 -55 -101 -74 -107 -11 -4 -18 -11 -15 -16 3 -5 -1 -6 -9 -3 -9 3 -16 11 -16 17 0 6 3 7 6 4 9 -9 47 41 40 52 -3 5 6 20 21 35 14 14 22 26 17 26 -5 1 2 7 16 15 31 18 33 18 23 3z"/><path d="M45 523 c1 -109 18 -158 74 -223 l31 -34 1 32 c1 18 2 38 2 45 1 6 -2 34 -6 60 -7 51 -80 217 -94 217 -5 0 -9 -44 -8 -97z m58 -63 c16 -44 20 -71 18 -100 -2 -24 -34 29 -33 56 0 13 -3 22 -7 20 -3 -2 -6 16 -6 40 -1 50 5 47 28 -16z"/><path d="M548 53 c7 -3 16 -2 19 1 4 3 -2 6 -13 5 -11 0 -14 -3 -6 -6z"/><path d="M136 42 c-3 -5 1 -9 9 -9 8 0 12 4 9 9 -3 4 -7 8 -9 8 -2 0 -6 -4 -9 -8z"/></g></svg>
+            <svg version="1.0" xmlns="http://www.w3.org/2000/svg" class="key-container" preserveAspectRatio="xMidYMid meet"><g transform="translate(0.000000,53.000000) scale(0.100000,-0.100000)" fill="#000000" stroke="none"><path d="M260 512 c-27 -12 -55 -36 -73 -62 -19 -27 -23 -101 -7 -131 9 -16 -2 -35 -72 -121 -45 -57 -86 -108 -91 -115 -5 -7 -6 -26 -2 -43 6 -27 10 -30 45 -30 41 0 67 26 56 56 -3 9 1 14 12 14 23 0 57 40 54 63 -2 11 3 17 17 17 12 0 21 6 21 13 1 19 68 57 103 57 107 0 179 148 111 229 -21 26 -30 29 -57 24 -42 -8 -57 -20 -57 -49 0 -36 43 -53 71 -29 14 13 18 26 14 42 -8 33 12 28 30 -7 46 -88 -28 -200 -132 -200 -18 0 -33 -4 -33 -9 0 -5 -13 -12 -30 -16 -16 -4 -30 -13 -30 -21 0 -8 -4 -14 -9 -14 -5 0 -18 -3 -28 -7 -13 -5 -10 3 13 32 47 61 48 64 24 90 -12 13 -24 41 -27 63 -12 93 71 166 164 145 24 -6 43 -7 43 -3 0 18 -98 26 -130 12z m128 -69 c-3 -32 -44 -46 -54 -19 -8 21 13 46 38 46 15 0 19 -6 16 -27z m-202 -180 c-5 -15 -4 -15 9 1 8 11 18 17 21 13 4 -4 -10 -27 -31 -52 -28 -35 -35 -49 -26 -58 16 -16 14 -47 -4 -47 -8 0 -14 -6 -13 -12 2 -7 -8 -14 -20 -16 -19 -3 -23 -8 -18 -25 7 -28 -10 -47 -45 -47 -28 0 -33 7 -32 46 0 11 154 214 162 214 2 0 0 -8 -3 -17z"/><path d="M102 159 c-67 -86 -77 -109 -49 -109 13 0 101 109 94 116 -2 3 -23 -20 -47 -51 -24 -31 -45 -53 -48 -51 -5 6 27 51 91 129 22 26 37 50 35 53 -3 2 -37 -37 -76 -87z"/><path d="M420 236 c0 -2 7 -7 16 -10 8 -3 12 -2 9 4 -6 10 -25 14 -25 6z"/><path d="M15 179 c-4 -6 -5 -12 -2 -15 2 -3 7 2 10 11 7 17 1 20 -8 4z"/></g></svg>
 
             <svg version="1.0" xmlns="http://www.w3.org/2000/svg" class="lee-signature" width="216.000000pt" height="147.000000pt" viewBox="0 0 216.000000 147.000000" preserveAspectRatio="xMidYMid meet"><g transform="translate(0.000000,147.000000) scale(0.100000,-0.100000)" fill="#000000" stroke="none"><path d="M2016 1379 c20 -23 24 -23 24 -5 0 7 -9 16 -21 19 -20 5 -20 5 -3 -14z"/><path d="M1917 1360 c-91 -57 -127 -144 -134 -324 l-6 -128 24 7 c13 4 51 18 83 31 33 13 65 24 72 24 14 0 44 -38 44 -55 0 -7 -29 -35 -65 -64 -71 -58 -105 -105 -105 -144 0 -52 74 -43 127 15 32 35 64 103 71 150 4 34 15 52 51 87 45 42 45 42 3 7 -23 -20 -44 -36 -47 -36 -2 0 -11 13 -20 30 -22 42 -49 45 -128 15 -37 -14 -70 -25 -72 -25 -10 0 -4 203 7 248 20 82 71 147 138 176 19 8 28 15 19 16 -8 0 -36 -13 -62 -30z m62 -576 c-36 -74 -120 -110 -127 -55 -3 18 13 39 70 95 l73 71 3 -33 c2 -19 -6 -52 -19 -78z"/><path d="M1108 983 c7 -3 16 -2 19 1 4 3 -2 6 -13 5 -11 0 -14 -3 -6 -6z"/><path d="M1022 940 c-145 -114 -225 -360 -159 -490 68 -136 247 -33 247 143 0 66 -13 100 -46 117 -19 11 -27 10 -48 -4 -14 -9 -33 -27 -41 -40 -20 -30 -32 -96 -17 -96 5 0 13 20 16 44 8 50 25 69 58 64 51 -7 72 -114 37 -191 -15 -33 -67 -67 -100 -67 -124 0 -136 256 -20 423 32 46 94 108 126 125 11 6 15 12 8 12 -6 0 -34 -18 -61 -40z"/><path d="M1665 910 c-3 -5 4 -19 15 -30 18 -18 20 -29 15 -63 -6 -41 -5 -41 9 -17 18 30 21 91 4 108 -14 14 -35 16 -43 2z"/><path d="M1370 818 c-18 -13 -36 -29 -38 -37 -3 -10 5 -7 23 7 15 12 32 22 36 22 19 0 7 -37 -26 -79 -20 -25 -38 -55 -41 -68 -4 -13 -10 -23 -14 -23 -10 0 -71 74 -98 119 -17 29 -22 32 -28 18 -7 -19 11 -70 30 -87 10 -7 5 -25 -21 -76 -38 -76 -41 -102 -14 -135 18 -22 19 -22 45 -6 14 10 26 22 26 28 0 8 -4 8 -14 0 -11 -9 -18 -8 -30 4 -21 22 -20 54 4 110 l20 47 49 -46 c58 -54 171 -128 223 -147 l38 -13 -23 -24 c-39 -42 -140 -114 -202 -143 -88 -42 -166 -38 -184 10 -8 23 -9 24 -10 4 -2 -47 82 -68 160 -41 50 17 125 65 201 129 l68 57 58 -15 c133 -36 312 37 312 126 0 40 -18 51 -85 51 -69 0 -135 -27 -195 -80 -32 -28 -31 -28 16 5 64 44 123 65 183 65 74 0 92 -34 46 -88 -45 -54 -172 -78 -268 -51 -34 9 -37 12 -25 26 12 15 11 15 -9 2 -20 -12 -29 -10 -79 14 -30 15 -80 46 -110 68 -72 53 -73 82 -9 165 64 81 55 129 -15 82z"/><path d="M593 610 c-50 -16 -101 -26 -112 -23 -16 4 -21 1 -21 -16 0 -27 28 -28 106 -1 122 43 194 47 194 13 0 -8 -15 -30 -34 -49 -27 -27 -42 -34 -72 -34 -44 0 -104 -32 -104 -55 0 -19 20 -19 71 1 39 16 41 16 62 -5 17 -17 22 -33 21 -76 0 -61 10 -63 26 -4 9 33 8 46 -9 83 l-19 45 39 41 c59 62 50 111 -20 109 -20 0 -77 -13 -128 -29z m22 -140 c-28 -12 -37 -12 -30 0 3 6 16 10 28 9 21 0 21 -1 2 -9z"/><path d="M286 509 c-30 -23 -36 -45 -8 -28 30 19 70 2 98 -41 37 -55 28 -78 -67 -175 -71 -74 -115 -145 -88 -145 5 0 9 7 9 16 0 8 33 50 74 93 40 42 81 91 90 109 9 18 18 32 21 32 2 0 15 -25 29 -55 27 -60 49 -70 81 -35 18 20 18 20 -4 18 -20 -3 -31 11 -72 87 -47 88 -96 145 -123 145 -7 0 -25 -9 -40 -21z"/><path d="M113 461 c-11 -17 -9 -20 10 -23 20 -3 22 -9 22 -60 0 -32 1 -58 2 -58 9 0 33 65 33 90 0 63 -41 93 -67 51z"/><path d="M215 100 c3 -5 8 -10 11 -10 2 0 4 5 4 10 0 6 -5 10 -11 10 -5 0 -7 -4 -4 -10z"/></g></svg>
 
@@ -969,34 +968,33 @@ function paginateTextAndRender(text) {
     const container = document.getElementById('pagesContainer');
     container.innerHTML = '';
 
-    // 1. הגנה על ירידות שורה: צמצום רצפים ל-@@@ בודד ושמירה על מבנה
+    // 1. הגנה על ירידות שורה: צמצום רצפים ל-@@@ בודד
     let processedText = text.replace(/\n+/g, '@@@');
     
-    // 2. פיצול אימוג'ים לנרמול, וטיפול ברווחים (מבלי למחוק את ה-@@@)
+    // 2. פיצול אימוג'ים לנרמול, וטיפול ברווחים
     processedText = processedText.replace(/([\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}])/gu, ' $1 ')
-                                .replace(/\s+/g, ' ') 
-                                .trim();
+                     .replace(/\s+/g, ' ') 
+                     .trim();
     
-    // 3. פיצול למילים (כולל ה-@@@ כאיבר במערך כדי לשמור עליו)
+    // 3. פיצול למילים
     const words = processedText.split(/(\s+|@@@)/);
     let lines = [];
     let currentLine = "";
 
     words.forEach(word => {
-        // אם זה המפריד שלנו, שבור שורה מיד
         if (word === '@@@') {
             lines.push(currentLine.trim());
             currentLine = "";
             return;
         }
 
-        const cleanWord = word.replace(/\*/g, ''); 
+        // ניקוי זמני של תגיות העיצוב כדי לחשב אורך ויזואלי נכון
+        const cleanWord = word.replace(/#([a-z])(.*?)\1#/g, '$2'); 
         const visualLength = Array.from(cleanWord).length;
 
-        const currentLen = getVisualLength(currentLine.replace(/\*/g, ''));
+        const currentLen = getVisualLength(currentLine.replace(/#([a-z])(.*?)\1#/g, '$2'));
         const wordLen = visualLength;
 
-        // לוגיקת הפיצול: שבירת שורה רק כשחורגים מהגבול
         if ((currentLen + wordLen) > MAX_CHARS_PER_LINE && currentLine.length > 0) {
             lines.push(currentLine.trim());
             currentLine = word;
@@ -1006,12 +1004,11 @@ function paginateTextAndRender(text) {
     });
     if (currentLine.trim()) lines.push(currentLine.trim());
 
-    // 4. שלב הקיבוץ לעמודים ורינדור
+    // 4. שלב הקיבוץ לעמודים
     let pages = [];
     let currentPageLines = [];
 
     lines.forEach(line => {
-        // החזרת @@ ל- \n בתוך השורות לפני הרינדור
         const formattedLine = line.replace(/@@@/g, '\n');
         
         if (currentPageLines.length >= MAX_LINES_PER_PAGE) {
@@ -1023,26 +1020,28 @@ function paginateTextAndRender(text) {
     });
     if (currentPageLines.length > 0) pages.push(currentPageLines.join('\n'));
 
-    // 5. שלב הרינדור ל-DOM
+    // 5. שלב הרינדור ל-DOM (כאן השינוי המרכזי!)
     pages.forEach((pageText, index) => {
         const pageDiv = document.createElement('div');
         pageDiv.classList.add('page-content');
         if (index === 0) pageDiv.classList.add('active');
         pageDiv.id = `page-idx-${index}`;
         
-        // קונטיינר לטקסט בלבד
         const textContainer = document.createElement('div');
         textContainer.className = 'text-container';
+        
+        // --- כאן הקסם: עיבוד האפקטים והזרקה כ-HTML ---
+        const processedHtml = processTextEffects(pageText);
+        textContainer.innerHTML = processedHtml.replace(/\n/g, '<br>');
+        // ---------------------------------------------
+        
         pageDiv.appendChild(textContainer);
         
         if (index === pages.length - 1) {
             const signatureDiv = document.createElement('div');
             signatureDiv.className = 'signature-wrapper';
-            // שימוש ב-cloneNode כדי להעתיק את ה-SVG עם כל המאפיינים שלו
             const sigSvg = document.querySelector('.lee-signature').cloneNode(true);
             signatureDiv.appendChild(sigSvg);
-            
-            // הוספת החתימה ישירות ל-pageDiv כבלוק נפרד מהטקסט
             pageDiv.appendChild(signatureDiv); 
         }
 
@@ -1137,69 +1136,6 @@ function paginateTextAndRender(text) {
             }
         }
 
-        function runTypingEffect() {
-    const activePage = document.querySelector('.page-content.active');
-    if (!activePage) return;
-    
-    // מוצאים את הקונטיינר הספציפי לטקסט
-        const textContainer = activePage.querySelector('.text-container');
-        if (typingTimeoutId) clearTimeout(typingTimeoutId);
-
-        const rawText = activePage.getAttribute('data-full-text');
-        if (!rawText) return;
-
-        const pipeIndex = rawText.indexOf('|');
-        const text = rawText.replace('|', '');
-        
-        let i = 0;
-        let output = "";
-        let isInsideEmphasis = false;
-
-        function type() {
-            if (i < text.length) {
-                const char = text.charAt(i);
-                if (char === '*') {
-                    isInsideEmphasis = !isInsideEmphasis;
-                    output += isInsideEmphasis ? '<span class="emphasized-word">' : '</span>';
-                    i++;
-                    type();
-                    return;
-                }
-
-                let charToAppend = (char === '\n') ? "<br>" : ((char === ' ') ? "&nbsp;" : char);
-
-                if (i < pipeIndex) {
-                    if (i === 0) output += '<span class="client-name">';
-                    output += charToAppend;
-                    if (i === pipeIndex - 1) output += '</span>';
-                } else {
-                    output += charToAppend;
-                }
-                
-                // כותבים רק לקונטיינר של הטקסט
-                textContainer.innerHTML = output + '<span class="caret"></span>';
-                i++;
-                typingTimeoutId = setTimeout(type, Math.random() * 50 + 70);
-            } else {
-                // סיום - העלמת סמן
-                const caret = textContainer.querySelector('.caret');
-                if (caret) caret.style.display = 'none';
-
-                const hasNextPage = activePage.nextElementSibling !== null;
-                if (hasNextPage) {
-                    autoNavigateTimeout = setTimeout(() => { navigatePage(-1); }, 1000);
-                } else {
-                    // הצגת החתימה שנמצאת מחוץ לקונטיינר הטקסט
-                    const signatureWrapper = activePage.querySelector('.signature-wrapper');
-                    if (signatureWrapper) signatureWrapper.classList.add('show-signature');
-                }
-            }
-        }
-        
-        textContainer.innerHTML = '<span class="caret"></span>';
-        type();
-    }
-
         function launchContextualConfetti(text) {
             const container = document.getElementById('confetti-container');
             if (!container) return;
@@ -1282,8 +1218,10 @@ function paginateTextAndRender(text) {
         }
 
         function handleGreetingDisplay(clientName, messageContent) {
-            const fullMessage = `${clientName} !| \n\n${messageContent}`;
-            rawGreetingTextGlobal = fullMessage;
+            const fullMessage = `${clientName}\n${messageContent}`;
+            // במקום לשמור את התוצאה המעובדת, שמור את הטקסט הגולמי
+            rawGreetingTextGlobal = fullMessage; 
+            
             document.getElementById('clientName').innerText = ""; 
             paginateTextAndRender(rawGreetingTextGlobal);
             applyDynamicTheme(messageContent);
