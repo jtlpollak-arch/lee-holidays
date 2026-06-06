@@ -313,7 +313,7 @@
             display: none; 
             
             font-family: 'DanaYad', sans-serif;
-            font-size: 19px;
+            font-size: 18px;
             line-height: 1.6;
             color: #2c3e50; 
             text-shadow: 0.5px 0.5px 0.5px rgba(0,0,0,0.15);
@@ -887,7 +887,8 @@
     </div>
 
     <script>
-        let flatData = "";
+        let cachedFlatData = null;
+        let isEnvelopeOpen = false;
 
         const firebaseConfig = {
             apiKey: "AIzaSyBCfo3DoB1fY8BUo-pcWlImmIAANaok9Eo",
@@ -906,14 +907,28 @@
             console.error("Firebase init error:", e);
         }
 
+        function waitForEnvelope() {
+            return new Promise((resolve) => {
+                const checkInterval = setInterval(() => {
+                    if (isEnvelopeOpen) {
+                        clearInterval(checkInterval); // עוצרים את השעון
+                        resolve(); // מעירים את הפונקציה
+                    }
+                }, 100); // בודק כל 100 מילישניות
+            });
+        }
+
         function openEnvelope() {
             document.getElementById('holidayBackdrop').style.transition = "filter 1s ease";
             document.getElementById('holidayBackdrop').style.filter = "blur(8px)";
 
             document.getElementById('envelopeWrapper').classList.add('open');
+
+            isEnvelopeOpen = true;
+
             setTimeout(() => {
                 document.getElementById('cardElement').classList.add('open');
-                launchContextualConfetti(flatData);
+                launchContextualConfetti(cachedFlatData);
                 runTypingEffect();
             }, 400);
         }
@@ -1113,7 +1128,7 @@
         }
 
         // בתוך index.html
-        function handleGreetingDisplay(clientName, messageContent) {
+        async function handleGreetingDisplay(clientName, messageContent) {
             // הגרסה החדשה:
             try {
                 const delta = JSON.parse(messageContent);
@@ -1131,16 +1146,18 @@
                     delta.unshift({
                         insert: clientName + "!!!",
                         attributes: {
-                            effect: "r,s,f,b"
+                            effect: "u,f"
                         }
                     });
                 }
+
+                await waitForEnvelope();
                 
                 // כעת, כשה-Delta כולל את שם הלקוח באופן אורגני, המנוע יפרק ויעמד אותו נכון
-                const flatData = flattenDelta(delta);
+                cachedFlatData = flattenDelta(delta);
                 
                 // העברת המערך המעודכן והמחושב לרינדור ולחלוקת עמודים דינמית
-                paginateTextAndRender(flatData); 
+                paginateTextAndRender(cachedFlatData); 
                 
                 applyDynamicTheme(messageContent);
                 setupClickNavigation();

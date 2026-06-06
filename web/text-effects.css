@@ -8,73 +8,486 @@ span {
 /* 1. סיבוב */
 .effect-i {
     display: inline-block;
-    font-style: italic; /* זו הפקודה שמבצעת את ההטיה המוכרת של הפונט */
+    font-style: italic;
     font-weight: 800;
-    color: #1B5565;
+    
+    /* 1. שדרוג הצבע הסטטי לגרדיאנט זורם בגווני המותג שלך */
+    background: linear-gradient(120deg, #1B5565 0%, #3A8E9E 50%, #1B5565 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    
+    /* 2. הוספת מתאר וצל תלת-ממדי עדין שגורם למילה "לקפוץ" מהדף */
+    filter: drop-shadow(2px 2px 2px rgba(27, 85, 101, 0.2));
+    
+    /* 3. שילוב שתי אנימציות: תנועת צבע (נצנוץ) וריחוף אנכי עדין */
+    animation: italicFloat 3s ease-in-out infinite,
+               italicShimmer 6s linear infinite;
+    
+    /* מבטיח שהעיוות הוויזואלי ירונדר בצורה חלקה על כרטיס המסך */
+    transform-style: preserve-3d;
+    will-change: transform, background-position;
 }
+@keyframes italicFloat {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-4px) rotate(-1deg); /* שילוב של הרמה והטיה דינמית עדינה */
+    }
+}
+@keyframes italicShimmer {
+    0% {
+        background-position: 0% center;
+    }
+    100% {
+        background-position: 200% center;
+    }
+}
+
+
+
+
+
 
 /* 2. זהב */
 .effect-g {
-    background: linear-gradient(to right, #bf953f, #fcf6ba, #b38728);
+    /* 1. גרדיאנט זהב עשיר ורחב יותר עם נקודות אור וצל */
+    background: linear-gradient(
+        135deg, 
+        #bf953f 0%, 
+        #fcf6ba 25%, 
+        #b38728 50%, 
+        #fcf6ba 75%, 
+        #bf953f 100%
+    );
+    background-size: 200% auto; /* מאפשר לגרדיאנט "לזוז" ברקע */
+    
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    font-weight: bold;
+    font-weight: 800; /* שינוי ל-800 נותן נוכחות חזקה יותר לזהב מבלי להגדיל את הפונט */
+    
+    /* 2. הוספת עומק ומתאר עדין שגורם לזהב לקפוץ מהדף (במיוחד על רקע בהיר/כהה) */
+    filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.15)) 
+            contrast(1.2);
+            
+    /* 3. הפעלת אנימציית נצנוץ עדינה שזזה ברקע */
+    animation: goldShimmer 4s linear infinite;
 }
+
+@keyframes goldShimmer {
+    0% {
+        background-position: 0% center;
+    }
+    100% {
+        background-position: 200% center;
+    }
+}
+
+
+
+
+
 
 /* 3. בולד גדול */
 .effect-b {
     font-size: 1.2em;
     font-weight: 900;
-    color: #0f2e36;
+    display: inline-block;
+    
+    /* 1. שדרוג הצבע הכהה הסטטי לגרדיאנט מתכתי עמוק ויוקרתי */
+    background: linear-gradient(135deg, #0f2e36 0%, #1e525f 50%, #0f2e36 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    
+    /* 2. הוספת עומק ומתאר תלת-ממדי עדין שמונע מהטקסט העבה להיראות שטוח */
+    filter: drop-shadow(1px 1px 1px rgba(15, 46, 54, 0.25));
+    
+    /* 3. אפקט "מרקר זהב" אחורי עדין שיוצר הדגשה אלגנטית מתחת לכתב היד */
+    position: relative;
+    padding: 0 4px;
 }
+.effect-b::before {
+    content: "";
+    position: absolute;
+    bottom: 2px;
+    left: 0;
+    width: 100%;
+    height: 35%; /* תופס רק את החלק התחתון של המילה, כמו מרקר אמיתי */
+    background: linear-gradient(90deg, rgba(252, 246, 186, 0.4), rgba(191, 149, 63, 0.2));
+    border-radius: 2px;
+    z-index: -1; /* דוחף את המרקר מאחורי הטקסט */
+    
+    /* אנימציה חלקה שגורמת לקו הhighlight "להימתח" כשהמילה נכתבת */
+    transform: scaleX(0);
+    transform-origin: right;
+    animation: highlightExpand 0.5s ease-out forwards;
+    animation-delay: 0.2s;
+}
+@keyframes highlightExpand {
+    to {
+        transform: scaleX(1);
+    }
+}
+
+
+
+
+
 
 /* 4. קו תחתי */
 .effect-u {
-    text-decoration: underline;
-    text-decoration-color: #1B5565;
-    text-decoration-style: wavy;
+    /* 1. מחיקת קו הדקור המובנה של הדפדפן כדי למנוע חיתוך גס של האותיות */
+    text-decoration: none;
+    
+    display: inline-block;
+    position: relative;
+    padding-bottom: 6px; /* מייצר מרווח מושלם בין כתב היד לגל התחתון */
+    
+    /* 2. הענקת גוון עמוק ומבריק לטקסט שמעל הגל */
+    background: linear-gradient(135deg, #1B5565 0%, #3A8E9E 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: bold;
+    
+    /* 3. הגדרת מיכל הרקע שבו ירוצו הגלים הדינמיים */
+    overflow: hidden;
 }
+.effect-u::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 200%; /* רוחב כפול כדי לאפשר לגל לנסוע בצורה אינסופית */
+    height: 6px; /* גובה הגל */
+    
+    /* יצירת תבנית גלים מתמטית באמצעות SVG נקי ומעוצב בצבע המותג שלך */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 6'%3E%3Cpath d='M0,3 C5,0 5,6 10,3 C15,0 15,6 20,3' fill='none' stroke='%233A8E9E' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-size: 16px 6px;
+    
+    animation: waveMove 2s linear infinite;
+    
+    /* ייעול הרינדור בכרטיס המסך למניעת קפיצות */
+    will-change: transform;
+}
+@keyframes waveMove {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%); /* נסיעה חלקה עד חצי המרחק ליצירת לולאה אינסופית */
+    }
+}
+
+
+
+
+
+
+
 
 /* 5. ריווח */
 .effect-s {
+    display: inline-block;
     letter-spacing: 0.3em;
+    font-weight: bold;
+    
+    /* 1. שדרוג הצבע החלק לגרדיאנט זורם ועמוק שמתאים למותג */
+    background: linear-gradient(135deg, #1B5565 0%, #2A7B91 50%, #1B5565 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    
+    /* 2. הוספת צל רך מסביב לאותיות הריקות כדי לתת להן נפח תלת-ממדי */
+    filter: drop-shadow(1px 1px 2px rgba(27, 85, 101, 0.2));
+    
+    /* 3. הפעלת אנימציית נשימה דינמית לריווח האותיות ואנימציית צבע */
+    animation: letterBreath 4s ease-in-out infinite,
+               letterShimmer 6s linear infinite;
+               
+    /* אופטימיזציה לחלקות הרינדור בכרטיס המסך */
+    will-change: letter-spacing, background-position;
 }
+@keyframes letterBreath {
+    0%, 100% {
+        letter-spacing: 0.28em;
+        filter: drop-shadow(1px 1px 2px rgba(27, 85, 101, 0.2));
+    }
+    50% {
+        letter-spacing: 0.35em; /* פתיחה עדינה של הריווח בשיא הפעימה */
+        filter: drop-shadow(2px 2px 4px rgba(27, 85, 101, 0.35)); /* הצל מעמיק כשהאותיות מתרחקות */
+    }
+}
+@keyframes letterShimmer {
+    0% {
+        background-position: 0% center;
+    }
+    100% {
+        background-position: 200% center;
+    }
+}
+
+
+
+
+
+
 
 /* 6. ריטוט */
 .effect-v {
-    animation: jitter 0.4s infinite;
+    display: inline-block;
+    font-weight: 900;
+    position: relative;
+    color: #1B5565;
+    
+    /* 1. הוספת זוהר בסיסי עדין שיתחבר עם האנימציה */
+    text-shadow: 0 0 4px rgba(27, 85, 101, 0.3);
+    
+    /* 2. הפעלת האנימציה המשולבת (תנועה, עיוות וצבע) */
+    animation: advancedJitter 0.3s linear infinite;
+    
+    /* ייעול הרינדור בכרטיס המסך למניעת מריחה של ה-DOM */
+    will-change: transform, text-shadow, color;
 }
-@keyframes jitter {
-    0%, 100% { transform: translate(1px, 1px); }
-    50% { transform: translate(-1px, -1px); }
+@keyframes advancedJitter {
+    0% {
+        transform: translate(0, 0) skew(0deg);
+        color: #1B5565;
+        text-shadow: 1px 1px 0 rgba(255, 0, 0, 0.5), -1px -1px 0 rgba(0, 0, 255, 0.5);
+    }
+    20% {
+        /* תזוזה חדה שמאלה למטה עם עיוות זוויתי זמני */
+        transform: translate(-1.5px, 1px) skew(-3deg);
+        color: #2A7B91;
+        text-shadow: -2px 0 0 rgba(255, 0, 100, 0.6), 1px 1.5px 0 rgba(0, 255, 200, 0.6);
+    }
+    40% {
+        /* קפיצה לצד הנגדי ושינוי צבע הברק */
+        transform: translate(1.5px, -1px) skew(2deg);
+        text-shadow: 2px -1px 0 rgba(0, 0, 255, 0.5), -1.5px 1px 0 rgba(255, 215, 0, 0.6);
+    }
+    60% {
+        /* חזרה קרובה למרכז אך עם רטט אנכי חזק */
+        transform: translate(-0.5px, -1.5px) skew(0deg);
+        color: #1B5565;
+        text-shadow: -1px 2px 0 rgba(255, 0, 0, 0.4), 2px -1px 0 rgba(0, 255, 0, 0.4);
+    }
+    80% {
+        /* עיוות אופקי קל */
+        transform: translate(1px, 1.5px) skew(4deg);
+        color: #0F2E36;
+        text-shadow: 1.5px -1.5px 0 rgba(0, 255, 255, 0.5), -2px 0 0 rgba(255, 0, 255, 0.5);
+    }
+    100% {
+        transform: translate(0, 0) skew(0deg);
+        color: #1B5565;
+        text-shadow: 1px 1px 0 rgba(255, 0, 0, 0.5), -1px -1px 0 rgba(0, 0, 255, 0.5);
+    }
 }
+
+
+
+
 
 /* 7. זוהר (הילה) */
 .effect-f {
-    text-shadow: 0 0 8px rgba(255, 165, 0, 0.8);
+    display: inline-block;
+    font-weight: 900;
+    color: #ffffff; /* הפיכת הטקסט עצמו ללבן בוהק מדמה את הליבה החמה של הלהבה */
+    
+    /* 1. בניית עומק ראשוני באמצעות ריבוי שכבות צל בגוונים שונים של אש */
+    text-shadow: 
+        0 0 4px #ffffff,
+        0 -2px 4px rgba(255, 215, 0, 0.8),    /* צהוב זהב (חלק עליון חם) */
+        2px -4px 6px rgba(255, 140, 0, 0.7),   /* כתום כהה */
+        -2px -8px 10px rgba(255, 69, 0, 0.6);  /* אדום אש עמוק */
+
+    /* 2. הפעלת האנימציה שמניעה את הלהבות ומריצדת את האור */
+    animation: fireFlicker 1.5s ease-in-out infinite alternate;
+    
+    /* ייעול הביצועים בכרטיס המסך למניעת קפיצות בזמן ההקלדה */
+    will-change: text-shadow, transform;
 }
+@keyframes fireFlicker {
+    0% {
+        transform: skewX(-0.5deg) scale(1);
+        text-shadow: 
+            0 0 4px #ffffff,
+            0 -2px 4px rgba(255, 215, 0, 0.8),
+            2px -4px 6px rgba(255, 140, 0, 0.7),
+            -2px -8px 10px rgba(255, 69, 0, 0.6);
+    }
+    25% {
+        /* הלהבה זזה מעט ימינה ומשנה גבהים */
+        transform: skewX(1deg) scale(1.01);
+        text-shadow: 
+            0 0 5px #ffffff,
+            1px -3px 5px rgba(255, 215, 0, 0.9),
+            -1px -5px 8px rgba(255, 110, 0, 0.8),
+            2px -10px 12px rgba(255, 50, 0, 0.7);
+    }
+    50% {
+        transform: skewX(-1deg) scale(0.99);
+        text-shadow: 
+            0 0 4px #ffffff,
+            -1px -2px 4px rgba(255, 200, 0, 0.8),
+            2px -4px 7px rgba(255, 140, 0, 0.7),
+            -1px -7px 9px rgba(255, 69, 0, 0.6);
+    }
+    75% {
+        /* עיוות אופקי קל המדמה משב רוח על הכתב */
+        transform: skewX(0.5deg) scale(1.02);
+        text-shadow: 
+            0 0 6px #ffffff,
+            0 -4px 6px rgba(255, 215, 0, 0.85),
+            2px -6px 9px rgba(255, 130, 0, 0.75),
+            -2px -11px 14px rgba(255, 60, 0, 0.65);
+    }
+    100% {
+        transform: skewX(-0.5deg) scale(1);
+        text-shadow: 
+            0 0 4px #ffffff,
+            0 -2px 4px rgba(255, 215, 0, 0.8),
+            2px -4px 6px rgba(255, 140, 0, 0.7),
+            -2px -8px 10px rgba(255, 69, 0, 0.6);
+    }
+}
+
+
+
 
 /* 8. לחישה */
 .effect-w {
     font-size: 0.85em;
-    opacity: 0.7;
+    display: inline-block;
     color: #5a7b82;
+    
+    /* 1. הגדרת אטימות בסיסית וריווח אותיות מעט פתוח שנותן "אוויר" למילה */
+    opacity: 0.7;
+    letter-spacing: 0.05em;
+    
+    /* 2. הוספת הילת ערפל רכה מסביב לאותיות הלחישה */
+    text-shadow: 0 0 3px rgba(90, 123, 130, 0.4);
+    
+    /* 3. הפעלת אנימציית "נשימת לחישה" אקטיבית ומסתורית */
+    animation: whisperBreathe 4s ease-in-out infinite;
+    
+    /* ייעול הרינדור בכרטיס המסך למניעת קפיצות או מריחה של הפונט */
+    will-change: opacity, filter, text-shadow;
 }
+@keyframes whisperBreathe {
+    0%, 100% {
+        opacity: 0.6;
+        filter: blur(0px);
+        text-shadow: 0 0 3px rgba(90, 123, 130, 0.4);
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.35;         /* המילה כמעט נעלמת לחלוטין בשיא הלחישה */
+        filter: blur(0.8px);    /* האותיות הופכות למטושטשות ורכות כמו עשן */
+        text-shadow: 0 0 8px rgba(90, 123, 130, 0.6); /* ההילה מתרחבת כשהטקסט מתערפל */
+        transform: scale(0.98);  /* כיווץ מיקרוסקופי שנותן תחושה של התרחקות */
+    }
+}
+
+
+
+
+
 
 /* 9. מרקר */
 .effect-h {
-    background-color: rgba(255, 235, 59, 0.5);
-    border-radius: 2px;
+    display: inline-block;
+    position: relative;
+    padding: 0 4px;
+    font-weight: bold;
+    color: #0f2e36; /* מעניק ניגודיות מושלמת על רקע המרקר */
+    z-index: 1;
+}
+.effect-h::before {
+    content: "";
+    position: absolute;
+    top: 5%;
+    left: 0;
+    width: 100%;
+    height: 90%; /* מכסה את רוב גובה המילה כמו מרקר אמיתי */
+    
+    /* 1. שדרוג הגוון הצהוב הפשוט לגרדיאנט מרקר זרחני, עשיר ואלגנטי */
+    background: linear-gradient(
+        100deg, 
+        rgba(255, 235, 59, 0.7) 0%, 
+        rgba(255, 241, 118, 0.8) 50%, 
+        rgba(255, 214, 0, 0.6) 100%
+    );
+    
+    /* 2. קצוות מעט א-סימטריים שמדמים חיתוך של ראש מרקר אמיתי */
+    border-radius: 4px 2px 3px 5px;
+    
+    /* דוחף את שכבת המרקר אל מאחורי האותיות של הכתב יד */
+    z-index: -1; 
+    
+    /* 3. הכנת המרקר לאנימציית מתיחה (סקייל) */
+    transform: scaleX(0);
+    transform-origin: right; /* נקודת העיגון בימין כדי שהמתיחה תהיה מימין לשמאל (RTL) */
+    
+    /* 4. הפעלת האנימציה שמותחת את המרקר אקטיבית */
+    animation: markerDraw 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    animation-delay: 0.1s; /* השהיה קלה כדי לתת לאותיות להתחיל להכתב קודם */
+    
+    /* אופטימיזציה לחלקות הרינדור */
+    will-change: transform;
+}
+@keyframes markerDraw {
+    to {
+        transform: scaleX(1);
+    }
 }
 
 /* 10. פופ-אפ */
 .effect-r {
-    animation: pop 2.5s ease-out;
+    display: inline-block;
+    font-weight: 900;
+    position: relative;
+    
+    /* 1. שדרוג הגוון לגרדיאנט עמוק ומלוטש שמתאים לראש הברכה */
+    background: linear-gradient(135deg, #1B5565 0%, #3A8E9E 50%, #1B5565 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+
+    /* 2. הפעלת אנימציית פופ אלסטית, מהירה ומלאת אופי */
+    animation: elasticPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    
+    /* מבטיח שהתנועה התלת-ממדית והצללים ירונדרו בצורה חלקה */
+    transform-style: preserve-3d;
+    will-change: transform, text-shadow;
 }
-@keyframes pop {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.3); }
-    100% { transform: scale(1); }
+
+/* 3. מנוע הפופ האלסטי והתלת-ממדי */
+@keyframes elasticPop {
+    0% {
+        transform: scale(0) rotate(-5deg);
+        text-shadow: 0 0 0 rgba(27, 85, 101, 0);
+        opacity: 0;
+    }
+    60% {
+        /* הזינוק המרבי - המילה גדלה מעבר למידה הרצויה ומסתובבת מעט ליישור */
+        transform: scale(1.25) rotate(2deg);
+        text-shadow: 0 10px 15px rgba(27, 85, 101, 0.3);
+        opacity: 1;
+    }
+    80% {
+        /* כיווץ חזרה מתחת לגודל הסופי ליצירת אפקט הגומי (Bounce) */
+        transform: scale(0.95) rotate(-1deg);
+        text-shadow: 0 2px 4px rgba(27, 85, 101, 0.15);
+    }
+    100% {
+        /* נחיתה רכה ומדויקת בגודל המקורי (1) עם צל יציב ואלגנטי */
+        transform: scale(1) rotate(0deg);
+        text-shadow: 2px 3px 5px rgba(27, 85, 101, 0.25);
+    }
 }
 
 /* סמן הקלדה */
