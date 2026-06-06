@@ -171,6 +171,14 @@ function paginateTextAndRender(delta) {
         console.error("<--paginateTextAndRender--> שגיאה קריטית: לא נמצא pagesContainer ב-DOM");
         return;
     }
+
+
+    let pen = container.querySelector('.writing-pen');
+    if (!pen) {
+        pen = document.createElement('div');
+        pen.className = 'writing-pen';
+        container.appendChild(pen);
+    }
     
     container.innerHTML = '';
     const maxPage = Math.max(...flatData.map(d => d.pageIndex), 0);
@@ -263,7 +271,16 @@ function typeNextChar() {
         const span = document.createElement('span');
         span.textContent = item.char;
         item.classes.forEach(c => span.classList.add(c));
+        
+        // הופכים את האות ל"רטובה" ברגע הולדתה על הנייר
+        span.classList.add('ink-wet');
+        
         container.appendChild(span);
+        
+        // מנגנון ייבוש אוטומטי (הסמן של ה-CSS מופיע אוטומטית על ה-span האחרון שנוסף)
+        setTimeout(() => {
+            span.classList.remove('ink-wet');
+        }, 60);
     }
 
     // ניהול החלפת העמוד הויזואלי הפעיל עם אפקט מחיקה אלקטרונית עדינה
