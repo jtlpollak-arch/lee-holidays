@@ -180,6 +180,24 @@ function paginateTextAndRender(delta) {
         pageDiv.className = `page-content ${i === 0 ? 'active' : ''}`;
         pageDiv.id = `page-${i}`;
         pageDiv.innerHTML = '<div class="text-container" style="white-space: pre-wrap; direction: rtl; text-align: right;"></div>';
+        
+        // אם הגענו לעמוד האחרון בסדרה, נשכפל את החתימה ונכניס אותה
+        if (i === maxPage) {
+            const originalSignature = document.querySelector('.lee-signature');
+            if (originalSignature) {
+                const signatureDiv = document.createElement('div');
+                signatureDiv.className = 'signature-wrapper';
+                
+                // שכפול ה-SVG המקורי על כל תכונותיו ומבנה הקווים הפנימיים שלו
+                const sigSvg = originalSignature.cloneNode(true);
+                signatureDiv.appendChild(sigSvg);
+                
+                // הזרקה ישירה לתוך העמוד, מחוץ ומסביב ל-text-container
+                pageDiv.appendChild(signatureDiv);
+                console.log("<--paginateTextAndRender--> חתימת ה-SVG שוכפלה בהצלחה לעמוד האחרון (" + i + ")");
+            }
+        }
+        
         container.appendChild(pageDiv);
     }
 
@@ -203,8 +221,6 @@ function paginateTextAndRender(delta) {
     if (window.typingTimeoutId) {
         clearTimeout(window.typingTimeoutId);
     }
-
-
     
     console.log("<--paginateTextAndRender--> קורא לתו הראשון להקלדה");
     typeNextChar();
@@ -214,6 +230,18 @@ function paginateTextAndRender(delta) {
 function typeNextChar() {
     if (window.globalCharIndex >= window.globalFlatData.length) {
         console.log("<--typeNextChar--> תהליך ההקלדה הסתיים בהצלחה לכל העמודים");
+        
+        // מוצאים את העמוד הפעיל הנוכחי (שהוא העמוד האחרון שבו הסתיימה ההקלדה)
+        const activePage = document.querySelector('.page-content.active');
+        if (activePage) {
+            // מחפשים בתוכו את מיכל החתימה שהזרקנו מראש
+            const signatureWrapper = activePage.querySelector('.signature-wrapper');
+            if (signatureWrapper) {
+                // מדליקים את הקלאס שמפעיל את ה-CSS ואת האנימציה של הזהב
+                signatureWrapper.classList.add('show-signature');
+                console.log("<--typeNextChar--> ההקלדה הסתיימה, החתימה הודלקה בהצלחה!");
+            }
+        }
         return;
     }
 

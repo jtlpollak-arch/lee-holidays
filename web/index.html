@@ -765,24 +765,30 @@
 }
 
 .signature-wrapper {
-    display: block; /* במקום inline-block */
-    width: 100px;
-    text-align: left; /* או center, תלוי איפה אתה רוצה שהיא תהיה */
-    opacity: 0;
-    transition: opacity 2s ease;
+    display: block;
+    width: 100%;                  /* תופס את כל רוחב העמוד */
+    text-align: center;           /* ממקם את התוכן במרכז */
+    opacity: 0;                   /* חבוי לחלוטין כל עוד מקלידים */
+    visibility: hidden;           /* מונע לחיצות או תפיסת מקום אקטיבית */
+    transition: opacity 1.5s ease, transform 1.5s ease;
+    transform: translateY(10px);  /* אפקט כניסה עדין מלמטה למעלה */
+    margin-top: 5px;             /* מרווח קבוע מתחת לטקסט שהוקלד */
 }
 
-/* 3. הגדרת החתימה בתוך השרשור */
 .signature-wrapper .lee-signature {
-    position: static; /* מבטל את ה-absolute הקודם */
-    width: 45px;
-    height: 45px;
-    opacity: 1 !important; /* האטימות נשלטת ע"י ה-wrapper */
-    fill: #856526 !important;
+    position: static; 
+    display: inline-block !important; /* מאפשר ל-text-align center למקם אותו באמצע */
+    width: 40px;                  /* גודל חגיגי וברור לחתימה */
+    height: 40px;
+    opacity: 1 !important;        
+    fill: #856526 !important;     /* צבע הזהב היוקרתי שלך */
 }
 
+/* הרגע שבו מנוע ההקלדה מוסיף את הקלאס בסיום */
 .signature-wrapper.show-signature {
-    opacity: 0.8;
+    opacity: 1 !important;        /* חשיפה מלאה */
+    visibility: visible;          /* החזרה ל-visible */
+    transform: translateY(0);     /* השלמת תנועת הברקה החלקה */
 }
 
     </style>
