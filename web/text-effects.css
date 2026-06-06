@@ -489,13 +489,3 @@ span {
         text-shadow: 2px 3px 5px rgba(27, 85, 101, 0.25);
     }
 }
-
-/* סמן הקלדה */
-.caret {
-    display: inline-block;
-    width: 2px;
-    height: 1.2em;
-    background-color: #1B5565;
-    animation: blink 1s infinite;
-}
-@keyframes blink { 50% { opacity: 0; } }

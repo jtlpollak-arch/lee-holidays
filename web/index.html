@@ -993,7 +993,7 @@
             root.style.setProperty('--envelope-paper', '#112830');
             backdrop.style.backgroundImage = 'none';
         }
-
+/*
         function setupClickNavigation() {
             const container = document.getElementById('pagesContainer');
             
@@ -1023,7 +1023,7 @@
                 switchToTargetPage(newPage);
             }
         }
-
+*/
         function switchToTargetPage(pageIndex) {
             // 1. עצירת מנוע ההקלדה האוטומטי שרץ ברקע כרגע כדי שלא יקפיץ אותנו חזרה
             if (window.typingTimeoutId) {
@@ -1068,10 +1068,10 @@
         }
 
         function handleTouchEnd(event) {
-            touchEndXCoordinate = event.changedTouches[0].clientX;
-            handleSwipeGestureLogic();
+//            touchEndXCoordinate = event.changedTouches[0].clientX;
+//            handleSwipeGestureLogic();
         }
-
+/*
         function handleSwipeGestureLogic() {
 
             clearAutoNavigation();
@@ -1090,7 +1090,7 @@
                 navigatePage(1);
             }
         }
-
+*/
         function getGreetingIdFromUrl() {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get('id');
@@ -1212,7 +1212,7 @@
                 paginateTextAndRender(cachedFlatData); 
                 
                 applyDynamicTheme(messageContent);
-                setupClickNavigation();
+//                setupClickNavigation();
             } catch (e) {
                 console.error("שגיאה בפענוח הגלויה:", e);
             }
