@@ -10,6 +10,7 @@ window.TYPING_SPEED = 120;
 window.globalFlatData = [];
 window.globalCharIndex = 0;
 window.typingTimeoutId = null;
+window.isErasingNow = false;
 
 // פונקציית הגשר המוזמנת מהדף הראשי
 function runTypingEffect(delta) {
@@ -265,20 +266,65 @@ function typeNextChar() {
         container.appendChild(span);
     }
 
-    // ניהול החלפת העמוד הויזואלי הפעיל בהתאם לקצב ההקלדה
+    // ניהול החלפת העמוד הויזואלי הפעיל עם אפקט מחיקה אלקטרונית עדינה
+    // ניהול החלפת העמוד הויזואלי הפעיל עם אפקט מחיקה אלקטרונית עדינה ושומר סף
     if (!pageDiv.classList.contains('active')) {
-        console.log("<--typeNextChar--> מעבר עמוד ויזואלי לעמוד אקטיבי מספר:", item.pageIndex);
+        
+        // חסימת כפל הרצות: אם המנוע כבר נמצא בתהליך מחיקה, עצור מיד!
+        if (window.isErasingNow) {
+            return;
+        }
+
+        const oldActivePage = document.querySelector('.page-content.active');
+        
+        if (oldActivePage) {
+            const oldContainer = oldActivePage.querySelector('.text-container');
+            if (oldContainer) {
+                console.log("<--typeNextChar--> מפעיל מחיקה אלקטרונית עדינה על עמוד ישן");
+                
+                // נועלים את השער כדי למנוע מטיימרים מקבילים להיכנס לכאן
+                window.isErasingNow = true;
+                
+                // 1. מדליקים את אפקט הניגוב ב-CSS
+                oldContainer.classList.add('erase-active');
+                
+                // 2. מקפיאים את מנוע ההקלדה למשך 900 מילישניות כדי לתת לאפקט להסתיים בחלקות
+                window.typingTimeoutId = setTimeout(() => {
+                    // מנקים את אפקט המחיקה מהקונטיינר הישן
+                    oldContainer.classList.remove('erase-active');
+                    
+                    // 3. מבצעים את המעבר הפיזי לעמוד החדש
+                    document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+                    pageDiv.classList.add('active');
+                    
+                    // עדכון נקודות הניווט (Dots) בהתאמה לעמוד החדש
+                    const dots = document.querySelectorAll('.dot');
+                    if (dots.length > 0) {
+                        document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
+                        const currentDot = document.getElementById(`dot-idx-${item.pageIndex}`);
+                        if (currentDot) currentDot.classList.add('active');
+                    }
+                    
+                    // פותחים את השער בחזרה לקראת מעבר העמוד הבא בעתיד
+                    window.isErasingNow = false;
+                    
+                    // 4. משחררים את המנוע להמשיך להקליד את התו הבא על דף נקי
+                    window.globalCharIndex++;
+                    window.typingTimeoutId = setTimeout(typeNextChar, window.TYPING_SPEED);
+                }, 2200);
+                
+                return; // עוצרים את הלולאה הנוכחית בזמן ההמתנה
+            }
+        }
+        
+        // הגנה לעמוד הראשון בהתחלה
         document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
         pageDiv.classList.add('active');
-        
-        // עדכון נקודות הניווט (Dots) במידה וקיימות בדף
         const dots = document.querySelectorAll('.dot');
         if (dots.length > 0) {
             document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
             const currentDot = document.getElementById(`dot-idx-${item.pageIndex}`);
-            if (currentDot) {
-                currentDot.classList.add('active');
-            }
+            if (currentDot) currentDot.classList.add('active');
         }
     }
 

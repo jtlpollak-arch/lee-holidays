@@ -791,6 +791,19 @@
     transform: translateY(0);     /* השלמת תנועת הברקה החלקה */
 }
 
+/* 1. מצב רגיל של קונטיינר הטקסט */
+.text-container {
+    opacity: 1;
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+    transition: clip-path 1.6s ease-in-out, opacity 1.6s ease-in-out;
+}
+
+/* 2. רגע המעבר - הקו העליון של המלבן יורד למטה ל-100%, מה שיוצר מחיקה מושלמת מלמעלה למטה */
+.text-container.erase-active {
+    opacity: 0;
+    clip-path: polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%);
+}
+
     </style>
 
     <svg style="position: absolute; width: 0; height: 0;">
@@ -1150,9 +1163,9 @@
                     
                     // הזרקת שם הלקוח לפוזיציה הראשונה במערך עם האפקט המבוקש
                     delta.unshift({
-                        insert: clientName + "!!!",
+                        insert: clientName + "!!",
                         attributes: {
-                            effect: "u,f"
+                            effect: "s,u"
                         }
                     });
                 }
