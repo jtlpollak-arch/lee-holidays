@@ -887,12 +887,6 @@
     </div>
 
     <script>
-        let currentActivePage = 0;
-        let totalCreatedPages = 0;
-        let rawGreetingTextGlobal = "";
-
-        let touchStartXCoordinate = 0;
-        let touchEndXCoordinate = 0;
 
         const firebaseConfig = {
             apiKey: "AIzaSyBCfo3DoB1fY8BUo-pcWlImmIAANaok9Eo",
@@ -932,164 +926,28 @@
             backdrop.style.backgroundImage = 'none';
         }
 
-function setupClickNavigation() {
-    const container = document.getElementById('pagesContainer');
-    
-    if (!container) return;
+        function setupClickNavigation() {
+            const container = document.getElementById('pagesContainer');
+            
+            if (!container) return;
 
-    container.addEventListener('click', function(event) {
+            container.addEventListener('click', function(event) {
 
-        clearAutoNavigation();
+                clearAutoNavigation();
 
-        const screenWidth = window.innerWidth;
-        const clickX = event.clientX;
-        const halfWidth = screenWidth / 2;
+                const screenWidth = window.innerWidth;
+                const clickX = event.clientX;
+                const halfWidth = screenWidth / 2;
 
-        // חצי ימני -> דף קודם (-1)
-        // חצי שמאלי -> דף הבא (1)
-        if (clickX > halfWidth) {
-            navigatePage(1); 
-        } else {
-            navigatePage(-1);
+                // חצי ימני -> דף קודם (-1)
+                // חצי שמאלי -> דף הבא (1)
+                if (clickX > halfWidth) {
+                    navigatePage(1); 
+                } else {
+                    navigatePage(-1);
+                }
+            });
         }
-    });
-}
-
-function getVisualLength(str) {
-    // Array.from מפרק את המחרוזת לפי "תווי Unicode" ולא לפי "יחידות זיכרון"
-    return Array.from(str).length;
-}        
-/*
-        // קבוע שתוכל לכוון עדין לפי הצורך
-const MAX_CHARS_PER_LINE = 16;
-const MAX_LINES_PER_PAGE = 4;
-
-
-// החלף את הפונקציה הקיימת (אתה יכול לשמור את הישנה בהערה)
-function paginateTextAndRender(flatArray) {
-    const textContainer = document.getElementById('text-container');
-    textContainer.innerHTML = ''; // ניקוי הקיים
-
-    // אנחנו יוצרים דף חדש בתוך ה-DOM
-    let currentPage = document.createElement('div');
-    currentPage.className = 'page';
-    textContainer.appendChild(currentPage);
-
-    // לוגיקת החלוקה לדפים:
-    // במקום לחתוך מחרוזת, אנחנו עוברים על ה-flatArray
-    // ומזריקים לתוך ה-currentPage.
-    
-    // בוא נשמור את המערך השטוח בגלובלי כדי שה-type יוכל להשתמש בו
-    window.currentGreetingData = flatArray; 
-    window.currentIndex = 0; 
-    
-    // מפעילים את ה-type שיתחיל לעבוד על המערך הזה
-    type();
-}
-
-
-/*
-function paginateTextAndRender(text) {
-    const container = document.getElementById('pagesContainer');
-    container.innerHTML = '';
-
-    // 1. הגנה על ירידות שורה: צמצום רצפים ל-@@@ בודד
-    let processedText = text.replace(/\n+/g, '@@@');
-    
-    // 2. פיצול אימוג'ים לנרמול, וטיפול ברווחים
-    processedText = processedText.replace(/([\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}])/gu, ' $1 ')
-                     .replace(/\s+/g, ' ') 
-                     .trim();
-    
-    // 3. פיצול למילים
-    const words = processedText.split(/(\s+|@@@)/);
-    let lines = [];
-    let currentLine = "";
-
-    words.forEach(word => {
-        if (word === '@@@') {
-            lines.push(currentLine.trim());
-            currentLine = "";
-            return;
-        }
-
-        // ניקוי זמני של תגיות העיצוב כדי לחשב אורך ויזואלי נכון
-        const cleanWord = word.replace(/#([a-z])(.*?)\1#/g, '$2'); 
-        const visualLength = Array.from(cleanWord).length;
-
-        const currentLen = getVisualLength(currentLine.replace(/#([a-z])(.*?)\1#/g, '$2'));
-        const wordLen = visualLength;
-
-        if ((currentLen + wordLen) > MAX_CHARS_PER_LINE && currentLine.length > 0) {
-            lines.push(currentLine.trim());
-            currentLine = word;
-        } else {
-            currentLine += word;
-        }
-    });
-    if (currentLine.trim()) lines.push(currentLine.trim());
-
-    // 4. שלב הקיבוץ לעמודים
-    let pages = [];
-    let currentPageLines = [];
-
-    lines.forEach(line => {
-        const formattedLine = line.replace(/@@@/g, '\n');
-        
-        if (currentPageLines.length >= MAX_LINES_PER_PAGE) {
-            pages.push(currentPageLines.join('\n'));
-            currentPageLines = [formattedLine];
-        } else {
-            currentPageLines.push(formattedLine);
-        }
-    });
-    if (currentPageLines.length > 0) pages.push(currentPageLines.join('\n'));
-
-    // 5. שלב הרינדור ל-DOM (כאן השינוי המרכזי!)
-    pages.forEach((pageText, index) => {
-        const pageDiv = document.createElement('div');
-        pageDiv.classList.add('page-content');
-        if (index === 0) pageDiv.classList.add('active');
-        pageDiv.id = `page-idx-${index}`;
-        
-        const textContainer = document.createElement('div');
-        textContainer.className = 'text-container';
-        
-        // --- כאן הקסם: עיבוד האפקטים והזרקה כ-HTML ---
-        const processedHtml = processTextEffects(pageText);
-        textContainer.innerHTML = processedHtml.replace(/\n/g, '<br>');
-        // ---------------------------------------------
-        
-        pageDiv.appendChild(textContainer);
-        
-        if (index === pages.length - 1) {
-            const signatureDiv = document.createElement('div');
-            signatureDiv.className = 'signature-wrapper';
-            const sigSvg = document.querySelector('.lee-signature').cloneNode(true);
-            signatureDiv.appendChild(sigSvg);
-            pageDiv.appendChild(signatureDiv); 
-        }
-
-        pageDiv.setAttribute('data-full-text', pageText);
-        container.appendChild(pageDiv);
-    });
-
-    // 6. יצירת הנקודות למטה
-    const dotsContainer = document.getElementById('pageDots');
-    dotsContainer.innerHTML = '';
-    totalCreatedPages = pages.length;
-
-    if (totalCreatedPages > 1) {
-        for (let i = 0; i < totalCreatedPages; i++) {
-            const dot = document.createElement('div');
-            dot.classList.add('dot');
-            if (i === 0) dot.classList.add('active');
-            dot.id = `dot-idx-${i}`;
-            dot.setAttribute('onclick', `switchToTargetPage(${i}); event.stopPropagation();`);
-            dotsContainer.appendChild(dot);
-        }
-    }
-}*/
 
         function navigatePage(direction) {
             const newPage = currentActivePage - direction;
@@ -1099,22 +957,41 @@ function paginateTextAndRender(text) {
         }
 
         function switchToTargetPage(pageIndex) {
+            // 1. עצירת מנוע ההקלדה האוטומטי שרץ ברקע כרגע כדי שלא יקפיץ אותנו חזרה
+            if (window.typingTimeoutId) {
+                clearTimeout(window.typingTimeoutId);
+            }
 
-            clearAutoNavigation();
-
-            if (pageIndex >= 0 && pageIndex < totalCreatedPages) {
-                document.getElementById(`page-idx-${currentActivePage}`).classList.remove('active');
-                const prevDot = document.getElementById(`dot-idx-${currentActivePage}`);
-                if (prevDot) prevDot.classList.remove('active');
-                
-                currentActivePage = pageIndex;
-                const newPage = document.getElementById(`page-idx-${currentActivePage}`);
+            // 2. עדכון הסטייל של העמודים ב-DOM (הסרת active מכולם והוספה לעמוד הנבחר)
+            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+            const newPage = document.getElementById(`page-${pageIndex}`);
+            if (newPage) {
                 newPage.classList.add('active');
-                const nextDot = document.getElementById(`dot-idx-${currentActivePage}`);
-                if (nextDot) nextDot.classList.add('active');
+            }
+
+            // 3. עדכון הסטייל של הנקודות (Dots) ב-DOM (הסרת active מכולן והוספה לנקודה שנלחצה)
+            document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
+            const newDot = document.getElementById(`dot-idx-${pageIndex}`);
+            if (newDot) {
+                newDot.classList.add('active');
+            }
+
+            // 4. איפוס וניקוי מוחלט של כל הדפים באפליקציה כדי למנוע שאריות וטעינה כפולה
+            document.querySelectorAll('.page-content .text-container').forEach(container => {
+                container.innerHTML = '';
+            });
+
+            // 5. מציאת האינדקס של התו הראשון השייך לעמוד שנבחר מתוך המערך החדש
+            const firstCharIndex = window.globalFlatData.findIndex(item => item.pageIndex === pageIndex);
+            
+            if (firstCharIndex !== -1) {
+                // מעדכנים את המצביע הגלובלי של המנוע החדש למיקום החדש בטקסט
+                window.globalCharIndex = firstCharIndex;
                 
-                // 2. מפעילים את אפקט הכתיבה מחדש לעמוד החדש
-                runTypingEffect(); 
+                // 6. הפעלה מחדש של מנוע ההקלדה מהנקודה המעודכנת של העמוד החדש
+                typeNextChar();
+            } else {
+                console.error("<--switchToTargetPage--> שגיאה: לא נמצאו תווים עבור עמוד זה במערך הגלובלי");
             }
         }
 
@@ -1152,13 +1029,6 @@ function paginateTextAndRender(text) {
         }
 
         let autoNavigateTimeout = null;
-
-        function clearAutoNavigation() {
-            if (autoNavigateTimeout) {
-                clearTimeout(autoNavigateTimeout);
-                autoNavigateTimeout = null;
-            }
-        }
 
         function launchContextualConfetti(text) {
             const container = document.getElementById('confetti-container');
