@@ -125,7 +125,11 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
   }
 
   void _openPreview() {
-    final previewMap = {'clientName': widget.client.firstName, 'text': _quillController.getPlainText()};
+    // 1. שליפת מבנה ה-Delta המלא (כולל העיצובים והתגים) והמרתו ל-Map
+    final deltaMap = _quillController.document.toDelta().toJson();
+
+    // 2. בניית ה-Map עבור ה-Preview, כאשר שדה ה-text מכיל את ה-Delta כסטרינג של JSON
+    final previewMap = {'clientName': widget.client.firstName, 'text': jsonEncode(deltaMap)};
 
     // הופכים את ה-JSON למחרוזת של בתים ומקודדים ל-Base64 בטוח ל-URL
     final jsonString = jsonEncode(previewMap);
