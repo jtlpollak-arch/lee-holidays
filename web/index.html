@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>גלויה דיגיטלית אישית | לי אטדגי - תיווך וייעוץ נדל"ן</title>
 
-    <script src="text-effects.js" defer></script>
-    <link rel="stylesheet" href="text-effects.css">
+    <script src="text-effects.js" defer></script><link rel="stylesheet" href="text-effects.css">
+    <script src="delta-renderer.js" defer></script> <link rel="stylesheet" href="text-effects.css">
 
     <style>
         @font-face {
@@ -959,11 +959,36 @@ function getVisualLength(str) {
     // Array.from מפרק את המחרוזת לפי "תווי Unicode" ולא לפי "יחידות זיכרון"
     return Array.from(str).length;
 }        
-
+/*
         // קבוע שתוכל לכוון עדין לפי הצורך
 const MAX_CHARS_PER_LINE = 16;
 const MAX_LINES_PER_PAGE = 4;
 
+
+// החלף את הפונקציה הקיימת (אתה יכול לשמור את הישנה בהערה)
+function paginateTextAndRender(flatArray) {
+    const textContainer = document.getElementById('text-container');
+    textContainer.innerHTML = ''; // ניקוי הקיים
+
+    // אנחנו יוצרים דף חדש בתוך ה-DOM
+    let currentPage = document.createElement('div');
+    currentPage.className = 'page';
+    textContainer.appendChild(currentPage);
+
+    // לוגיקת החלוקה לדפים:
+    // במקום לחתוך מחרוזת, אנחנו עוברים על ה-flatArray
+    // ומזריקים לתוך ה-currentPage.
+    
+    // בוא נשמור את המערך השטוח בגלובלי כדי שה-type יוכל להשתמש בו
+    window.currentGreetingData = flatArray; 
+    window.currentIndex = 0; 
+    
+    // מפעילים את ה-type שיתחיל לעבוד על המערך הזה
+    type();
+}
+
+
+/*
 function paginateTextAndRender(text) {
     const container = document.getElementById('pagesContainer');
     container.innerHTML = '';
@@ -1064,7 +1089,7 @@ function paginateTextAndRender(text) {
             dotsContainer.appendChild(dot);
         }
     }
-}
+}*/
 
         function navigatePage(direction) {
             const newPage = currentActivePage - direction;
@@ -1126,7 +1151,6 @@ function paginateTextAndRender(text) {
             return urlParams.get('id');
         }
 
-        let typingTimeoutId = null;
         let autoNavigateTimeout = null;
 
         function clearAutoNavigation() {
@@ -1217,15 +1241,34 @@ function paginateTextAndRender(text) {
             }
         }
 
+        // בתוך index.html
         function handleGreetingDisplay(clientName, messageContent) {
-            const fullMessage = `${clientName}\n${messageContent}`;
-            // במקום לשמור את התוצאה המעובדת, שמור את הטקסט הגולמי
-            rawGreetingTextGlobal = fullMessage; 
-            
-            document.getElementById('clientName').innerText = ""; 
-            paginateTextAndRender(rawGreetingTextGlobal);
-            applyDynamicTheme(messageContent);
-            setupClickNavigation();
+            // הגרסה החדשה:
+            try {
+                const delta = JSON.parse(messageContent);
+                const flatData = flattenDelta(delta);
+                
+                document.getElementById('clientName').innerText = ""; 
+                
+                // כעת אנחנו מעבירים מערך (flatData) במקום טקסט גולמי
+                paginateTextAndRender(flatData); 
+                
+                applyDynamicTheme(messageContent);
+                setupClickNavigation();
+            } catch (e) {
+                console.error("שגיאה בפענוח הגלויה:", e);
+            }
+
+            /* // הגרסה הישנה (להערה בלבד):
+            function handleGreetingDisplay(clientName, messageContent) {
+                const fullMessage = `${clientName}\n${messageContent}`;
+                rawGreetingTextGlobal = fullMessage; 
+                document.getElementById('clientName').innerText = ""; 
+                paginateTextAndRender(rawGreetingTextGlobal);
+                applyDynamicTheme(messageContent);
+                setupClickNavigation();
+            }
+            */
         }
 
         window.addEventListener('DOMContentLoaded', loadGreetingCard);

@@ -1,78 +1,87 @@
-/* 1. כוכביות: סיבוב עדין + טשטוש דיו */
-.emphasized-rotate {
-    display: inline-block;
-    transform: rotate(-20deg);
-    font-weight: 800;
-    color: #1B5565;
-    text-shadow: 1px 1px 2px rgba(27, 85, 101, 0.3);
+/* text-effects.css - גרסה סופית מותאמת ל-Classes שלך */
+
+span { 
+    display: inline-block; 
+    transition: all 0.3s ease; 
 }
 
-/* 2. סוגריים מרובעים: זהב יוקרתי */
-.gold-text {
+/* 1. סיבוב */
+.effect-i {
+    transform: rotate(-5deg);
+    font-weight: 800;
+    color: #1B5565;
+}
+
+/* 2. זהב */
+.effect-g {
     background: linear-gradient(to right, #bf953f, #fcf6ba, #b38728);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     font-weight: bold;
 }
 
-/* 3. כוכבית כפולה: הדגשה חזקה */
-.bold-large {
+/* 3. בולד גדול */
+.effect-b {
     font-size: 1.2em;
     font-weight: 900;
     color: #0f2e36;
 }
 
-/* 4. קו תחתון: גלי וידני */
-.underline-handwritten {
-    border-bottom: 2px wavy #1B5565;
-    padding-bottom: 2px;
+/* 4. קו תחתי */
+.effect-u {
+    text-decoration: underline;
+    text-decoration-color: #1B5565;
+    text-decoration-style: wavy;
 }
 
-/* 5. מרווח אותיות: אצילי */
-.wide-spacing {
-    letter-spacing: 3px;
-    font-variant: small-caps;
+/* 5. ריווח */
+.effect-s {
+    letter-spacing: 0.3em;
 }
 
-/* 6. רטט: אנימציה */
-.jitter-effect {
-    display: inline-block;
-    animation: jitter 0.5s infinite;
+/* 6. ריטוט */
+.effect-v {
+    animation: jitter 0.4s infinite;
 }
 @keyframes jitter {
-    0% { transform: translate(1px, 1px) rotate(0deg); }
-    10% { transform: translate(-1px, -2px) rotate(-1deg); }
-    20% { transform: translate(-3px, 0px) rotate(1deg); }
+    0%, 100% { transform: translate(1px, 1px); }
+    50% { transform: translate(-1px, -1px); }
 }
 
-/* 7. הילה זוהרת */
-.glow-effect {
-    text-shadow: 0 0 8px rgba(191, 149, 63, 0.6);
+/* 7. זוהר (הילה) */
+.effect-f {
+    text-shadow: 0 0 8px rgba(255, 165, 0, 0.8);
 }
 
-/* 8. טקסט לחש: דק ואפור */
-.whisper-text {
+/* 8. לחישה */
+.effect-w {
     font-size: 0.85em;
-    color: #7a8c91;
-    font-style: italic;
+    opacity: 0.7;
+    color: #5a7b82;
 }
 
-/* 9. מרקר: רקע פסטל */
-.marker-highlight {
-    background: linear-gradient(120deg, #fff59d 0%, #fff59d 100%);
-    background-repeat: no-repeat;
-    background-size: 100% 40%;
-    background-position: 0 80%;
-    padding: 0 2px;
+/* 9. מרקר */
+.effect-h {
+    background-color: rgba(255, 235, 59, 0.5);
+    border-radius: 2px;
 }
 
-/* 10. קפיצה: אנימציה */
-.pop-up {
-    display: inline-block;
-    animation: pop 0.9s ease-out;
+/* 10. פופ-אפ */
+.effect-r {
+    animation: pop 0.5s ease-out;
 }
 @keyframes pop {
-    0% { transform: scale(0.8); }
-    50% { transform: scale(1.2); }
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
     100% { transform: scale(1); }
 }
+
+/* סמן הקלדה */
+.caret {
+    display: inline-block;
+    width: 2px;
+    height: 1.2em;
+    background-color: #1B5565;
+    animation: blink 1s infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
