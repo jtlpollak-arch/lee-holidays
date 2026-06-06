@@ -887,6 +887,7 @@
     </div>
 
     <script>
+        let flatData = "";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBCfo3DoB1fY8BUo-pcWlImmIAANaok9Eo",
@@ -912,7 +913,7 @@
             document.getElementById('envelopeWrapper').classList.add('open');
             setTimeout(() => {
                 document.getElementById('cardElement').classList.add('open');
-                launchContextualConfetti(rawGreetingTextGlobal);
+                launchContextualConfetti(flatData);
                 runTypingEffect();
             }, 400);
         }
@@ -1116,11 +1117,29 @@
             // הגרסה החדשה:
             try {
                 const delta = JSON.parse(messageContent);
-                const flatData = flattenDelta(delta);
                 
                 document.getElementById('clientName').innerText = ""; 
                 
-                // כעת אנחנו מעבירים מערך (flatData) במקום טקסט גולמי
+                // בדיקה שקיים שם לקוח ושדה ה-ops קיים ב-Delta לפני ההזרקה
+                if (clientName && clientName.trim() !== "" && Array.isArray(delta)) {
+                    // הוספת ירידת שורה מיד אחרי השם כדי להפריד מגוף הברכה
+                    delta.unshift({
+                        insert: "\n"
+                    });
+                    
+                    // הזרקת שם הלקוח לפוזיציה הראשונה במערך עם האפקט המבוקש
+                    delta.unshift({
+                        insert: clientName + "!!!",
+                        attributes: {
+                            effect: "r,s,f,b"
+                        }
+                    });
+                }
+                
+                // כעת, כשה-Delta כולל את שם הלקוח באופן אורגני, המנוע יפרק ויעמד אותו נכון
+                const flatData = flattenDelta(delta);
+                
+                // העברת המערך המעודכן והמחושב לרינדור ולחלוקת עמודים דינמית
                 paginateTextAndRender(flatData); 
                 
                 applyDynamicTheme(messageContent);
@@ -1128,17 +1147,6 @@
             } catch (e) {
                 console.error("שגיאה בפענוח הגלויה:", e);
             }
-
-            /* // הגרסה הישנה (להערה בלבד):
-            function handleGreetingDisplay(clientName, messageContent) {
-                const fullMessage = `${clientName}\n${messageContent}`;
-                rawGreetingTextGlobal = fullMessage; 
-                document.getElementById('clientName').innerText = ""; 
-                paginateTextAndRender(rawGreetingTextGlobal);
-                applyDynamicTheme(messageContent);
-                setupClickNavigation();
-            }
-            */
         }
 
         window.addEventListener('DOMContentLoaded', loadGreetingCard);

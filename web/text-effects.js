@@ -1,18 +1,4 @@
 // text-effects.js
-
-const textEffects = {
-    '*': 'emphasized-rotate',   // כוכביות: סיבוב עדין
-    '[': 'gold-text',           // סוגריים מרובעים: צבע זהב
-    '**': 'bold-large',         // כוכבית כפולה: הדגשה חזקה
-    '_': 'underline-handwritten',// קו תחתון ידני
-    '<': 'wide-spacing',        // קטן-גדול: מרווח אותיות
-    '{': 'jitter-effect',       // סוגריים מסולסלים: רטט
-    '~': 'glow-effect',         // טילדה: הילה זוהרת
-    '`': 'whisper-text',        // גרש הפוך: לחש
-    '^': 'marker-highlight',    // חץ למעלה: מרקר
-    '!': 'pop-up'               // קריאה: קפיצה
-};
-
 /**
  * פונקציה שמקבלת טקסט גולמי ומחזירה אותו עם תגיות HTML
  */
@@ -46,7 +32,7 @@ function applyTextEffects(text) {
     return processTextEffects(text);
 }
 
-
+/*
 function runTypingEffect() {
     const activePage = document.querySelector('.page-content.active');
     if (!activePage) return;
@@ -141,3 +127,4 @@ function runTypingEffect() {
     textContainer.innerHTML = '<span class="caret"></span>';
     type();
 }
+*/
