@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/quill_delta.dart';
+import 'package:holidays/presentation/widgets/text_style_option.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // ייבוא רשמי לעבודה מול בסיס הנתונים בענן
 import '../../data/models/client_model.dart';
@@ -6,8 +8,8 @@ import '../../data/models/event_model.dart';
 import '../bloc_or_provider/home_cubit.dart';
 import 'dart:convert';
 import 'greeting_templates.dart';
-import 'emoji_space_fix_formatter.dart';
 import 'text_style_helper.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 
 class GreetingCanvas extends StatefulWidget {
   final ClientModel client;
@@ -26,7 +28,9 @@ class GreetingCanvas extends StatefulWidget {
 }
 
 class _GreetingCanvasState extends State<GreetingCanvas> {
-  late TextEditingController _textController;
+  late QuillController _quillController;
+  final FocusNode _focusNode = FocusNode();
+  final ValueNotifier<List<String>> _activeTagsNotifier = ValueNotifier<List<String>>([]);
   late String _currentGreetingText;
   bool _isProcessing = false;
 
@@ -35,26 +39,93 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
   final Color _lightBgColor = const Color(0xFFF4F7F8);
 
   @override
+  @override
   void initState() {
     super.initState();
     _currentGreetingText = widget.defaultGreetingText;
-    _textController = TextEditingController(text: widget.defaultGreetingText);
+    _quillController = QuillController.basic();
 
-    _textController.addListener(() {
-      setState(() {
-        _currentGreetingText = _textController.text;
-      });
-    });
+    // הוספת האזנה גם לשינויי בחירה וגם לשינויי תוכן
+    _quillController.addListener(_updateActiveTags);
   }
 
   @override
   void dispose() {
-    _textController.dispose();
+    _quillController.removeListener(_updateActiveTags);
+    _quillController.dispose();
     super.dispose();
   }
 
+  void _updateActiveTags() {
+    if (!mounted) return;
+
+    // 1. נזהה את הטווח של המילה הנוכחית (בדומה למה שעשינו ב-_toggleEffect)
+    final selection = _quillController.selection;
+    final text = _quillController.document.toPlainText();
+
+    int start = selection.start;
+    while (start > 0 && text[start - 1] != ' ' && text[start - 1] != '\n') {
+      start--;
+    }
+    int end = selection.start;
+    while (end < text.length && text[end] != ' ' && text[end] != '\n') {
+      end++;
+    }
+
+    // 2. נשלוף את ה-Attributes של כל הטווח שמצאנו
+    // זה מבטיח שאם המילה מפוצלת, נקבל את העיצוב של כולה
+    final attributes = _quillController.document.collectStyle(start, end - start).attributes;
+
+    if (attributes.containsKey('effect')) {
+      _activeTagsNotifier.value = attributes['effect']!.value.toString().split(',');
+    } else {
+      _activeTagsNotifier.value = [];
+    }
+  }
+
+  void _toggleEffect(String tag) {
+    _focusNode.requestFocus();
+
+    // 1. זיהוי הטווח (כולל הרחבה למילה אם הסמן רק עומד)
+    var selection = _quillController.selection;
+    if (selection.isCollapsed) {
+      final text = _quillController.document.toPlainText();
+      int start = selection.start;
+      while (start > 0 && text[start - 1] != ' ' && text[start - 1] != '\n') start--;
+      int end = selection.start;
+      while (end < text.length && text[end] != ' ' && text[end] != '\n') end++;
+      selection = TextSelection(baseOffset: start, extentOffset: end);
+      _quillController.updateSelection(selection, ChangeSource.local);
+    }
+
+    // 2. עוברים תו-תו בטווח הנבחר ומפעילים לוגיקה עצמאית לכל אחד
+    for (int i = selection.start; i < selection.end; i++) {
+      // א. קריאת המצב הקיים של התו הספציפי
+      final style = _quillController.document.collectStyle(i, 1);
+      final String currentEffectStr = style.attributes['effect']?.value?.toString() ?? "";
+      List<String> effects = currentEffectStr.isEmpty ? [] : currentEffectStr.split(',');
+
+      // ב. לוגיקה חכמה: אם יש - תוריד, אם אין - תוסיף
+      // זה קורה בנפרד עבור כל תו, לכן זה עובד בצורה מושלמת על טווחים מעורבים
+      if (effects.contains(tag)) {
+        effects.remove(tag);
+      } else {
+        effects.add(tag);
+      }
+
+      // ג. החלת העדכון על התו הספציפי הזה בלבד
+      final newEffect = effects.join(',');
+      _quillController.formatText(i, 1, newEffect.isEmpty ? Attribute<String>('effect', AttributeScope.inline, "") : Attribute<String>('effect', AttributeScope.inline, newEffect));
+    }
+
+    // 3. ריענון ה-UI כדי שהצ'יפים יתעדכנו לפי המצב החדש
+    Future.delayed(const Duration(milliseconds: 50), () {
+      _updateActiveTags();
+    });
+  }
+
   void _openPreview() {
-    final previewMap = {'clientName': widget.client.firstName, 'text': _textController.text};
+    final previewMap = {'clientName': widget.client.firstName, 'text': _quillController.getPlainText()};
 
     // הופכים את ה-JSON למחרוזת של בתים ומקודדים ל-Base64 בטוח ל-URL
     final jsonString = jsonEncode(previewMap);
@@ -76,7 +147,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
       final String greetingId = greetingsRef.doc().id;
 
       // 2. העלאת נתוני הגלויה לשרת הענן בזמן אמת
-      await greetingsRef.doc(greetingId).set({'id': greetingId, 'clientName': widget.client.firstName, 'text': _currentGreetingText.trim(), 'createdAt': FieldValue.serverTimestamp()});
+      await greetingsRef.doc(greetingId).set({'id': greetingId, 'clientName': widget.client.firstName, 'text': jsonEncode(_quillController.document.toDelta().toJson()), 'createdAt': FieldValue.serverTimestamp()});
 
       // 3. בניית כתובת הקישור הרשמית המצביעה ישירות על ה-index.html ב-Hosting
       final String cloudCardUrl = 'https://lee-greetings.web.app/?id=$greetingId';
@@ -329,7 +400,9 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                               color: Colors.transparent,
                               child: InkWell(
                                 onTap: () {
-                                  setState(() => _textController.text = template.content);
+                                  setState(() {
+                                    _quillController.document = Document()..insert(0, template.content);
+                                  });
                                   Navigator.pop(context);
                                 },
                                 child: Padding(
@@ -475,72 +548,12 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                       ),
                       const SizedBox(height: 8),
 
-                      // הוסף את זה בדיוק לפני ה-Stack של ה-TextFormField
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: // בתוך ה-Column של ה-build:
-                        SizedBox(
-                          height: 45,
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            children: TextStyleHelper.styleMap.entries.map((entry) {
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 4),
-                                child: ActionChip(
-                                  avatar: Icon(entry.value['icon'], size: 16),
-                                  label: Text(entry.key, style: const TextStyle(fontSize: 12)),
-                                  onPressed: () => TextStyleHelper.applyStyle(_textController, entry.value['tag']),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
+                      SizedBox(
+                        height: 300, // הגובה המוקצה לעורך
+                        child: _buildQuillEditorComponent(),
                       ),
 
                       // בתוך ה-build של GreetingCanvas, לפני ה-Stack של ה-TextField:
-                      Stack(
-                        children: [
-                          // 1. תיבת הטקסט
-                          TextFormField(
-                            controller: _textController,
-                            enableSuggestions: true,
-                            autocorrect: false,
-                            inputFormatters: [
-                              EmojiSpaceFixFormatter(), // הפילטר שיפתור את סימני השאלה
-                            ],
-                            minLines: 13,
-                            maxLines: 13,
-                            textDirection: TextDirection.rtl,
-                            textCapitalization: TextCapitalization.sentences,
-                            keyboardType: TextInputType.multiline,
-                            textInputAction: TextInputAction.newline,
-                            style: const TextStyle(fontSize: 15, height: 1.4, color: Colors.black87),
-                            decoration: InputDecoration(
-                              hintText: "הקלידי ברכה אישית או בחרי מהמאגר ✨",
-                              fillColor: _lightBgColor,
-                              filled: true,
-                              contentPadding: const EdgeInsets.only(top: 16, bottom: 16, left: 16, right: 48),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: _tealColor, width: 1.5),
-                              ),
-                            ),
-                          ),
-
-                          // 2. הכפתור ממוקם ידנית בפינה
-                          Positioned(
-                            top: 8,
-                            right: 8, // ב-RTL, right הוא הפינה העליונה של ההתחלה
-                            child: IconButton(
-                              icon: const Icon(Icons.auto_awesome, color: Color(0xFF1B5565)),
-                              onPressed: () => _showTemplatesDialog(widget.event.eventType),
-                              tooltip: 'מחולל ברכות',
-                            ),
-                          ),
-                        ],
-                      ),
-
                       const SizedBox(height: 24),
 
                       // במקום SizedBox, השתמש ב-Alignment או ב-Row
@@ -576,6 +589,75 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildQuillEditorComponent() {
+    return Column(
+      children: [
+        // 1. המניו למעלה (הצ'יפים נשארים כפי שהיו)
+        SizedBox(
+          height: 50,
+          child: ValueListenableBuilder<List<String>>(
+            valueListenable: _activeTagsNotifier,
+            builder: (context, activeTags, child) {
+              return ListView(
+                scrollDirection: Axis.horizontal,
+                children: TextStyleHelper.styleMap.entries.map((entry) {
+                  final name = entry.key;
+                  final tag = entry.value['tag'];
+                  final color = entry.value['color'] as Color;
+                  final icon = entry.value['icon'] as IconData;
+                  final bool isActive = activeTags.contains(tag);
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: ActionChip(
+                      avatar: Icon(icon, size: 16, color: isActive ? Colors.white : Colors.black),
+                      label: Text(name, style: TextStyle(fontSize: 12, color: isActive ? Colors.white : Colors.black)),
+                      backgroundColor: isActive ? color : Colors.grey[200],
+                      onPressed: () => _toggleEffect(tag),
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ),
+
+        // 2. ה-Stack שמכיל את העורך ואת כפתור הברכות הצף
+        Expanded(
+          child: Stack(
+            children: [
+              // העורך תופס את כל המקום
+              Positioned.fill(
+                child: QuillEditor.basic(
+                  controller: _quillController,
+                  focusNode: _focusNode,
+                  config: const QuillEditorConfig(placeholder: "הקלידי ברכה אישית או בחרי מהמאגר ✨", padding: EdgeInsets.only(top: 16, left: 16, bottom: 16, right: 60)),
+                ),
+              ),
+
+              // כפתור הברכות ממוקם בפינה העליונה (RTL)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.8), // רקע חצי שקוף למראה נקי
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.auto_awesome, color: Color(0xFF1B5565)),
+                    onPressed: () => _showTemplatesDialog(widget.event.eventType),
+                    tooltip: 'בחירת ברכה מהמאגר',
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
