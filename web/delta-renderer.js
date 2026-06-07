@@ -5,7 +5,7 @@
 
 window.MAX_CHARS_PER_LINE = 18;
 window.MAX_LINES_PER_PAGE = 4;
-window.TYPING_SPEED = 120;
+window.TYPING_SPEED = 250;
 
 window.globalFlatData = [];
 window.globalCharIndex = 0;
@@ -328,7 +328,7 @@ function typeNextChar() {
                     // 4. משחררים את המנוע להמשיך להקליד את התו הבא על דף נקי
                     window.globalCharIndex++;
                     window.typingTimeoutId = setTimeout(typeNextChar, window.TYPING_SPEED);
-                }, 2200);
+                }, 2100);
                 
                 return; // עוצרים את הלולאה הנוכחית בזמן ההמתנה
             }
