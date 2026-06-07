@@ -72,9 +72,15 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
       end++;
     }
 
-    // 2. נשלוף את ה-Attributes של כל הטווח שמצאנו
-    // זה מבטיח שאם המילה מפוצלת, נקבל את העיצוב של כולה
-    final attributes = _quillController.document.collectStyle(start, end - start).attributes;
+    // הגנה למקרה שהטקסט ריק או שהאינדקס מחוץ לטווח
+    if (start >= text.length || start == end) {
+      _activeTagsNotifier.value = [];
+      return;
+    }
+
+    // 2. חבל ההצלה: נשלוף את ה-Attributes רק של התו הראשון במילה (באורך 1)
+    // זה מונע מסימני פיסוק צמודים בסוף המילה (כמו ! או ?) להכשיל את בדיקת ה-collectStyle
+    final attributes = _quillController.document.collectStyle(start, 1).attributes;
 
     if (attributes.containsKey('effect')) {
       _activeTagsNotifier.value = attributes['effect']!.value.toString().split(',');
@@ -453,6 +459,115 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
     );
   }
 
+  void _showEffectsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: Colors.white,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // כותרת הדיאלוג
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.auto_awesome, size: 18, color: Color(0xFF1B5565)),
+                        SizedBox(width: 8),
+                        Text(
+                          'סגנונות ואפקטים לטקסט',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1B5565)),
+                        ),
+                      ],
+                    ),
+                    IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context)),
+                  ],
+                ),
+                const Text('סמני מילים בברכה ובחרי אפקט להחלה או להסרה:', style: TextStyle(fontSize: 11, color: Colors.black54)),
+                const SizedBox(height: 16),
+
+                // בניית 10 הכפתורים במבנה דו-שורתי של 5 כפול 2 בתוך ה-Dialog
+                ValueListenableBuilder<List<String>>(
+                  valueListenable: _activeTagsNotifier,
+                  builder: (context, activeTags, child) {
+                    final List<MapEntry<String, Map<String, dynamic>>> allEntries = TextStyleHelper.styleMap.entries.toList();
+
+                    final List<MapEntry<String, Map<String, dynamic>>> firstRow = allEntries.sublist(0, 5);
+                    final List<MapEntry<String, Map<String, dynamic>>> secondRow = allEntries.sublist(5, 10);
+
+                    Widget buildDialogKey(MapEntry<String, Map<String, dynamic>> entry) {
+                      final String name = entry.key;
+                      final String tag = entry.value['tag'];
+                      final Color color = entry.value['color'] as Color;
+                      final IconData icon = entry.value['icon'] as IconData;
+                      final bool isActive = activeTags.contains(tag);
+
+                      return Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(2.0),
+                          child: GestureDetector(
+                            onTap: () {
+                              // 1. החלת האפקט על ה-Controller בזיכרון
+                              _toggleEffect(tag);
+
+                              // 2. חבל ההצלה: מכיוון ש-_toggleEffect מחזיר אוטומטית פוקוס לעורך,
+                              // אנחנו מורידים אותו מיד חזרה כדי להעלים את הדמעות הסגולות באותה מאית שנייה!
+                              _focusNode.unfocus();
+                            },
+                            child: Container(
+                              height: 52, // גובה מושלם ללחיצה נוחה בדיאלוג
+                              decoration: BoxDecoration(
+                                color: isActive ? color : Colors.grey[50],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: isActive ? color : Colors.grey[300]!, width: 1),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(icon, size: 18, color: isActive ? Colors.white : Colors.black87),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    name,
+                                    style: TextStyle(fontSize: 10, fontWeight: isActive ? FontWeight.bold : FontWeight.normal, color: isActive ? Colors.white : Colors.black87),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(children: firstRow.map((e) => buildDialogKey(e)).toList()),
+                        const SizedBox(height: 4),
+                        Row(children: secondRow.map((e) => buildDialogKey(e)).toList()),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+              ],
+            ),
+          ),
+        );
+      },
+    ).then((_) {
+      // בלוק זה יורץ אוטומטית מיד ברגע שהדיאלוג נסגר מכל סיבה שהיא
+      // אנחנו מחזירים את הפוקוס לעורך כדי שהמקלדת והידיות הסגולות יקפצו חזרה למקומן
+      if (mounted && _quillController.selection.isValid && !_quillController.selection.isCollapsed) {
+        _focusNode.requestFocus();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     List<Widget> actionButtons = [];
@@ -599,33 +714,43 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
   Widget _buildQuillEditorComponent() {
     return Column(
       children: [
-        // 1. המניו למעלה (הצ'יפים נשארים כפי שהיו)
-        SizedBox(
-          height: 50,
-          child: ValueListenableBuilder<List<String>>(
-            valueListenable: _activeTagsNotifier,
-            builder: (context, activeTags, child) {
-              return ListView(
-                scrollDirection: Axis.horizontal,
-                children: TextStyleHelper.styleMap.entries.map((entry) {
-                  final name = entry.key;
-                  final tag = entry.value['tag'];
-                  final color = entry.value['color'] as Color;
-                  final icon = entry.value['icon'] as IconData;
-                  final bool isActive = activeTags.contains(tag);
+        // שורת כלי עיצוב עליונה מהודקת ואלגנטית במקום ה-ListView הישן
+        Container(
+          height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+            border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(right: 8),
+                child: Text(
+                  "עריכה:",
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black54),
+                ),
+              ),
+              // כפתור הפתיחה של לוח האפקטים המרוכז
+              // כפתור הפתיחה של לוח האפקטים המרוכז
+              TextButton.icon(
+                onPressed: () {
+                  // 1. הסרת הפוקוס מהעורך - מעלים מיד את המקלדת ואת ידיות הבחירה (הטיפות) מהמסך
+                  _focusNode.unfocus();
 
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: ActionChip(
-                      avatar: Icon(icon, size: 16, color: isActive ? Colors.white : Colors.black),
-                      label: Text(name, style: TextStyle(fontSize: 12, color: isActive ? Colors.white : Colors.black)),
-                      backgroundColor: isActive ? color : Colors.grey[200],
-                      onPressed: () => _toggleEffect(tag),
-                    ),
-                  );
-                }).toList(),
-              );
-            },
+                  // 2. פתיחת הדיאלוג המרוכז
+                  _showEffectsDialog();
+                },
+                icon: const Icon(Icons.palette_outlined, size: 16, color: Color(0xFF1B5565)),
+                label: const Text(
+                  "אפקטים 💥",
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1B5565)),
+                ),
+                style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12)),
+              ),
+            ],
           ),
         ),
 
@@ -633,7 +758,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
         Expanded(
           child: Stack(
             children: [
-              // העורך תופס את כל המקום
+              // העורך תופס את כל המקום הפנוי שנותר
               Positioned.fill(
                 child: QuillEditor.basic(
                   controller: _quillController,
@@ -647,10 +772,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                 top: 8,
                 right: 8,
                 child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.8), // רקע חצי שקוף למראה נקי
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.8), borderRadius: BorderRadius.circular(8)),
                   child: IconButton(
                     icon: const Icon(Icons.auto_awesome, color: Color(0xFF1B5565)),
                     onPressed: () => _showTemplatesDialog(widget.event.eventType),

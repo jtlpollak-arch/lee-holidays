@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class TextStyleHelper {
   static const Map<String, Map<String, dynamic>> styleMap = {
-    'הטיה': {'tag': 'i', 'color': Colors.blueGrey, 'icon': Icons.format_italic},
+    'גל': {'tag': 'i', 'color': Color.fromARGB(255, 16, 146, 211), 'icon': Icons.waves},
     'זהב': {'tag': 'g', 'color': Colors.amber, 'icon': Icons.star_border},
     'הדגשה': {'tag': 'b', 'color': Colors.black87, 'icon': Icons.format_bold},
     'קו': {'tag': 'u', 'color': Colors.teal, 'icon': Icons.format_underline},
