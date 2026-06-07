@@ -312,59 +312,76 @@ span {
 
 
 /* 6. ריטוט */
-.effect-v {
-    display: inline-block;
-    font-weight: 900;
+/* אפקט רטט דיגיטלי (Glitch) - גרסה מיוצבת ומיושרת למניעת רווחים ומריחות בסלולר */
+.effect-v,
+.text-container span.effect-v,
+.text-container span.effect-v.ink-wet {
+    /* 1. שינוי ל-inline-block בשילוב יישור אנכי מאפשר ל-transform לעבוד בסלולר */
+    display: inline-block !important;
+    vertical-align: top;
     position: relative;
-    color: #1B5565;
     
-    /* 1. הוספת זוהר בסיסי עדין שיתחבר עם האנימציה */
-    text-shadow: 0 0 4px rgba(27, 85, 101, 0.3);
+    /* 2. קיזוז ארכיטקטוני: מונע מהסלולר לייצר רווחים צידיים ומחזיק את המילה שלמה ומחוברת */
+    margin: 0 -0.02em !important;
+    padding: 0 !important;
     
-    /* 2. הפעלת האנימציה המשולבת (תנועה, עיוות וצבע) */
-    animation: advancedJitter 0.3s linear infinite;
+    /* 3. צבע הבסיס של האות */
+    color: #1B5565 !important;
+    -webkit-text-fill-color: #1B5565 !important;
     
-    /* ייעול הרינדור בכרטיס המסך למניעת מריחה של ה-DOM */
+    /* 4. התאמת משקל הגופן ל-600 של ה-page-content למניעת מריחה ועיוות הפיקסלים במובייל */
+    font-weight: 600 !important;
+    
+    /* 5. נטרול צל האב הגלובלי כדי למנוע התנגשויות רינדור עם צללי הצבע של הרטט */
+    text-shadow: none !important;
+    
+    /* הפעלת האנימציה המהירה והדרמטית */
+    animation: advancedJitterMobile 0.25s linear infinite !important;
+    
+    /* ייעול ביצועים מקסימלי בכרטיס המסך של הנייד לקצב פריימים גבוה (60fps) */
     will-change: transform, text-shadow, color;
 }
-@keyframes advancedJitter {
+
+/* אנימציית רטט ועיוות חסינת-מובייל השומרת על חדות האותיות */
+@keyframes advancedJitterMobile {
     0% {
-        transform: translate(0, 0) skew(0deg);
-        color: #1B5565;
-        text-shadow: 1px 1px 0 rgba(255, 0, 0, 0.5), -1px -1px 0 rgba(0, 0, 255, 0.5);
+        transform: translate(0, 0) skewX(0deg);
+        color: #1B5565 !important;
+        -webkit-text-fill-color: #1B5565 !important;
+        text-shadow: 1px 1px 0 rgba(255, 0, 0, 0.6), -1px -1px 0 rgba(0, 0, 255, 0.6) !important;
     }
     20% {
-        /* תזוזה חדה שמאלה למטה עם עיוות זוויתי זמני */
-        transform: translate(-1.5px, 1px) skew(-3deg);
-        color: #2A7B91;
-        text-shadow: -2px 0 0 rgba(255, 0, 100, 0.6), 1px 1.5px 0 rgba(0, 255, 200, 0.6);
+        transform: translate(-1px, 0.5px) skewX(-2deg);
+        color: #2A7B91 !important;
+        -webkit-text-fill-color: #2A7B91 !important;
+        text-shadow: -1.5px 0 0 rgba(255, 0, 100, 0.7), 1px 1px 0 rgba(0, 255, 200, 0.7) !important;
     }
     40% {
-        /* קפיצה לצד הנגדי ושינוי צבע הברק */
-        transform: translate(1.5px, -1px) skew(2deg);
-        text-shadow: 2px -1px 0 rgba(0, 0, 255, 0.5), -1.5px 1px 0 rgba(255, 215, 0, 0.6);
+        transform: translate(1px, -0.5px) skewX(2deg);
+        text-shadow: 1.5px -1px 0 rgba(0, 0, 255, 0.6), -1px 0.5px 0 rgba(255, 215, 0, 0.7) !important;
     }
     60% {
-        /* חזרה קרובה למרכז אך עם רטט אנכי חזק */
-        transform: translate(-0.5px, -1.5px) skew(0deg);
-        color: #1B5565;
-        text-shadow: -1px 2px 0 rgba(255, 0, 0, 0.4), 2px -1px 0 rgba(0, 255, 0, 0.4);
+        transform: translate(-0.5px, -1px) skewX(0deg);
+        color: #1B5565 !important;
+        -webkit-text-fill-color: #1B5565 !important;
+        text-shadow: -1px 1px 0 rgba(255, 0, 0, 0.5), 1.5px -0.5px 0 rgba(0, 255, 0, 0.5) !important;
     }
     80% {
-        /* עיוות אופקי קל */
-        transform: translate(1px, 1.5px) skew(4deg);
-        color: #0F2E36;
-        text-shadow: 1.5px -1.5px 0 rgba(0, 255, 255, 0.5), -2px 0 0 rgba(255, 0, 255, 0.5);
+        transform: translate(0.5px, 1px) skewX(3deg);
+        color: #0F2E36 !important;
+        -webkit-text-fill-color: #0F2E36 !important;
+        text-shadow: 1px -1px 0 rgba(0, 255, 255, 0.6), -1.5px 0 0 rgba(255, 0, 255, 0.6) !important;
     }
     100% {
-        transform: translate(0, 0) skew(0deg);
-        color: #1B5565;
-        text-shadow: 1px 1px 0 rgba(255, 0, 0, 0.5), -1px -1px 0 rgba(0, 0, 255, 0.5);
+        transform: translate(0, 0) skewX(0deg);
+        color: #1B5565 !important;
+        -webkit-text-fill-color: #1B5565 !important;
+        text-shadow: 1px 1px 0 rgba(255, 0, 0, 0.6), -1px -1px 0 rgba(0, 0, 255, 0.6) !important;
     }
 }
 
 
-
+/****************************************************************************************************/
 
 
 /* 7. זוהר (הילה) */
@@ -445,136 +462,225 @@ span {
 }
 
 
-
+/****************************************************************************************************/
 
 /* 8. לחישה */
-.effect-w {
-    font-size: 0.85em;
-    display: inline-block;
-    color: #5a7b82;
+/* אפקט לחישה מסתורית ועשן - מיוצב לקריאות מקסימלית וחלקות במובייל */
+/* אפקט לחישה מיוצב - קריאות ברזל 100% עם הילת עשן דינמית מאחור */
+/* אפקט לחישה מסתורית מחוזקת - קריאות חדה וברורה ב-100% בסלולר */
+/* אפקט לחישה מסתורית ועשן - מיוצב לקריאות מקסימלית וחלקות במובייל */
+.effect-w,
+.text-container span.effect-w,
+.text-container span.effect-w.ink-wet {
+    /* 1. שינוי ל-inline-block בשילוב יישור אנכי מאפשר ל-scale לעבוד בסלולר */
+    display: inline-block !important;
+    vertical-align: top;
+    position: relative;
     
-    /* 1. הגדרת אטימות בסיסית וריווח אותיות מעט פתוח שנותן "אוויר" למילה */
-    opacity: 0.7;
-    letter-spacing: 0.05em;
+    /* 2. הקטנת גופן עדינה ואווריריות מבוקרת */
+    font-size: 1.0em !important;
+    letter-spacing: 0.1em !important;
     
-    /* 2. הוספת הילת ערפל רכה מסביב לאותיות הלחישה */
-    text-shadow: 0 0 3px rgba(90, 123, 130, 0.4);
+    /* 3. קיזוז ארכיטקטוני: מונע מהסלולר להפריד את האותיות ושומר על המילה מאוחדת */
+    margin: 0 -0.02em !important;
+    padding: 0 !important;
     
-    /* 3. הפעלת אנימציית "נשימת לחישה" אקטיבית ומסתורית */
-    animation: whisperBreathe 4s ease-in-out infinite;
+    /* 4. העמקת גוון הבסיס לפחם-מותג עמוק כדי להבטיח קריאות גם כשהאטימות יורדת */
+    color: #1B5565 !important;
+    -webkit-text-fill-color: #0f1f24 !important;
     
-    /* ייעול הרינדור בכרטיס המסך למניעת קפיצות או מריחה של הפונט */
-    will-change: opacity, filter, text-shadow;
+    /* 5. התאמת משקל הגופן ל-600 של ה-page-content למניעת מריחה של כתב היד */
+    font-weight: 600 !important;
+    
+    /* 6. נטרול צל האב הגלובלי למניעת התנגשויות */
+    text-shadow: none !important;
+    
+    /* הפעלת אנימציית "נשימת הלחישה" המעודכנת והבטוחה */
+    animation: whisperBreatheMobile 4s ease-in-out infinite alternate !important;
+    
+    /* ייעול ביצועי חומרה בכרטיס המסך של הסלולר (GPU) */
+    will-change: transform, opacity, text-shadow, color;
 }
-@keyframes whisperBreathe {
-    0%, 100% {
-        opacity: 0.6;
-        filter: blur(0px);
-        text-shadow: 0 0 3px rgba(90, 123, 130, 0.4);
+
+/* אנימציית לחישה ועשן חסינת-מובייל ללא שימוש בפילטרים כבדים */
+@keyframes whisperBreatheMobile {
+    0% {
+        opacity: 0.85; /* התחלה: קריאה, חדה ויציבה מאוד מעל הנייר */
+        color: #1B5565 !important;
+        -webkit-text-fill-color: #1B5565 !important;
         transform: scale(1);
+        text-shadow: 0 0 2px rgba(27, 85, 101, 0.2) !important;
     }
     50% {
-        opacity: 0.35;         /* המילה כמעט נעלמת לחלוטין בשיא הלחישה */
-        filter: blur(0.8px);    /* האותיות הופכות למטושטשות ורכות כמו עשן */
-        text-shadow: 0 0 8px rgba(90, 123, 130, 0.6); /* ההילה מתרחבת כשהטקסט מתערפל */
-        transform: scale(0.98);  /* כיווץ מיקרוסקופי שנותן תחושה של התרחקות */
+        opacity: 0.5; /* שיא הלחישה: האטימות יורדת בצורה מבוקרת שלא נעלמת בשמש */
+        
+        /* הטריק הארכיטקטוני: הפיכת גוף האות לשקוף חלקית והעברת המשקל לצל מטושטש.
+           זה מייצר אשליה אופטית מושלמת של התערפלות ועשן, בלי להשתמש ב-filter: blur הקורס. */
+        color: rgba(27, 85, 101, 0.3) !important;
+        -webkit-text-fill-color: rgba(27, 85, 101, 0.3) !important;
+        
+        transform: scale(0.97); /* כיווץ מיקרוסקופי חלק שנותן תחושה של התרחקות של הלחישה */
+        text-shadow: 0 0 6px rgba(27, 85, 101, 0.85) !important; /* הילת עשן עשירה ורכה מסביב */
+    }
+    100% {
+        opacity: 0.85;
+        color: #1B5565 !important;
+        -webkit-text-fill-color: #1B5565 !important;
+        transform: scale(1);
+        text-shadow: 0 0 2px rgba(27, 85, 101, 0.2) !important;
     }
 }
 
 
-
-
+/****************************************************************************************************/
 
 
 /* 9. מרקר */
-.effect-h {
-    display: inline-block;
+/* אפקט מרקר צהוב זרחני - מיוצב לחלוטין לקריאות ומניעת רווחים במובייל */
+.effect-h,
+.text-container span.effect-h,
+.text-container span.effect-h.ink-wet {
     position: relative;
-    padding: 0 4px;
-    font-weight: bold;
-    color: #0f2e36; /* מעניק ניגודיות מושלמת על רקע המרקר */
+    
+    /* 1. תצוגת בלוק בשורה בשילוב יישור אנכי מאפשרת למרקר להימתח נכון בסלולר */
+    display: inline-block !important;
+    vertical-align: top;
+    
+    /* 2. הידוק הריווח הצידי וקיזוז ארכיטקטוני למניעת דחיפת מילים הצידה */
+    padding: 0 2px !important;
+    margin: 0 -0.02em !important;
+    
+    /* 3. משקל גופן מיושר המונע מריחת פיקסלים ושומר על אות חדה וברורה */
+    font-weight: 600 !important;
+    
+    /* 4. צבע פחם-מותג עמוק המייצר ניגודיות מושלמת מעל המרקר הבהיר */
+    color: #0f2e36 !important; 
+    -webkit-text-fill-color: #0f2e36 !important;
+    
+    /* 5. יצירת סביבת שכבות מבודדת (Stacking Context) חסינת-מובייל.
+       זה מכריח את הדפדפן להשאיר את המרקר מעל הנייר הלבן ומונע את היעלמותו באייפון ובסלולר. */
+    isolation: isolate;
     z-index: 1;
+    
+    /* 6. נטרול צל האב הגלובלי למניעת מריחה של האות הכהה */
+    text-shadow: none !important;
 }
+
+/* אלמנט המרקר הצהוב הזרחני - נמתח בצורה חלקה ויציבה */
 .effect-h::before {
     content: "";
     position: absolute;
-    top: 5%;
+    
+    /* מיקום וכיסוי פרופורציונלי המדמה ראש מרקר אמיתי */
+    top: 8%;
     left: 0;
     width: 100%;
-    height: 90%; /* מכסה את רוב גובה המילה כמו מרקר אמיתי */
+    height: 84%; 
     
-    /* 1. שדרוג הגוון הצהוב הפשוט לגרדיאנט מרקר זרחני, עשיר ואלגנטי */
+    /* גרדיאנט מרקר זרחני, עשיר ואלגנטי */
     background: linear-gradient(
         100deg, 
-        rgba(255, 235, 59, 0.7) 0%, 
-        rgba(255, 241, 118, 0.8) 50%, 
-        rgba(255, 214, 0, 0.6) 100%
-    );
+        rgba(255, 235, 59, 0.75) 0%, 
+        rgba(255, 241, 118, 0.85) 50%, 
+        rgba(255, 214, 0, 0.65) 100%
+    ) !important;
     
-    /* 2. קצוות מעט א-סימטריים שמדמים חיתוך של ראש מרקר אמיתי */
-    border-radius: 4px 2px 3px 5px;
+    /* קצוות א-סימטריים עדינים שמדמים חיתוך ידני של מרקר */
+    border-radius: 4px 2px 3px 5px !important;
     
-    /* דוחף את שכבת המרקר אל מאחורי האותיות של הכתב יד */
+    /* מיקום קבוע ובטוח מאחורי הכתב הכהה בזכות ה-isolation שבאב */
     z-index: -1; 
     
-    /* 3. הכנת המרקר לאנימציית מתיחה (סקייל) */
+    /* הדמיית שילוב צבעים אורגני וחי עם הנייר של הגלויה */
+    mix-blend-mode: multiply;
+    
+    /* הגדרת נקודת מוצא מימין לשמאל (RTL) עבור המתיחה האנימטיבית */
     transform: scaleX(0);
-    transform-origin: right; /* נקודת העיגון בימין כדי שהמתיחה תהיה מימין לשמאל (RTL) */
+    transform-origin: right; 
     
-    /* 4. הפעלת האנימציה שמותחת את המרקר אקטיבית */
-    animation: markerDraw 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
-    animation-delay: 0.1s; /* השהיה קלה כדי לתת לאותיות להתחיל להכתב קודם */
+    /* הפעלת האנימציה שמותחת את המרקר אקטיבית עם הגעת המילה */
+    animation: markerDrawMobile 0.55s cubic-bezier(0.23, 1, 0.32, 1) forwards !important;
+    animation-delay: 0.1s !important; 
     
-    /* אופטימיזציה לחלקות הרינדור */
+    /* ייעול ביצועי כרטיס המסך למניעת קפיצות או השהיות במובייל */
     will-change: transform;
 }
-@keyframes markerDraw {
+
+@keyframes markerDrawMobile {
     to {
         transform: scaleX(1);
     }
 }
 
+
+
+
+/****************************************************************************************************/
+
+
+
 /* 10. פופ-אפ */
-.effect-r {
-    display: inline-block;
-    font-weight: 900;
+/* אפקט פופ אלסטי ותלת-ממדי - גרסה מיוצבת, חלקה וחסינת רעידות לסלולר */
+.effect-r,
+.text-container span.effect-r,
+.text-container span.effect-r.ink-wet {
+    /* 1. שינוי ל-inline-block בשילוב יישור אנכי מאפשר ל-scale ולרוטציה לעבוד חלק בנייד */
+    display: inline-block !important;
+    vertical-align: top;
     position: relative;
     
-    /* 1. שדרוג הגוון לגרדיאנט עמוק ומלוטש שמתאים לראש הברכה */
-    background: linear-gradient(135deg, #1B5565 0%, #3A8E9E 50%, #1B5565 100%);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-
-    /* 2. הפעלת אנימציית פופ אלסטית, מהירה ומלאת אופי */
-    animation: elasticPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    /* 2. קיזוז ארכיטקטוני: מונע מהסלולר להקפיץ את המילים השכנות הצידה בזמן הזינוק */
+    margin: 0 -0.03em !important;
+    padding: 0 !important;
     
-    /* מבטיח שהתנועה התלת-ממדית והצללים ירונדרו בצורה חלקה */
+    /* 3. התאמת משקל הגופן ל-600 של ה-page-content למניעת מריחה ועיוות הגרדיאנט */
+    font-weight: 600 !important;
+    
+    /* 4. הגדרת הגרדיאנט המלוטש והעמוק בתוך האותיות */
+    background: linear-gradient(135deg, #1B5565 0%, #3A8E9E 50%, #1B5565 100%) !important;
+    background-size: 200% auto !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    
+    /* 5. קו מתאר כהה מסביב לאות השקופה השומר על גבולות חדים ומגן מפני הלובן של הדף */
+    -webkit-text-stroke: 0.5px #1B5565 !important;
+    
+    /* 6. נטרול צל האב הגלובלי כדי למנוע כפלי רינדור עם הצל הדינמי של ה-Pop */
+    text-shadow: none !important;
+
+    /* 7. הפעלת מנוע הרינדור התלת-ממדי והחלקה בכרטיס המסך */
     transform-style: preserve-3d;
-    will-change: transform, text-shadow;
+    
+    /* הפעלת האנימציה האלסטית המהירה */
+    animation: elasticPopMobile 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+    
+    /* אופטימיזציה מקסימלית לתנועה חלקה ב-60 פריימים בשנייה */
+    will-change: transform, text-shadow, opacity;
 }
 
-/* 3. מנוע הפופ האלסטי והתלת-ממדי */
-@keyframes elasticPop {
+/* מנוע הפופ האלסטי המעודכן והמיוצב עבור דפדפני מובייל */
+@keyframes elasticPopMobile {
     0% {
-        transform: scale(0) rotate(-5deg);
-        text-shadow: 0 0 0 rgba(27, 85, 101, 0);
+        transform: scale(0) rotate(-4deg);
+        text-shadow: 0 0 0 rgba(27, 85, 101, 0) !important;
         opacity: 0;
     }
     60% {
-        /* הזינוק המרבי - המילה גדלה מעבר למידה הרצויה ומסתובבת מעט ליישור */
-        transform: scale(1.25) rotate(2deg);
-        text-shadow: 0 10px 15px rgba(27, 85, 101, 0.3);
+        /* הזינוק המרבי: המילה גדלה ומקבלת את צל העומק התלת-ממדי בצורה מבוקרת */
+        transform: scale(1.2) rotate(1deg);
+        text-shadow: 0 6px 10px rgba(27, 85, 101, 0.25) !important;
         opacity: 1;
     }
     80% {
-        /* כיווץ חזרה מתחת לגודל הסופי ליצירת אפקט הגומי (Bounce) */
-        transform: scale(0.95) rotate(-1deg);
-        text-shadow: 0 2px 4px rgba(27, 85, 101, 0.15);
+        /* אפקט הגומי (Bounce): כיווץ מיקרוסקופי חזרה לייצוב התנועה */
+        transform: scale(0.97) rotate(-0.5deg);
+        text-shadow: 0 2px 4px rgba(27, 85, 101, 0.15) !important;
     }
     100% {
-        /* נחיתה רכה ומדויקת בגודל המקורי (1) עם צל יציב ואלגנטי */
+        /* נחיתה רכה ומדויקת בגודל המקורי (1) עם צל קבוע, עשיר ואלגנטי */
         transform: scale(1) rotate(0deg);
-        text-shadow: 2px 3px 5px rgba(27, 85, 101, 0.25);
+        text-shadow: 1.5px 2px 4px rgba(27, 85, 101, 0.25) !important;
+        opacity: 1;
     }
 }
