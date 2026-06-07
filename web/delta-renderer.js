@@ -5,12 +5,31 @@
 
 window.MAX_CHARS_PER_LINE = 18;
 window.MAX_LINES_PER_PAGE = 4;
-window.TYPING_SPEED = 250;
+window.TYPING_SPEED = 150;
 
 window.globalFlatData = [];
 window.globalCharIndex = 0;
 window.typingTimeoutId = null;
 window.isErasingNow = false;
+
+// פונקציית תשתית חדשה - ברז החירום של המנוע (Refactoring)
+function stopAndResetEngine() {
+    console.log("<--stopAndResetEngine--> עצירת שעונים ואיפוס דגלים ומחלקות");
+    
+    // 1. עצירה מוחלטת של שעון ההקלדה הראשי
+    if (window.typingTimeoutId) {
+        clearTimeout(window.typingTimeoutId);
+        window.typingTimeoutId = null;
+    }
+    
+    // 2. איפוס דגל המחיקה האוטומטי
+    window.isErasingNow = false;
+    
+    // 3. ניקוי מחלקות האנימציה של המחיקה מכל הדפים כדי שלא יישארו קפואים
+    document.querySelectorAll('.page-content .text-container').forEach(container => {
+        container.classList.remove('erase-active');
+    });
+}
 
 // פונקציית הגשר המוזמנת מהדף הראשי
 function runTypingEffect(delta) {
@@ -106,7 +125,7 @@ function flattenDelta(delta) {
 
             // החלטה קריטית ברמת האובייקט השלם: האם המילה נכנסת בפוזיציה הנוכחית?
             if (currentLineChars + wordLen > window.MAX_CHARS_PER_LINE) {
-                // מניעת רווחים מיותרים בסוף השורה שנסגרת עכשיו
+                // Mניעת רווחים מיותרים בסוף השורה שנסגרת עכשיו
                 if (currentLine.length > 0 && currentLine[currentLine.length - 1].text.trim() === '') {
                     currentLine.pop();
                 }
@@ -171,7 +190,6 @@ function paginateTextAndRender(delta) {
         console.error("<--paginateTextAndRender--> שגיאה קריטית: לא נמצא pagesContainer ב-DOM");
         return;
     }
-
 
     let pen = container.querySelector('.writing-pen');
     if (!pen) {
@@ -283,7 +301,6 @@ function typeNextChar() {
         }, 60);
     }
 
-    // ניהול החלפת העמוד הויזואלי הפעיל עם אפקט מחיקה אלקטרונית עדינה
     // ניהול החלפת העמוד הויזואלי הפעיל עם אפקט מחיקה אלקטרונית עדינה ושומר סף
     if (!pageDiv.classList.contains('active')) {
         
@@ -305,7 +322,7 @@ function typeNextChar() {
                 // 1. מדליקים את אפקט הניגוב ב-CSS
                 oldContainer.classList.add('erase-active');
                 
-                // 2. מקפיאים את מנוע ההקלדה למשך 900 מילישניות כדי לתת לאפקט להסתיים בחלקות
+                // 2. מקפיאים את מנוע ההקלדה למשך 2100 מילישניות כדי לתת לאפקט להסתיים בחלקות
                 window.typingTimeoutId = setTimeout(() => {
                     // מנקים את אפקט המחיקה מהקונטיינר הישן
                     oldContainer.classList.remove('erase-active');

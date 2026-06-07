@@ -1025,9 +1025,16 @@
         }
 */
         function switchToTargetPage(pageIndex) {
-            // 1. עצירת מנוע ההקלדה האוטומטי שרץ ברקע כרגע כדי שלא יקפיץ אותנו חזרה
-            if (window.typingTimeoutId) {
+            console.log(`<--switchToTargetPage--> ניווט יזום לעמוד: ${pageIndex}`);
+
+            // 1. הפעלת ברז החירום - עצירת מנוע ההקלדה, איפוס דגלי המחיקה וניקוי מחלקות האנימציה של העמוד הקודם
+            if (typeof stopAndResetEngine === 'function') {
+                stopAndResetEngine();
+            } else if (window.typingTimeoutId) {
+                // גישת גיבוי במידה והפונקציה לא זמינה ברגע הראשון
                 clearTimeout(window.typingTimeoutId);
+                window.typingTimeoutId = null;
+                window.isErasingNow = false;
             }
 
             // 2. עדכון הסטייל של העמודים ב-DOM (הסרת active מכולם והוספה לעמוד הנבחר)
