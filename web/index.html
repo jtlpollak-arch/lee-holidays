@@ -1007,39 +1007,11 @@
             root.style.setProperty('--envelope-paper', '#112830');
             backdrop.style.backgroundImage = 'none';
         }
-/*
-        function setupClickNavigation() {
-            const container = document.getElementById('pagesContainer');
-            
-            if (!container) return;
 
-            container.addEventListener('click', function(event) {
-
-                clearAutoNavigation();
-
-                const screenWidth = window.innerWidth;
-                const clickX = event.clientX;
-                const halfWidth = screenWidth / 2;
-
-                // חצי ימני -> דף קודם (-1)
-                // חצי שמאלי -> דף הבא (1)
-                if (clickX > halfWidth) {
-                    navigatePage(1); 
-                } else {
-                    navigatePage(-1);
-                }
-            });
-        }
-
-        function navigatePage(direction) {
-            const newPage = currentActivePage - direction;
-            if (newPage >= 0 && newPage < totalCreatedPages) {
-                switchToTargetPage(newPage);
-            }
-        }
-*/
         function switchToTargetPage(pageIndex) {
             console.log(`<--switchToTargetPage--> ניווט יזום לעמוד: ${pageIndex}`);
+
+            window.isPausedByClick = true;
 
             // 1. הפעלת ברז החירום - עצירת מנוע ההקלדה, איפוס דגלי המחיקה וניקוי מחלקות האנימציה של העמוד הקודם
             if (typeof stopAndResetEngine === 'function') {
@@ -1089,29 +1061,8 @@
         }
 
         function handleTouchEnd(event) {
-//            touchEndXCoordinate = event.changedTouches[0].clientX;
-//            handleSwipeGestureLogic();
         }
-/*
-        function handleSwipeGestureLogic() {
 
-            clearAutoNavigation();
-
-            const minimumSwipeDistancePixels = 45;
-            const swipeDistance = touchEndXCoordinate - touchStartXCoordinate;
-            
-            if (totalCreatedPages <= 1) return;
-
-            // גרירה משמאל לימין -> דוחף את הדף לאחור ומקדם לעמוד הבא
-            if (swipeDistance > minimumSwipeDistancePixels) {
-                navigatePage(-1);
-            } 
-            // משיכה מימין לשמאל -> מחזיר לעמוד הקודם
-            else if (swipeDistance < -minimumSwipeDistancePixels) {
-                navigatePage(1);
-            }
-        }
-*/
         function getGreetingIdFromUrl() {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get('id');

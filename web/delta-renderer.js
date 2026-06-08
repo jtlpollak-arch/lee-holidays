@@ -11,6 +11,7 @@ window.globalFlatData = [];
 window.globalCharIndex = 0;
 window.typingTimeoutId = null;
 window.isErasingNow = false;
+window.isPausedByClick = false;
 
 // פונקציית תשתית חדשה - ברז החירום של המנוע (Refactoring)
 function stopAndResetEngine() {
@@ -303,6 +304,11 @@ function typeNextChar() {
 
     // ניהול החלפת העמוד הויזואלי הפעיל עם אפקט מחיקה אלקטרונית עדינה ושומר סף
     if (!pageDiv.classList.contains('active')) {
+
+        if (window.isPausedByClick) {
+            console.log("<- מוד ידני פעיל -> נשארים בעמוד הנוכחי, חוסמים מעבר אוטומטי");
+            return; 
+        }
         
         // חסימת כפל הרצות: אם המנוע כבר נמצא בתהליך מחיקה, עצור מיד!
         if (window.isErasingNow) {
@@ -365,3 +371,19 @@ function typeNextChar() {
     window.globalCharIndex++;
     window.typingTimeoutId = setTimeout(typeNextChar, window.TYPING_SPEED);
 }
+
+/*
+
+להחזיר כדי למנוע הקלקה על המסך ולהפסיק מנוע מעבר בין דפים
+
+document.addEventListener('click', (event) => {
+    // בדיקה אם הלחיצה בוצעה על אלמנט של דף ברכה
+    if (event.target.closest('.page-content')) {
+        
+        // הדלקת המתג למצב פעיל
+        window.isPausedByClick = true;
+        
+        console.log("<- מוד ידני הופעל -> לחיצה על גוף הברכה. העמוד הנוכחי יוקלד עד סופו ויעצר.");
+    }
+});
+*/
