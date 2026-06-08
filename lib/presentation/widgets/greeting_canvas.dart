@@ -717,24 +717,6 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                       // בתוך ה-build של GreetingCanvas, לפני ה-Stack של ה-TextField:
                       const SizedBox(height: 24),
 
-                      // במקום SizedBox, השתמש ב-Alignment או ב-Row
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center, // מרכז את הכפתור
-                        children: [
-                          OutlinedButton.icon(
-                            onPressed: _openPreview,
-                            icon: const Icon(Icons.visibility_rounded, size: 18),
-                            label: const Text('תצוגה מקדימה'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF1B5565), // צבע טקסט ואייקון אוטומטי
-                              side: const BorderSide(color: Color(0xFF1B5565), width: 1.2),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                              padding: const EdgeInsets.symmetric(horizontal: 20), // ריווח נקי
-                              minimumSize: const Size(140, 48), // גודל מינימלי נוח ללחיצה
-                            ),
-                          ),
-                        ],
-                      ),
                       const SizedBox(height: 24), // הוגדל מעט מ-20 לרווח נקי לפני הכפתורים
                       // 4. אזור לחצני הפעולה - ממוקם בתחתית הרשימה
                       // לפני ה-return של ה-build או בתוכו, הגדר את הרשימה:
@@ -766,29 +748,25 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
             border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Padding(
-                padding: EdgeInsets.only(right: 8),
-                child: Text(
-                  "עריכה:",
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black54),
+              // 1. צד ימין: כפתור תצוגה מקדימה הרחב והראשי פותח את השורה מיד בתחילתה
+              TextButton.icon(
+                onPressed: _openPreview,
+                icon: const Icon(Icons.visibility_rounded, size: 16, color: Color(0xFF1B5565)),
+                label: const Text(
+                  "תצוגה מקדימה",
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1B5565)),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(0, 40), // מתאים לגובה השורה
                 ),
               ),
-              const SizedBox(width: 4),
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(color: const Color(0xFF1B5565).withOpacity(0.08), shape: BoxShape.circle),
-                child: IconButton(
-                  icon: const Icon(Icons.visibility_outlined, size: 18, color: Color(0xFF1B5565)),
-                  tooltip: "איך זה ייראה (כל האפקטים)",
-                  onPressed: _openAllEffectsShowcasePreview,
-                  padding: EdgeInsets.zero,
-                ),
-              ),
-              // כפתור הפתיחה של לוח האפקטים המרוכז
-              // כפתור הפתיחה של לוח האפקטים המרוכז
+
+              // Spacer דוחף את כל שאר הכפתורים (העיצוב והבדיקה) לצד שמאל באופן מוחלט
+              const Spacer(),
+
+              // 2. צד שמאל: כפתור הפתיחה של לוח האפקטים המרוכז
               TextButton.icon(
                 onPressed: () {
                   // 1. הסרת הפוקוס מהעורך - מעלים מיד את המקלדת ואת ידיות הבחירה (הטיפות) מהמסך
@@ -802,8 +780,28 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                   "אפקטים 💥",
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1B5565)),
                 ),
-                style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12)),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(0, 40), // מתאים לגובה השורה
+                ),
               ),
+
+              const SizedBox(width: 2),
+
+              // 3. צמוד לשמאל הקיצוני: כפתור המבחנה לבדיקת כל 20 האפקטים יחד
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(color: const Color(0xFF1B5565).withOpacity(0.08), shape: BoxShape.circle),
+                child: IconButton(
+                  icon: const Icon(Icons.science_outlined, size: 16, color: Color(0xFF1B5565)),
+                  tooltip: "איך זה ייראה (כל האפקטים)",
+                  onPressed: _openAllEffectsShowcasePreview,
+                  padding: EdgeInsets.zero,
+                ),
+              ),
+
+              const SizedBox(width: 4), // מרווח קל מסגרת המסך השמאלית
             ],
           ),
         ),
