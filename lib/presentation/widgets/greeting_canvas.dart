@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'greeting_templates.dart';
 import 'text_style_helper.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'greeting_preview_page.dart';
 
 class GreetingCanvas extends StatefulWidget {
   final ClientModel client;
@@ -139,7 +140,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
     final base64String = base64UrlEncode(bytes);
 
     final url = 'https://lee-greetings.web.app/?preview=$base64String';
-    launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    Navigator.push(context, MaterialPageRoute(builder: (context) => GreetingPreviewPage(url: url)));
   }
 
   void _openAllEffectsShowcasePreview() {
@@ -177,7 +178,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
     final base64String = base64UrlEncode(bytes);
 
     final url = 'https://lee-greetings.web.app/?preview=$base64String';
-    launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    Navigator.push(context, MaterialPageRoute(builder: (context) => GreetingPreviewPage(url: url)));
   }
 
   Future<void> _processAndSend({required String channelType}) async {
