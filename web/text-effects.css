@@ -715,45 +715,81 @@ span {
 /* המילה מקבלת רקע כהה אחיד והאותיות נצבעות בלבן מוחלט - מייצר אפקט של חיתוך חלול וקריא בטרוף */
 .effect-o,
 .text-container span.effect-o {
+    /* המבנה המקורי והמהודק של "חלול" */
     display: inline-block !important;
     vertical-align: middle;
     font-weight: 700 !important;
-    font-size: 0.82em !important; /* הקטנת הגופן כדי שלא יתפוס מקום במסך */
-    color: #ffffff !important; /* אותיות לבנות */
-    -webkit-text-fill-color: #ffffff !important;
+    font-size: 0.82em !important;
     position: relative;
-    padding: 1px 2px !important; /* פדינג מינימליסטי ורזה */
-    margin: 0 -0.5px !important; /* משיכת האותיות קרוב אחת לשנייה למינימום רווח */
-    background: #1B5565 !important; /* רקע כהה קונטרסטי */
+    padding: 1px 2px !important;
+    margin: 0 -0.5px !important;
     border-radius: 2px;
+    background: #1B5565 !important;
+    
+    /* אותיות לבנות נקיות */
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
     text-shadow: none !important;
+
+    /* הפעלת אפקט ההבלחה - דופק כל 3 שניות */
+    animation: pulseGlint 3s ease-in-out infinite !important;
+}
+
+@keyframes pulseGlint {
+    0%, 100% {
+        filter: brightness(1) drop-shadow(0 0 0 rgba(255, 255, 255, 0));
+    }
+    50% {
+        /* בשיא הדופק - האות מתבהרת והילה לבנה רכה מקיפה אותה */
+        filter: brightness(1.6) drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
+    }
 }
 
 
 /****************************************************************************************************/
 
 
-/* 13. קו חוצה דינמי (Strikethrough) */
+/* 13. ריצוד/מים */
+/* 1. רישום המשתנה הדינמי בכרטיס המסך כדי לאפשר אנימציה חלקה של אחוזים */
 .effect-t,
 .text-container span.effect-t {
+
+    filter: drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.3)) !important;
+    /* תוחם דק מאוד שמונע מהאות להיעלם */
+    -webkit-text-stroke: 0.4px rgba(0, 0, 0, 0.5) !important;
+    /* 1. מבנה יציב */
+    display: inline-block !important;
+    vertical-align: middle;
+    font-weight: 700 !important;
     position: relative;
-    display: inline-block;
-    vertical-align: top;
+    padding: 1px 2px !important;
+    margin: 0 -0.5px !important;
+    
+    /* 2. סטייל נקי - בלי צבעים משתנים, רק עיוות של החומר */
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    
+    /* 3. הגדרת האנימציה - מהירה ועדינה (1.5 שניות) */
+    animation: liquidDistortion 1.5s ease-in-out infinite !important;
+    transform-origin: center center;
+    will-change: transform;
 }
-.effect-t::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background: #e53935;
-    transform: translateY(-50%);
-    animation: strikeThroughAnim 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+
+@keyframes liquidDistortion {
+    0%, 100% {
+        transform: skewX(0deg) scale(1);
+    }
+    25% {
+        transform: skewX(25deg) scale(1.02);
+    }
+    50% {
+        transform: skewX(0deg) scale(1);
+    }
+    75% {
+        transform: skewX(-25deg) scale(1.02);
+    }
 }
-@keyframes strikeThroughAnim {
-    to { width: 100%; }
-}
+
 
 /****************************************************************************************************/
 

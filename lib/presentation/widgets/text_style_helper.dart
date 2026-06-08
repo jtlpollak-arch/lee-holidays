@@ -17,7 +17,7 @@ class TextStyleHelper {
     // 10 האפקטים החדשים (11-20)
     'כפול': {'tag': 'd', 'color': Colors.blueGrey, 'icon': Icons.density_small},
     'חלול': {'tag': 'o', 'color': Colors.grey, 'icon': Icons.text_fields_outlined},
-    'חוצה': {'tag': 't', 'color': Colors.red, 'icon': Icons.strikethrough_s},
+    'ריצוד': {'tag': 't', 'color': Colors.red, 'icon': Icons.looks},
     'נדנדה': {'tag': 'y', 'color': Colors.lightGreen, 'icon': Icons.swap_horizontal_circle_outlined},
     'דופק': {'tag': 'p', 'color': Colors.pinkAccent, 'icon': Icons.favorite_border},
     'זינוק': {'tag': 'm', 'color': Colors.green, 'icon': Icons.unfold_more_double},
