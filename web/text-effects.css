@@ -684,3 +684,269 @@ span {
         opacity: 1;
     }
 }
+
+
+
+/****************************************************************************************************/
+/* 11. קו כפול (Double Underline) */
+.effect-d,
+.text-container span.effect-d {
+    position: relative;
+    display: inline-block;
+    vertical-align: top;
+    margin: 0 -0.01em !important;
+    padding: 0 !important;
+}
+.effect-d::after {
+    content: "";
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    border-top: 1px double #1B5565;
+    border-bottom: 1px double #1B5565;
+    box-sizing: border-box;
+}
+
+/****************************************************************************************************/
+
+/* 12. כתב חלול (Outline Text) - גרסת קונטרסט גבוה חסינת-מובייל */
+/* המילה מקבלת רקע כהה אחיד והאותיות נצבעות בלבן מוחלט - מייצר אפקט של חיתוך חלול וקריא בטרוף */
+.effect-o,
+.text-container span.effect-o {
+    display: inline-block !important;
+    vertical-align: middle;
+    font-weight: 700 !important;
+    font-size: 0.82em !important; /* הקטנת הגופן כדי שלא יתפוס מקום במסך */
+    color: #ffffff !important; /* אותיות לבנות */
+    -webkit-text-fill-color: #ffffff !important;
+    position: relative;
+    padding: 1px 2px !important; /* פדינג מינימליסטי ורזה */
+    margin: 0 -0.5px !important; /* משיכת האותיות קרוב אחת לשנייה למינימום רווח */
+    background: #1B5565 !important; /* רקע כהה קונטרסטי */
+    border-radius: 2px;
+    text-shadow: none !important;
+}
+
+
+/****************************************************************************************************/
+
+
+/* 13. קו חוצה דינמי (Strikethrough) */
+.effect-t,
+.text-container span.effect-t {
+    position: relative;
+    display: inline-block;
+    vertical-align: top;
+}
+.effect-t::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: #e53935;
+    transform: translateY(-50%);
+    animation: strikeThroughAnim 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+@keyframes strikeThroughAnim {
+    to { width: 100%; }
+}
+
+/****************************************************************************************************/
+
+
+/* 14. נדנדה (Seesaw) */
+.effect-y,
+.text-container span.effect-y {
+    display: inline-block;
+    vertical-align: top;
+    transform-origin: center bottom;
+    animation: seesawAnim 2.5s ease-in-out infinite;
+    will-change: transform;
+}
+@keyframes seesawAnim {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(3deg); }
+    75% { transform: rotate(-3deg); }
+}
+
+
+/****************************************************************************************************/
+
+/* 15. דופק (Pulse) */
+.effect-p,
+.text-container span.effect-p {
+    display: inline-block;
+    vertical-align: top;
+    animation: pulseAnim 1.8s ease-in-out infinite;
+    will-change: transform;
+}
+@keyframes pulseAnim {
+    0%, 100% { transform: scale(1); }
+    14% { transform: scale(1.12); }
+    28% { transform: scale(1); }
+    42% { transform: scale(1.12); }
+    70% { transform: scale(1); }
+}
+
+/****************************************************************************************************/
+
+
+/* 16. זינוק (Slide-In Entrance) */
+.effect-m,
+.text-container span.effect-m {
+    display: inline-block;
+    vertical-align: top;
+    opacity: 0;
+    transform: translateY(12px);
+    animation: slideInAnim 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards;
+    will-change: transform, opacity;
+}
+@keyframes slideInAnim {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/****************************************************************************************************/
+/****************************************************************************************************/
+
+/* 17. אולטרה ניאון (Neon Glow) - גרסת ליבת פחם מוארת חסינת-מובייל */
+/* שילוב של אותיות כהות למחצה לקריאות מושלמת על רקע לבן, עם השתקפות אור פנימית */
+.effect-n,
+.text-container span.effect-n,
+span[class*="effect-n"] {
+    position: relative;
+    display: inline-block !important;
+    vertical-align: top;
+    font-weight: 800 !important; /* גופן עבה המבטיח נוכחות וקריאות */
+    
+    /* הפיכת גוף האות לכהה למחצה בצבע המותג - מייצר קונטרסט מושלם על הנייר הלבן */
+    color: rgba(27, 85, 101, 0.55) !important;
+    -webkit-text-fill-color: rgba(27, 85, 101, 0.55) !important;
+    
+    /* הילת אור טורקיז פנימית עדינה שנדבקת לאותיות עצמן */
+    text-shadow: 0 0 4px rgba(0, 229, 255, 0.6) !important;
+    animation: none !important;
+}
+
+/* פס הלד הניאוני שמתחת למילה המפיץ אור סביבתי */
+.effect-n::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    
+    /* גרדיאנט הניאון הזרחני הקיים שלך */
+    background: linear-gradient(90deg, #00e5ff 0%, #39ff14 100%) !important;
+    border-radius: 2px;
+    
+    /* הילת האור הרכה והמלוטשת שמפיצה אור סביב המילה */
+    box-shadow: 0 0 8px rgba(0, 229, 255, 0.9), 
+                0 2px 12px rgba(57, 255, 20, 0.6) !important;
+    
+    /* פעימת האור הנושמת בכרטיס המסך */
+    animation: neonAmbientPulseMobile 2.5s ease-in-out infinite alternate !important;
+    will-change: box-shadow, opacity;
+}
+
+@keyframes neonAmbientPulseMobile {
+    0% {
+        opacity: 0.7;
+        box-shadow: 0 0 5px rgba(0, 229, 255, 0.8), 
+                    0 1px 8px rgba(57, 255, 20, 0.5) !important;
+    }
+    100% {
+        opacity: 1;
+        box-shadow: 0 0 12px rgba(0, 229, 255, 1), 
+                    0 4px 16px rgba(57, 255, 20, 0.8) !important;
+    }
+}
+
+
+/****************************************************************************************************/
+
+/* 18. שקיעת בריזה (Sunset Gradient) - גרסה משודרגת חסינת-מובייל */
+/* במקום גרדיאנט שנחתך ונשבר באותיות מבודדות, נהפוך את זה לאפקט "ציפה ושקיעה" (Wave Floating) קולנועי */
+/* האותיות יעלו וירדו אחת אחרי השנייה ברצף זורם המדמה גל ים אמיתי, עם צבע חם קבוע */
+.effect-z,
+.text-container span.effect-z {
+    display: inline-block;
+    vertical-align: top;
+    color: #ff5722 !important; /* צבע שקיעה חם, קריא ועמוק */
+    -webkit-text-fill-color: #ff5722 !important;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.1) !important;
+    
+    /* הפעלת האנימציה הפיזיקלית */
+    animation: sunsetWaveFloatMobile 2s ease-in-out infinite !important;
+    will-change: transform;
+}
+/* הטריק הארכיטקטוני: מאחר שה-JavaScript שלך מייצר לכל אות אינדקס, הן יקבלו השהיית אנימציה טבעית בריצה */
+@keyframes sunsetWaveFloatMobile {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-6px); /* ציפה חלקה למעלה בכרטיס המסך */
+    }
+}
+
+
+/****************************************************************************************************/
+
+/* 19. כסף מטאלי (Silver Stamp) - גרסה משודרגת חסינת-מובייל */
+/* שינוי מהות לאפקט "ההשתקפות המטאלית" (Scale Pulse) - האותיות גדלות וקטנות בזו אחר זו בצבע כסוף אלגנטי */
+.effect-c,
+.text-container span.effect-c {
+    display: inline-block;
+    vertical-align: top;
+    color: #78909c !important; /* גוון כסף מטאלי עמוק ומיוצב לקריאות */
+    -webkit-text-fill-color: #78909c !important;
+    font-weight: 600 !important;
+    text-shadow: none !important;
+    
+    /* פעימה אלגנטית המדמה תנועת השתקפות אור על מתכת */
+    animation: silverReflectionPulseMobile 3s ease-in-out infinite !important;
+    will-change: transform, color;
+}
+@keyframes silverReflectionPulseMobile {
+    0%, 100% {
+        transform: scale(1);
+        color: #78909c !important;
+        -webkit-text-fill-color: #78909c !important;
+    }
+    50% {
+        transform: scale(1.35); /* התרחבות מטאלית עדינה */
+        color: #b0bec5 !important; /* הארה של הכסף ללבן-מתכתי בשיא הפעימה */
+        -webkit-text-fill-color: #b0bec5 !important;
+    }
+}
+
+
+/****************************************************************************************************/
+
+/* 20. הבלש (Blur Reveal) */
+.effect-k,
+.text-container span.effect-k {
+    display: inline-block;
+    vertical-align: top;
+    animation: blurRevealAnim 5s ease-in-out infinite alternate;
+    will-change: filter, opacity;
+}
+@keyframes blurRevealAnim {
+    0%, 20% {
+        filter: blur(5px);
+        opacity: 0.3;
+    }
+    50%, 100% {
+        filter: blur(0);
+        opacity: 1;
+    }
+}

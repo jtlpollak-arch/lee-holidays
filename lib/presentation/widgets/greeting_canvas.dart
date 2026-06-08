@@ -497,8 +497,11 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                   builder: (context, activeTags, child) {
                     final List<MapEntry<String, Map<String, dynamic>>> allEntries = TextStyleHelper.styleMap.entries.toList();
 
+                    // חלוקת כל 20 האפקטים ל-4 שורות סימטריות של 5 כפתורים בשורה למניעת חריגת רוחב במובייל
                     final List<MapEntry<String, Map<String, dynamic>>> firstRow = allEntries.sublist(0, 5);
                     final List<MapEntry<String, Map<String, dynamic>>> secondRow = allEntries.sublist(5, 10);
+                    final List<MapEntry<String, Map<String, dynamic>>> thirdRow = allEntries.sublist(10, 15);
+                    final List<MapEntry<String, Map<String, dynamic>>> fourthRow = allEntries.sublist(15, 20);
 
                     Widget buildDialogKey(MapEntry<String, Map<String, dynamic>> entry) {
                       final String name = entry.key;
@@ -549,6 +552,10 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                         Row(children: firstRow.map((e) => buildDialogKey(e)).toList()),
                         const SizedBox(height: 4),
                         Row(children: secondRow.map((e) => buildDialogKey(e)).toList()),
+                        const SizedBox(height: 4),
+                        Row(children: thirdRow.map((e) => buildDialogKey(e)).toList()),
+                        const SizedBox(height: 4),
+                        Row(children: fourthRow.map((e) => buildDialogKey(e)).toList()),
                       ],
                     );
                   },
