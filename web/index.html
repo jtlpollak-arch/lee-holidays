@@ -810,6 +810,10 @@
     opacity: 1;
     clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
     transition: clip-path 1.6s ease-in-out, opacity 1.6s ease-in-out;
+
+    box-sizing: border-box;
+    padding: 0 10px;
+    margin-left: -10px
 }
 
 /* 2. רגע המעבר - הקו העליון של המלבן יורד למטה ל-100%, מה שיוצר מחיקה מושלמת מלמעלה למטה */
@@ -1170,7 +1174,7 @@
                     delta.unshift({
                         insert: clientName + "!!",
                         attributes: {
-                            effect: "g,s"
+                            effect: "o"
                         }
                     });
                 }

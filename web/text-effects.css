@@ -546,9 +546,9 @@ span {
     display: inline-block !important;
     vertical-align: top;
     
-    /* 2. הידוק הריווח הצידי וקיזוז ארכיטקטוני למניעת דחיפת מילים הצידה */
-    padding: 0 2px !important;
-    margin: 0 -0.02em !important;
+    /* 2. ניקוי מוחלט של הריווח הצידי והקיזוז כדי לאפשר לאפקט הרווח החיצוני שלך לשלוט */
+    padding: 0 !important;
+    margin: 0 !important;
     
     /* 3. משקל גופן מיושר המונע מריחת פיקסלים ושומר על אות חדה וברורה */
     font-weight: 600 !important;
@@ -594,7 +594,7 @@ span {
     /* הדמיית שילוב צבעים אורגני וחי עם הנייר של הגלויה */
     mix-blend-mode: multiply;
     
-    /* הגדרת נקודת מוצא מימין לשמאל (RTL) עבור המתיחה האנימטיבית */
+    /* הגדרת נקונד מוצא מימין לשמאל (RTL) עבור המתיחה האנימטיבית */
     transform: scaleX(0);
     transform-origin: right; 
     
@@ -761,18 +761,36 @@ span {
 /* 14. נדנדה (Seesaw) */
 .effect-y,
 .text-container span.effect-y {
+    /* 1. תצוגת בלוק בשורה יציבה, יישור אנכי עליון למניעת קפיצות שורה */
     display: inline-block;
     vertical-align: top;
+    
+    /* 2. נקודת ציר במרכז ובסיס האות - מעגן את האות לנייר בזמן שהראש שלה נזרק הצידה */
     transform-origin: center bottom;
-    animation: seesawAnim 2.5s ease-in-out infinite;
+    
+    /* 3. הארכת הזמן ל-2.4 שניות בשילוב גרף תנועה רך (ease-in-out) לקבלת נדנוד אלגנטי וזורם */
+    animation: liquidStretchModerate 2.4s ease-in-out infinite;
+    
+    /* 4. האצה חומרתית מלאה של כרטיס המסך למניעת קפיצות פיקסלים במובייל */
     will-change: transform;
 }
-@keyframes seesawAnim {
-    0%, 100% { transform: rotate(0deg); }
-    25% { transform: rotate(3deg); }
-    75% { transform: rotate(-3deg); }
-}
 
+@keyframes liquidStretchModerate {
+    /* 0%, 50%, 100%: מצב מוצא מאוזן - הטקסט נח בגודלו הטבעי */
+    0%, 50%, 100% { 
+        transform: skewX(0deg) scale(1) translateY(0); 
+    }
+    
+    /* 25%: נטייה מתונה שמאלה (12 מעלות) בשילוב פעימת נפח של 15% והרמה קלה של 2 פיקסלים */
+    25% { 
+        transform: skewX(-12deg) scale(1.15) translateY(-2px); 
+    }
+    
+    /* 75%: נטייה מתונה ימינה (12 מעלות) בשילוב פעימת נפח של 15% והרמה קלה של 2 פיקסלים */
+    75% { 
+        transform: skewX(12deg) scale(1.15) translateY(-2px); 
+    }
+}
 
 /****************************************************************************************************/
 
