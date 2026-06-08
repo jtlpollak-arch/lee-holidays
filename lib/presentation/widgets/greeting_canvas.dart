@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_quill/quill_delta.dart';
-import 'package:holidays/presentation/widgets/text_style_option.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // ייבוא רשמי לעבודה מול בסיס הנתונים בענן
 import '../../data/models/client_model.dart';
@@ -31,7 +29,6 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
   late QuillController _quillController;
   final FocusNode _focusNode = FocusNode();
   final ValueNotifier<List<String>> _activeTagsNotifier = ValueNotifier<List<String>>([]);
-  late String _currentGreetingText;
   bool _isProcessing = false;
 
   final Color _tealColor = const Color(0xFF1B5565);
@@ -42,7 +39,6 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
   @override
   void initState() {
     super.initState();
-    _currentGreetingText = widget.defaultGreetingText;
     _quillController = QuillController.basic();
 
     // הוספת האזנה גם לשינויי בחירה וגם לשינויי תוכן
@@ -138,6 +134,44 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
     final previewMap = {'clientName': widget.client.firstName, 'text': jsonEncode(deltaMap)};
 
     // הופכים את ה-JSON למחרוזת של בתים ומקודדים ל-Base64 בטוח ל-URL
+    final jsonString = jsonEncode(previewMap);
+    final bytes = utf8.encode(jsonString);
+    final base64String = base64UrlEncode(bytes);
+
+    final url = 'https://lee-greetings.web.app/?preview=$base64String';
+    launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  }
+
+  void _openAllEffectsShowcasePreview() {
+    final List<Map<String, dynamic>> deltaOperations = [];
+    final List<MapEntry<String, Map<String, dynamic>>> allEntries = TextStyleHelper.styleMap.entries.toList();
+
+    for (int i = 0; i < allEntries.length; i++) {
+      final String name = allEntries[i].key;
+      final String tag = allEntries[i].value['tag'] as String;
+
+      // 1. הזרקת המילה של האפקט עם ה-Attribute של ה-effect
+      deltaOperations.add({
+        'insert': name,
+        'attributes': {'effect': tag},
+      });
+
+      // 2. הזרקת רווח מפריד או ירידת שורה בכל 5 אפקטים (להתאמה למטריצה)
+      if (i < allEntries.length - 1) {
+        if ((i + 1) % 10 == 0) {
+          deltaOperations.add({'insert': '\n'});
+        } else {
+          deltaOperations.add({'insert': ' '});
+        }
+      }
+    }
+    // הוספת ירידת שורה סופית כמקובל במבנה של Quill Document
+    deltaOperations.add({'insert': '\n'});
+
+    // בניית ה-Map בדיוק לפי הפורמט של _openPreview ששלחת
+    final previewMap = {'clientName': 'דוגמה', 'text': jsonEncode(deltaOperations)};
+
+    // קידוד ל-Base64 בטוח ל-URL
     final jsonString = jsonEncode(previewMap);
     final bytes = utf8.encode(jsonString);
     final base64String = base64UrlEncode(bytes);
@@ -738,6 +772,18 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                 child: Text(
                   "עריכה:",
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black54),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(color: const Color(0xFF1B5565).withOpacity(0.08), shape: BoxShape.circle),
+                child: IconButton(
+                  icon: const Icon(Icons.visibility_outlined, size: 18, color: Color(0xFF1B5565)),
+                  tooltip: "איך זה ייראה (כל האפקטים)",
+                  onPressed: _openAllEffectsShowcasePreview,
+                  padding: EdgeInsets.zero,
                 ),
               ),
               // כפתור הפתיחה של לוח האפקטים המרוכז
