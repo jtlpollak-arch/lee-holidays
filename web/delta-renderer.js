@@ -41,38 +41,20 @@ function runTypingEffect(delta) {
     paginateTextAndRender(delta);
 }
 
-// 1. Parser חכם - הופך את ה-Delta לרשימה שטוחה של Tokens (אובייקטים שלמים)
-function flattenDelta(delta) {
-    console.log("<--flattenDelta--> תחילת עיבוד והכנת Tokens");
-    
-    // שומר סף: אם הנתונים כבר עובדו בעבר למבנה תווים סופי, נחזיר אותם מיד
-    if (Array.isArray(delta) && delta.length > 0 && delta[0].pageIndex !== undefined) {
-        console.log("<--flattenDelta--> נתונים כבר מעובדים, מחזיר אותם ישירות");
-        return delta;
-    }
 
-    let data;
-    try {
-        data = typeof delta === 'string' ? JSON.parse(delta) : delta;
-    } catch (e) {
-        console.error("<--flattenDelta--> שגיאה בפענוח ה-JSON:", e);
-        return [];
-    }
 
-    if (!data || !Array.isArray(data)) {
-        console.error("<--flattenDelta--> שגיאה: הנתונים אינם מערך תקין");
-        return [];
-    }
 
+
+
+/**********************************************************************************/
+
+// 1. פונקציית פירוק ה-Delta לטוקנים
+function parseDeltaToTokens(data) {
     let rawTokens = [];
-
-    // פירוק ה-Delta למילים ורווחים תוך העתקת ה-Attributes לכל אלמנט בנפרד
     data.forEach(item => {
         const text = item.insert || "";
         const attrs = item.attributes || {};
         const classes = attrs.effect ? attrs.effect.split(',').map(c => `effect-${c}`) : [];
-        
-        // פירוק לפי רווחים וירידות שורה, תוך שמירה עליהם כאלמנטים עצמאיים
         const parts = text.split(/(\s+|\n)/);
         parts.forEach(part => {
             if (part !== "") {
@@ -80,101 +62,147 @@ function flattenDelta(delta) {
             }
         });
     });
+    return rawTokens;
+}
 
-    console.log("<--flattenDelta--> פירוק ל-Tokens הסתיים. כמות איברים גולמית:", rawTokens.length);
-
-    // 2. בניית ה-Layout הלוגי - חישוב שורות ועמודים על בסיס אובייקטים שלמים בלבד length(word)
+// 2. בניית ה-Layout
+function buildPagesLayout(rawTokens) {
     let pages = [];
     let currentPage = [];
     let currentLine = [];
     let currentLineChars = 0;
 
     rawTokens.forEach(token => {
-        // טיפול בירידת שורה מפורשת בטקסט
         if (token.text === '\n') {
-            if (currentLine.length > 0) {
-                currentPage.push(currentLine);
-            }
+            if (currentLine.length > 0) currentPage.push(currentLine);
             currentLine = [];
             currentLineChars = 0;
             return;
         }
 
-        // בדיקה האם מדובר ברווח
         const isSpace = token.text.trim() === '';
-
         if (isSpace) {
-            // חוק: אל תדפיס רווחים בתחילת שורה
-            if (currentLineChars === 0) {
-                return; 
-            }
-            // חוק: אל תדפיס רווחים בסוף שורה (אם הרווח מביא אותנו בדיוק לקצה, נתעלם ממנו)
-            if (currentLineChars + 1 > window.MAX_CHARS_PER_LINE) {
-                return;
-            }
-            
+            if (currentLineChars === 0 || currentLineChars + 1 > window.MAX_CHARS_PER_LINE) return;
             currentLine.push(token);
             currentLineChars += 1;
         } else {
-            // חישוב אורך המילה השלמה (אמוג'י נספר כתו אחד במערך תווים של ES6)
             let wordLen = Array.from(token.text).length;
-            
             if (wordLen > window.MAX_CHARS_PER_LINE) {
-                token.text = Array.from(token.text).slice(0, MAX_CHARS_PER_LINE).join('') + "...";
-                wordLen = MAX_CHARS_PER_LINE;
+                token.text = Array.from(token.text).slice(0, window.MAX_CHARS_PER_LINE).join('') + "...";
+                wordLen = window.MAX_CHARS_PER_LINE;
             }
-
-            // החלטה קריטית ברמת האובייקט השלם: האם המילה נכנסת בפוזיציה הנוכחית?
             if (currentLineChars + wordLen > window.MAX_CHARS_PER_LINE) {
-                // Mניעת רווחים מיותרים בסוף השורה שנסגרת עכשיו
-                if (currentLine.length > 0 && currentLine[currentLine.length - 1].text.trim() === '') {
-                    currentLine.pop();
-                }
-                
+                if (currentLine.length > 0 && currentLine[currentLine.length - 1].text.trim() === '') currentLine.pop();
                 currentPage.push(currentLine);
                 currentLine = [];
                 currentLineChars = 0;
             }
-
             currentLine.push(token);
             currentLineChars += wordLen;
         }
 
-        // ניהול ומעבר עמודים (MAX_LINES_PER_PAGE)
         if (currentPage.length >= window.MAX_LINES_PER_PAGE) {
             pages.push(currentPage);
             currentPage = [];
         }
     });
 
-    // סגירת שאריות שורות ועמודים
     if (currentLine.length > 0) {
         if (currentLine[currentLine.length - 1].text.trim() === '') currentLine.pop();
         if (currentLine.length > 0) currentPage.push(currentLine);
     }
-    if (currentPage.length > 0) {
-        pages.push(currentPage);
-    }
+    if (currentPage.length > 0) pages.push(currentPage);
+    return pages;
+}
 
-    console.log("<--flattenDelta--> חישוב ה-Layout הסתיים. כמות עמודים לוגיים:", pages.length);
-
-    // 3. הפיכת מבנה ה-Layout המוגמר למערך תווים שטוח ואטומי המשמש אך ורק את טיימר ההקלדה
+// 3. הפיכת ה-Layout לתווים שטוחים עם זיהוי אימוג'י
+function flattenLayoutToChars(pages) {
     let flatResult = [];
+    const isEmoji = (char) => /\p{Extended_Pictographic}/u.test(char);
+
     pages.forEach((page, pIdx) => {
         page.forEach(line => {
             line.forEach(t => {
                 Array.from(t.text).forEach(char => {
-                    flatResult.push({ char: char, classes: t.classes, pageIndex: pIdx });
+                    let finalClasses = [...t.classes];
+                    
+                    if (isEmoji(char)) {
+                        // אנחנו כבר לא מוחקים את קלאס האפקט, כי ה-CSS שלנו יודע
+                        // לטפל בהפרדה באמצעות הקלאס החדש שאנחנו מוסיפים כאן
+                        finalClasses.push('is-emoji');
+                    }
+
+                    flatResult.push({ char: char, classes: finalClasses, pageIndex: pIdx });
                 });
             });
-            // בסוף כל שורה לוגית מוגדרת מראש, נזריק ירידת שורה קשיחה ל-HTML
             flatResult.push({ char: '\n', classes: [], pageIndex: pIdx });
         });
     });
-
-    console.log("<--flattenDelta--> הכנת מערך התווים הסתיימה. סך הכל תווים להקלדה:", flatResult.length);
     return flatResult;
 }
+
+// 4. פונקציה ראשית מנהלת
+// הפונקציה הראשית המנהלת את התהליך
+// 4. פונקציה ראשית מנהלת
+function flattenDelta(delta) {
+    console.log("--> [DEBUG] flattenDelta started");
+
+    // שומר סף חכם: אם המבנה כבר שטוח (מכיל char או pageIndex), אין מה לנתח שוב!
+    // זה מונע את השגיאה שקרתה בהרצה השנייה של פונקציית הרינדור.
+    if (Array.isArray(delta) && delta.length > 0 && (delta[0].char !== undefined || delta[0].pageIndex !== undefined)) {
+        console.log("--> [DEBUG] Data already processed, returning directly.");
+        return delta;
+    }
+
+    // פענוח הנתונים (בדיקה שזה JSON או מערך)
+    let data;
+    try { 
+        data = typeof delta === 'string' ? JSON.parse(delta) : delta; 
+    } catch (e) { 
+        console.error("--> [DEBUG] JSON parse error:", e);
+        return []; 
+    }
+
+    if (!data || !Array.isArray(data)) {
+        console.error("--> [DEBUG] data is not a valid array");
+        return [];
+    }
+
+    // הרצה מסודרת של ה-Pipeline
+    console.log("--> [DEBUG] About to call parseDeltaToTokens");
+    const rawTokens = parseDeltaToTokens(data);
+    
+    console.log("--> [DEBUG] About to call buildPagesLayout");
+    const pages = buildPagesLayout(rawTokens);
+    
+    console.log("--> [DEBUG] About to call flattenLayoutToChars");
+    const flatResult = flattenLayoutToChars(pages);
+    
+    console.log("--> [DEBUG] flattenDelta finished successfully. Result length:", flatResult.length);
+    return flatResult;
+}
+
+/********************************************************************************************/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // 4. בניית העמודים ב-DOM והכנת התשתית הויזואלית
 function paginateTextAndRender(delta) {

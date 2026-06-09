@@ -231,7 +231,7 @@
             width: 50px; 
             
             /* סיבוב שיהיה יותר הרמוני עם פינת הדף */
-            transform: rotate(12deg); 
+            transform: rotate(25deg); 
             
             /* שקיפות שתחבר אותו לנייר */
             opacity: 0.2;
@@ -1182,10 +1182,10 @@
                 await waitForEnvelope();
                 
                 // כעת, כשה-Delta כולל את שם הלקוח באופן אורגני, המנוע יפרק ויעמד אותו נכון
-                cachedFlatData = flattenDelta(delta);
+//                cachedFlatData = flattenDelta(delta);
                 
                 // העברת המערך המעודכן והמחושב לרינדור ולחלוקת עמודים דינמית
-                paginateTextAndRender(cachedFlatData); 
+                paginateTextAndRender(flattenDelta(delta)); 
                 
                 applyDynamicTheme(messageContent);
 //                setupClickNavigation();

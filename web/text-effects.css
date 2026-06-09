@@ -8,107 +8,100 @@ span {
 /****************************************************************************************************/
 
 /* 1. סיבוב */
+/* 1. הגדרות התנועה המשותפות (הליבה) */
 .effect-i {
     display: inline-block;
     font-style: italic;
     font-weight: 800;
-    
-    /* 1. שדרוג הצבע הסטטי לגרדיאנט זורם בגווני המותג שלך */
-    background: linear-gradient(120deg, #1B5565 0%, #3A8E9E 50%, #1B5565 100%);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    
-    /* 2. הוספת מתאר וצל תלת-ממדי עדין שגורם למילה "לקפוץ" מהדף */
-    filter: drop-shadow(2px 2px 2px rgba(27, 85, 101, 0.2));
-    
-    /* 3. שילוב שתי אנימציות: תנועת צבע (נצנוץ) וריחוף אנכי עדין */
-    animation: italicFloat 3s ease-in-out infinite,
-               italicShimmer 6s linear infinite;
-    
-    /* מבטיח שהעיוות הוויזואלי ירונדר בצורה חלקה על כרטיס המסך */
     transform-style: preserve-3d;
     will-change: transform, background-position;
-}
-@keyframes italicFloat {
-    0%, 100% {
-        transform: translateY(0) rotate(0deg);
-    }
-    50% {
-        transform: translateY(-4px) rotate(-1deg); /* שילוב של הרמה והטיה דינמית עדינה */
-    }
-}
-@keyframes italicShimmer {
-    0% {
-        background-position: 0% center;
-    }
-    100% {
-        background-position: 200% center;
-    }
+    /* האנימציות עובדות על כולם */
+    animation: italicFloat 3s ease-in-out infinite,
+               italicShimmer 6s linear infinite;
+    filter: drop-shadow(2px 2px 2px rgba(27, 85, 101, 0.2));
 }
 
+/* 2. עיצוב לטקסט רגיל בלבד (באמצעות :not(.is-emoji)) */
+.effect-i:not(.is-emoji) {
+    background: linear-gradient(120deg, #1B5565 0%, #3A8E9E 50%, #1B5565 100%);
+    background-size: 200% auto;
+    
+    /* חיתוך לצורת הטקסט */
+    -webkit-mask-image: linear-gradient(black, black);
+    mask-image: linear-gradient(black, black);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+    
+    /* מילוי הטקסט בצבע השקוף כדי שהגרדיאנט ייראה */
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* 3. עיצוב לאימוג'י - ניקוי כל השכבות המציקות */
+.effect-i.is-emoji {
+    background: none !important;
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+    -webkit-text-fill-color: initial !important;
+    color: initial !important;
+}
+
+/* אנימציות נשארות כפי שהיו */
+@keyframes italicFloat {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-4px) rotate(-1deg); }
+}
+
+@keyframes italicShimmer {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
+}
 
 /****************************************************************************************************/
 
 
 
 /* 2. זהב */
-/* אפקט נצנוץ זהב מלכותי - מותאם ומיוצב לקריאות מקסימלית בסלולר */
-/* אפקט נצנוץ זהב מלכותי עם במת פחם אחורית - קריאות מושלמת 100% בסלולר */
-/* אפקט נצנוץ זהב מלכותי עם במת פחם אטומה ומחוזקת - קריאות מוחלטת בסלולר */
-/* אפקט זהב על מצע פחם - קריאות ברזל והילת זהב מנצנצת הזזה מאחור */
-.effect-g,
-.text-container span.effect-g,
-.text-container span.effect-g.ink-wet {
+.effect-g {
     display: inline-block;
-    
-    /* 1. התאמת משקל הגופן ל-600 של ה-page-content למניעת מריחת פיקסלים בסלולר */
     font-weight: 600 !important;
-    
-    /* 2. נעילת מילוי האות על פחם כהה ואטום לקריאות מוחלטת ללא מאמץ עיניים */
-    color: #1a150e !important;
-    -webkit-text-fill-color: #1a150e !important;
-    
-    /* 3. ביטול הגדרות ה-background-clip הישנות שהפכו את האות לשקופה */
-    background: none !important;
-    -webkit-background-clip: initial !important;
-    background-clip: initial !important;
-    -webkit-text-stroke: 0 !important;
-    
-    /* 4. נטרול צל האב הגלובלי כדי למנוע התנגשויות ברינדור המובייל */
-    text-shadow: none !important;
-
-    /* 5. יצירת הילת הזהב המלכותית הראשונית מסביב לאות הכהה */
-    filter: drop-shadow(0px -1px 2px rgba(252, 246, 186, 0.9)) 
-            drop-shadow(1px 2px 4px rgba(191, 149, 63, 0.85)) !important;
-            
-    /* הפעלת האנימציה המנצנצת שמניעה את הילת הזהב מאחור */
     animation: goldHaloShimmerMobile 3s ease-in-out infinite alternate !important;
-    
-    /* ייעול ביצועי כרטיס המסך לתנועה חלקה בנייד */
     will-change: filter, transform;
 }
 
-/* אנימציית ריצוד ונצנוץ עבור הילת הזהב האחורית */
+/* 2. עיצוב לטקסט רגיל: האות הכהה עם ההילה */
+.effect-g:not(.is-emoji) {
+    color: #1a150e !important;
+    -webkit-text-fill-color: #1a150e !important;
+    filter: drop-shadow(0px -1px 2px rgba(252, 246, 186, 0.9)) 
+            drop-shadow(1px 2px 4px rgba(191, 149, 63, 0.85)) !important;
+}
+
+/* 3. עיצוב לאימוג'י: בלי צבע שחור, רק ההילה המוזהבת מסביב */
+.effect-g.is-emoji {
+    /* נטרול צבע הטקסט כדי שהאימוג'י יראה את הצבעים של עצמו */
+    color: initial !important;
+    -webkit-text-fill-color: initial !important;
+    
+    /* שמירה על ההילה המוזהבת בלבד */
+    filter: drop-shadow(0px -1px 1px rgba(252, 246, 186, 0.9)) 
+            drop-shadow(1px 1px 2px rgba(191, 149, 63, 0.85)) !important;
+}
+
+/* אנימציה משותפת */
 @keyframes goldHaloShimmerMobile {
     0% {
         transform: skewX(-0.5deg) scale(1);
-        filter: drop-shadow(0px -1px 2px rgba(252, 246, 186, 0.9)) 
-                drop-shadow(1px 2px 4px rgba(191, 149, 63, 0.85)) 
-                contrast(1.1);
+        /* ההילה משתנה באנימציה */
     }
     50% {
-        /* משב אנרגיה עדין המותח את נצנוץ הזהב הצידה ולמעלה */
         transform: skewX(0.5deg) scale(1.01);
-        filter: drop-shadow(-1px -2px 3px rgba(255, 255, 255, 1))      /* הבזק אור לבן בזהב */
-                drop-shadow(2px 3px 6px rgba(212, 175, 55, 0.95))     /* זהב עשיר מורחב */
+        filter: drop-shadow(-1px -2px 3px rgba(255, 255, 255, 1)) 
+                drop-shadow(2px 3px 6px rgba(212, 175, 55, 0.95)) 
                 contrast(1.3);
     }
     100% {
         transform: skewX(-0.5deg) scale(1);
-        filter: drop-shadow(0px -1px 2px rgba(252, 246, 186, 0.9)) 
-                drop-shadow(1px 2px 4px rgba(191, 149, 63, 0.85)) 
-                contrast(1.1);
     }
 }
 
@@ -122,42 +115,38 @@ span {
 /* אפקט גרדיאנט מתכתי עם מרקר זהב - מותאם ומיוצב לסלולר */
 /* אפקט הדגשת מרקר זהב - ממוקד בהדגשה בלבד ללא שינוי ריווחים או גדלים */
 /* אפקט הדגשת מרקר זהב - מיוצב ל-inline טבעי למניעת ריווחים בסלולר */
-.effect-b,
-.text-container span.effect-b,
-.text-container span.effect-b.ink-wet {
-    /* 1. החזרה ל-inline טבעי: מונע מהסלולר להתייחס לאות כבלוק ומבטל את הריווח הצידי לחלוטין */
+/* 1. הליבה: הגדרות בסיס משותפות */
+.effect-b {
     display: inline !important;
     padding: 0 !important;
     margin: 0 !important;
-    
-    /* 2. התאמת משקל הגופן ל-600 של ה-page-content למניעת מריחה ועיוות בנייד */
     font-weight: 600 !important;
-    
-    /* 3. שילוב שני רקעים במקביל:
-       הראשון: הגרדיאנט המתכתי הכהה של האותיות.
-       השני: גרדיאנט הזהב הבהיר של המרקר שיושב בתחתית האות (0px מלמטה, בגובה 35%). */
+}
+
+/* 2. עיצוב לטקסט רגיל: השילוב של המתכת והמרקר */
+.effect-b:not(.is-emoji) {
     background: 
         linear-gradient(135deg, #0f2e36 0%, #1e525f 50%, #0f2e36 100%),
         linear-gradient(90deg, rgba(252, 246, 186, 0.45), rgba(191, 149, 63, 0.25)) !important;
     
-    /* מיקום וגודל הרקעים: המתכת פרוסה על הכל, המרקר יושב למטה ותופס 35% גובה */
     background-position: 0 0, 0 100% !important;
     background-size: 200% auto, 100% 35% !important;
     background-repeat: no-repeat !important;
     
-    /* 4. חיתוך הרקע המתכתי בלבד לצורת הטקסט (הדפדפן חכם מספיק להשאיר את רקע המרקר מאחור) */
     -webkit-background-clip: text !important;
     background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
-    
-    /* 5. קו מתאר כהה מסביב לאות השקופה שמפריד אותה בצורה חדה מהמרקר הבהיר שמתחתיה */
     -webkit-text-stroke: 0.5px #0f2e36 !important;
-    
-    /* 6. נטרול צל האב הגלובלי שיוצר כפל רינדור ומעלים את הטקסט במובייל */
     text-shadow: none !important;
-    
-    /* ביטול האנימציה הישנה של ה-::before מכיוון שהרקע כעת סטטי ומדויק */
-    animation: none !important;
+}
+
+/* 3. עיצוב לאימוג'י: ניקוי הכל כדי לחשוף את הצבעים המקוריים */
+.effect-b.is-emoji {
+    background: none !important;
+    -webkit-text-fill-color: initial !important;
+    color: initial !important;
+    -webkit-text-stroke: 0 !important;
+    filter: none !important;
 }
 
 
@@ -167,68 +156,58 @@ span {
 
 /* 4. קו תחתי */
 /* אפקט גל תחתון דינמי - מיוצב בגובה השורה וצמוד לאותיות ללא ריווח עודף */
-.effect-u,
-.text-container span.effect-u,
-.text-container span.effect-u.ink-wet {
+/* 1. הליבה: הגדרות בסיס משותפות */
+.effect-u {
     position: relative;
     display: inline-block;
-    
-    /* 1. יישור קשיח לקו הבסיס של השורה - מונע מהסלולר להקפיץ את המילה למעלה */
     vertical-align: top;
-    
-    /* 2. אירוסול מוחלט של מרווחים פנימיים ותחתונים כדי לקרב את הגל לבסיס האות */
     padding: 0 !important;
     margin: 0 !important;
-    
-    /* 3. התאמת משקל הגופן ל-600 של ה-page-content למניעת מריחה ועיוות הגרדיאנט בנייד */
     font-weight: 600 !important;
-    
-    /* 4. הגדרת הגרדיאנט המתכתי העמוק בתוך האותיות */
+}
+
+/* 2. עיצוב לטקסט רגיל: הגרדיאנט והקו התחתי (הגל) */
+.effect-u:not(.is-emoji) {
     background: linear-gradient(135deg, #1B5565 0%, #3A8E9E 100%) !important;
     background-size: 200% auto !important;
     -webkit-background-clip: text !important;
     background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
-    
-    /* 5. קו מתאר כהה ומגונן מסביב לאות השקופה לקריאות מושלמת בסלולר */
     -webkit-text-stroke: 0.5px #1B5565 !important;
-    
-    /* 6. נטרול צל האב הגלובלי למניעת התנגשויות רינדור במובייל */
     text-shadow: none !important;
 }
 
-/* אלמנט הגל הזז - ממוקם בדיוק מתחת לקו הכתב */
-.effect-u::after {
+/* הגדרת הגל רק לטקסט רגיל */
+.effect-u:not(.is-emoji)::after {
     content: "";
     position: absolute;
-    
-    /* מיקום מושלם וצמוד: 2 פיקסלים בלבד מתחת לבסיס האותיות */
     bottom: -2px; 
     left: 0;
-    
-    /* רוחב כפול המאפשר תנועת לולאה רציפה */
     width: 200%; 
-    height: 5px; /* התאמת גובה הגל שיהיה מעודן ופרופורציונלי */
-    
-    /* תבנית גלי ה-SVG הנקייה בצבע המותג */
+    height: 5px;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 6'%3E%3Cpath d='M0,3 C5,0 5,6 10,3 C15,0 15,6 20,3' fill='none' stroke='%233A8E9E' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") !important;
     background-repeat: repeat-x !important;
     background-size: 14px 5px !important;
-    
-    /* הפעלת האנימציה שמניעה את הגל שמאלה */
     animation: waveMoveMobile 1.8s linear infinite !important;
-    
-    /* ייעול הרינדור בכרטיס המסך למניעת קפיצות בסלולר */
     will-change: transform;
 }
 
+/* 3. עיצוב לאימוג'י: ביטול גרדיאנט, נטרול הגל (::after) והחזרת צבע מקורי */
+.effect-u.is-emoji {
+    background: none !important;
+    -webkit-text-fill-color: initial !important;
+    color: initial !important;
+    -webkit-text-stroke: 0 !important;
+}
+
+.effect-u.is-emoji::after {
+    display: none !important; /* ביטול הגל מתחת לאימוג'י */
+}
+
+/* אנימציה משותפת */
 @keyframes waveMoveMobile {
-    0% {
-        transform: translateX(0);
-    }
-    100% {
-        transform: translateX(-50%); /* נסיעה חלקה עד חצי המרחק ליצירת לולאה אינסופית */
-    }
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
 }
 
 
@@ -241,69 +220,52 @@ span {
 /* 5. ריווח */
 /* אפקט נשימה ונצנוץ - מיועל חומרה וחסין רעידות וקריסות בסלולר */
 /* אפקט נשימה ונצנוץ - גרסה מיוצבת למובייל המפעילה את ה-scale ללא רווחים עודפים */
-.effect-s,
-.text-container span.effect-s,
-.text-container span.effect-s.ink-wet {
-    /* 1. שינוי ל-inline-block בשילוב יישור אנכי מאפשר ל-scale לעבוד בסלולר */
+/* 1. הליבה: הגדרות בסיס ואנימציה משותפות */
+.effect-s {
     display: inline-block !important;
     vertical-align: top;
-    
-    /* 2. קיזוז ארכיטקטוני: מרג'ין שלילי זעיר המבטל את הרווח המלאכותי שהדפדפן מייצר במובייל */
     margin: 0 -0.03em !important;
     padding: 0 !important;
-    
-    /* 3. קביעת ריווח אותיות בסיסי אלגנטי */
     letter-spacing: 0.25em !important;
-    
-    /* 4. נקודת מוצא קבועה: נשימה והתרחבות ממרכז האות בצורה סימטרית */
     transform-origin: center;
-    
-    /* 5. התאמת משקל הגופן ל-600 של ה-page-content למניעת מריחה ועיוות הגרדיאנט */
     font-weight: 600 !important;
     
-    /* 6. הגדרת הגרדיאנט הזורם והעמוק בתוך האותיות */
+    /* האנימציה עובדת על כולם */
+    animation: letterBreathMobile 4s ease-in-out infinite alternate,
+               letterShimmerMobile 6s linear infinite !important;
+    will-change: transform, background-position;
+}
+
+/* 2. עיצוב לטקסט רגיל: הגרדיאנט, ה-clip וה-stroke */
+.effect-s:not(.is-emoji) {
     background: linear-gradient(135deg, #1B5565 0%, #2A7B91 50%, #1B5565 100%) !important;
     background-size: 200% auto !important;
     -webkit-background-clip: text !important;
     background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
-    
-    /* 7. קו מתאר כהה ומגן מסביב לאות השקופה למניעת היעלמות על הדף הלבן */
     -webkit-text-stroke: 0.5px #1B5565 !important;
-    
-    /* 8. נטרול צל האב הגלובלי למניעת התנגשויות רינדור במובייל */
     text-shadow: 1px 1px 2px rgba(27, 85, 101, 0.25) !important;
-    
-    /* 9. הפעלת האנימציות המשולבות */
-    animation: letterBreathMobile 4s ease-in-out infinite alternate,
-               letterShimmerMobile 6s linear infinite !important;
-               
-    /* אופטימיזציה מקסימלית לחלקות התנועה בכרטיס המסך של הנייד */
-    will-change: transform, background-position;
 }
 
-/* אנימציית נשימה חלקה המבוצעת בכרטיס המסך ומאוזנת מבחינת ריווחים */
+/* 3. עיצוב לאימוג'י: ניקוי גרדיאנטים וסגנונות טקסט */
+.effect-s.is-emoji {
+    background: none !important;
+    -webkit-text-fill-color: initial !important;
+    color: initial !important;
+    -webkit-text-stroke: 0 !important;
+    text-shadow: none !important; /* אופציונלי: אפשר להשאיר אם רוצים צל לאימוג'י */
+}
+
+/* אנימציות משותפות */
 @keyframes letterBreathMobile {
-    0% {
-        transform: scale(1);
-    }
-    50% {
-        /* פעימת נשימה עדינה שמנצלת את כרטיס המסך (GPU) בצורה חלקה ללא רעידות בעמוד */
-        transform: scale(1.36); 
-    }
-    100% {
-        transform: scale(1);
-    }
+    0% { transform: scale(1); }
+    50% { transform: scale(1.36); }
+    100% { transform: scale(1); }
 }
 
-/* אנימציית נצנוץ וזרימת צבע הגרדיאנט ברקע האות */
 @keyframes letterShimmerMobile {
-    0% {
-        background-position: 0% center;
-    }
-    100% {
-        background-position: 200% center;
-    }
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
 }
 
 
@@ -313,47 +275,43 @@ span {
 
 /* 6. ריטוט */
 /* אפקט רטט דיגיטלי (Glitch) - גרסה מיוצבת ומיושרת למניעת רווחים ומריחות בסלולר */
-.effect-v,
-.text-container span.effect-v,
-.text-container span.effect-v.ink-wet {
-    /* 1. שינוי ל-inline-block בשילוב יישור אנכי מאפשר ל-transform לעבוד בסלולר */
+/* 1. הליבה: הגדרות בסיס ואנימציה משותפות */
+.effect-v {
     display: inline-block !important;
     vertical-align: top;
     position: relative;
-    
-    /* 2. קיזוז ארכיטקטוני: מונע מהסלולר לייצר רווחים צידיים ומחזיק את המילה שלמה ומחוברת */
     margin: 0 -0.02em !important;
     padding: 0 !important;
-    
-    /* 3. צבע הבסיס של האות */
-    color: #1B5565 !important;
-    -webkit-text-fill-color: #1B5565 !important;
-    
-    /* 4. התאמת משקל הגופן ל-600 של ה-page-content למניעת מריחה ועיוות הפיקסלים במובייל */
     font-weight: 600 !important;
     
-    /* 5. נטרול צל האב הגלובלי כדי למנוע התנגשויות רינדור עם צללי הצבע של הרטט */
-    text-shadow: none !important;
-    
-    /* הפעלת האנימציה המהירה והדרמטית */
+    /* האנימציה המהירה והדרמטית עובדת על כולם */
     animation: advancedJitterMobile 0.25s linear infinite !important;
-    
-    /* ייעול ביצועים מקסימלי בכרטיס המסך של הנייד לקצב פריימים גבוה (60fps) */
     will-change: transform, text-shadow, color;
 }
 
-/* אנימציית רטט ועיוות חסינת-מובייל השומרת על חדות האותיות */
+/* 2. עיצוב לטקסט רגיל: הצבעים והפיצול בצללים */
+.effect-v:not(.is-emoji) {
+    color: #1B5565 !important;
+    -webkit-text-fill-color: #1B5565 !important;
+    /* ה-text-shadow מוגדר כאן בתוך ה-keyframes, לכן לא נדרש כאן הגדרה נוספת */
+}
+
+/* 3. עיצוב לאימוג'י: שמירה על הצבע המקורי וניקוי רקע */
+.effect-v.is-emoji {
+    color: initial !important;
+    -webkit-text-fill-color: initial !important;
+    background: none !important;
+    -webkit-text-stroke: 0 !important;
+}
+
+/* אנימציה משותפת - הלב של אפקט ה-Glitch */
 @keyframes advancedJitterMobile {
     0% {
         transform: translate(0, 0) skewX(0deg);
-        color: #1B5565 !important;
-        -webkit-text-fill-color: #1B5565 !important;
         text-shadow: 1px 1px 0 rgba(255, 0, 0, 0.6), -1px -1px 0 rgba(0, 0, 255, 0.6) !important;
     }
     20% {
         transform: translate(-1px, 0.5px) skewX(-2deg);
-        color: #2A7B91 !important;
-        -webkit-text-fill-color: #2A7B91 !important;
         text-shadow: -1.5px 0 0 rgba(255, 0, 100, 0.7), 1px 1px 0 rgba(0, 255, 200, 0.7) !important;
     }
     40% {
@@ -362,20 +320,14 @@ span {
     }
     60% {
         transform: translate(-0.5px, -1px) skewX(0deg);
-        color: #1B5565 !important;
-        -webkit-text-fill-color: #1B5565 !important;
         text-shadow: -1px 1px 0 rgba(255, 0, 0, 0.5), 1.5px -0.5px 0 rgba(0, 255, 0, 0.5) !important;
     }
     80% {
         transform: translate(0.5px, 1px) skewX(3deg);
-        color: #0F2E36 !important;
-        -webkit-text-fill-color: #0F2E36 !important;
         text-shadow: 1px -1px 0 rgba(0, 255, 255, 0.6), -1.5px 0 0 rgba(255, 0, 255, 0.6) !important;
     }
     100% {
         transform: translate(0, 0) skewX(0deg);
-        color: #1B5565 !important;
-        -webkit-text-fill-color: #1B5565 !important;
         text-shadow: 1px 1px 0 rgba(255, 0, 0, 0.6), -1px -1px 0 rgba(0, 0, 255, 0.6) !important;
     }
 }
@@ -385,79 +337,60 @@ span {
 
 
 /* 7. זוהר (הילה) */
-/* אפקט להבה חרוכה - מתאים לרקע בהיר ומבטיח קריאות פחם בסיום */
-/* אפקט להבה חרוכה עם ליבה כהה קבועה - קריאות מקסימלית 100% בסלולר */
-/* אפקט להבה חרוכה - דורס את צבעי הדיו הבהירים ומבטיח מילוי פחם קבוע */
-/* אפקט להבה מותאם לסלולר - מבטיח ליבה כהה קבועה ומניעת הצפה ויזואלית */
-/* אפקט להבה מותאם לסלולר המנטרל קונפליקטים מול ה-page-content */
-/* אפקט להבה מקסימלי ומתוחכם - ליבה נושמת, סיום פחם והילה עולה למעלה */
-.effect-f, 
-.text-container span.effect-f,
-.text-container span.effect-f.ink-wet {
-    display: inline-block;
-    
-    /* שמירה על משקל 600 התואם ל-page-content למניעת עיוות פיקסלים בסלולר */
-    font-weight: 600 !important; 
-    
-    /* הגנת מתאר חדה למובייל - שומרת על מבנה הכתב בתוך ענן הלהבות */
-    -webkit-text-stroke: 1px #1a150e;
-    
-    /* הפעלת האנימציה הדרמטית והמלאה */
-    animation: fireFlickerMaxAnim 2s ease-in-out infinite alternate;
-    
-    /* ייעול ביצועים בכרטיס המסך לריצה חלקה בנייד */
+/* 1. הליבה: הגדרות בסיס ואנימציה משותפות */
+.effect-f {
+    display: inline-block !important;
+    font-weight: 600 !important;
+    animation: fireFlickerMaxAnim 2s ease-in-out infinite alternate !important;
     will-change: text-shadow, transform, color;
 }
 
+/* 2. עיצוב לטקסט רגיל: הצבעים והלהבות */
+.effect-f:not(.is-emoji) {
+    -webkit-text-stroke: 1px #1a150e;
+    /* הצבעים והצללים מוגדרים ב-keyframes, כאן רק מוודאים ניקיון */
+}
+
+/* 3. עיצוב לאימוג'י: חשיפת האימוג'י ושמירה על הלהבות מסביב */
+.effect-f.is-emoji {
+    /* מאפשרים לאימוג'י להציג את הצבעים המקוריים שלו */
+    color: initial !important;
+    -webkit-text-fill-color: initial !important;
+    -webkit-text-stroke: 0 !important;
+    background: none !important;
+}
+
+/* אנימציית הבעירה המורכבת */
 @keyframes fireFlickerMaxAnim {
     0% {
-        color: #1a150e; /* התחלה: פחם כהה קריא ויציב */
+        color: #1a150e;
         -webkit-text-fill-color: #1a150e;
         transform: skewX(-0.5deg) scale(1);
-        text-shadow: 
-            0 0 2px rgba(61, 46, 17, 0.8),
-            0 -1px 3px rgba(255, 140, 0, 0.85),
-            1px -3px 6px rgba(255, 69, 0, 0.75);
+        text-shadow: 0 0 2px rgba(61, 46, 17, 0.8), 0 -1px 3px rgba(255, 140, 0, 0.85), 1px -3px 6px rgba(255, 69, 0, 0.75);
     }
     25% {
-        color: #ffffff; /* שיא בעירה 1: הליבה נדלקת ללבן בוהק באמצע */
+        color: #ffffff;
         -webkit-text-fill-color: #ffffff;
         transform: skewX(1.2deg) scale(1.03);
-        /* 4 שכבות אש עשירות שמציפות אור */
-        text-shadow: 
-            0 0 3px #ffffff,
-            0 -2px 4px rgba(255, 215, 0, 1),     /* זהב חם */
-            2px -5px 8px rgba(255, 130, 0, 0.9),   /* כתום דומיננטי */
-            -2px -9px 14px rgba(255, 50, 0, 0.8);  /* אדום אש עמוק */
+        text-shadow: 0 0 3px #ffffff, 0 -2px 4px rgba(255, 215, 0, 1), 2px -5px 8px rgba(255, 130, 0, 0.9), -2px -9px 14px rgba(255, 50, 0, 0.8);
     }
     50% {
-        color: #3d2e11; /* שלב ביניים: האות מתחילה להתפחם והאש נרגעת */
+        color: #3d2e11;
         -webkit-text-fill-color: #3d2e11;
         transform: skewX(-1deg) scale(0.99);
-        text-shadow: 
-            0 0 2px #1a150e,
-            -1px -2px 4px rgba(255, 140, 0, 0.8),
-            1px -6px 10px rgba(255, 69, 0, 0.7);
+        text-shadow: 0 0 2px #1a150e, -1px -2px 4px rgba(255, 140, 0, 0.8), 1px -6px 10px rgba(255, 69, 0, 0.7);
     }
     75% {
-        color: #ffffff; /* שיא בעירה 2: משב רוח נוסף מדליק את מרכז האות */
+        color: #ffffff;
         -webkit-text-fill-color: #ffffff;
         transform: skewX(0.6deg) scale(1.02);
-        text-shadow: 
-            0 0 4px #ffffff,
-            0 -3px 5px rgba(255, 230, 0, 1),
-            2px -6px 11px rgba(255, 110, 0, 0.95),
-            -2px -11px 16px rgba(255, 60, 0, 0.85);
+        text-shadow: 0 0 4px #ffffff, 0 -3px 5px rgba(255, 230, 0, 1), 2px -6px 11px rgba(255, 110, 0, 0.95), -2px -11px 16px rgba(255, 60, 0, 0.85);
     }
     100% {
-        color: #1a150e; /* סיום הלולאה: האות חוזרת לפחם מוחלט לקריאות של 100% */
+        color: #1a150e;
         -webkit-text-fill-color: #1a150e;
         transform: skewX(-0.5deg) scale(1);
-        /* האפקט שביקשת: ההילה נפרדת מהאות ועולה למעלה (ערכי מינוס פיקסלים גבוהים יותר) */
-        text-shadow: 
-            0 -2px 4px rgba(255, 215, 0, 0.85),    /* הזהב עולה למינוס 2 */
-            1px -6px 10px rgba(255, 140, 0, 0.9),   /* הכתום קופץ למינוס 6 */
-            -2px -14px 18px rgba(255, 69, 0, 0.8);  /* האדום נמתח הרחק למעלה למינוס 14 */
+        text-shadow: 0 -2px 4px rgba(255, 215, 0, 0.85), 1px -6px 10px rgba(255, 140, 0, 0.9), -2px -11px 18px rgba(255, 69, 0, 0.8);
     }
 }
 
@@ -466,66 +399,52 @@ span {
 
 /* 8. לחישה */
 /* אפקט לחישה מסתורית ועשן - מיוצב לקריאות מקסימלית וחלקות במובייל */
-/* אפקט לחישה מיוצב - קריאות ברזל 100% עם הילת עשן דינמית מאחור */
-/* אפקט לחישה מסתורית מחוזקת - קריאות חדה וברורה ב-100% בסלולר */
-/* אפקט לחישה מסתורית ועשן - מיוצב לקריאות מקסימלית וחלקות במובייל */
-.effect-w,
-.text-container span.effect-w,
-.text-container span.effect-w.ink-wet {
-    /* 1. שינוי ל-inline-block בשילוב יישור אנכי מאפשר ל-scale לעבוד בסלולר */
+/* 1. הליבה: הגדרות בסיס ואנימציה משותפות */
+.effect-w {
     display: inline-block !important;
     vertical-align: top;
     position: relative;
-    
-    /* 2. הקטנת גופן עדינה ואווריריות מבוקרת */
-    font-size: 1.0em !important;
-    letter-spacing: 0.1em !important;
-    
-    /* 3. קיזוז ארכיטקטוני: מונע מהסלולר להפריד את האותיות ושומר על המילה מאוחדת */
     margin: 0 -0.02em !important;
     padding: 0 !important;
-    
-    /* 4. העמקת גוון הבסיס לפחם-מותג עמוק כדי להבטיח קריאות גם כשהאטימות יורדת */
-    color: #1B5565 !important;
-    -webkit-text-fill-color: #0f1f24 !important;
-    
-    /* 5. התאמת משקל הגופן ל-600 של ה-page-content למניעת מריחה של כתב היד */
+    font-size: 1.0em !important;
+    letter-spacing: 0.1em !important;
     font-weight: 600 !important;
     
-    /* 6. נטרול צל האב הגלובלי למניעת התנגשויות */
-    text-shadow: none !important;
-    
-    /* הפעלת אנימציית "נשימת הלחישה" המעודכנת והבטוחה */
+    /* האנימציה המעודנת לכולם */
     animation: whisperBreatheMobile 4s ease-in-out infinite alternate !important;
-    
-    /* ייעול ביצועי חומרה בכרטיס המסך של הסלולר (GPU) */
     will-change: transform, opacity, text-shadow, color;
 }
 
-/* אנימציית לחישה ועשן חסינת-מובייל ללא שימוש בפילטרים כבדים */
+/* 2. עיצוב לטקסט רגיל: הצבעים והפיכתם ל"עשן" */
+.effect-w:not(.is-emoji) {
+    color: #1B5565 !important;
+    -webkit-text-fill-color: #0f1f24 !important;
+    text-shadow: none !important;
+}
+
+/* 3. עיצוב לאימוג'י: חשיפה מלאה של הצבעים, תוך שמירה על ה"נשימה" */
+.effect-w.is-emoji {
+    background: none !important;
+    -webkit-text-fill-color: initial !important;
+    color: initial !important;
+    text-shadow: none !important;
+    opacity: 0.85; /* נותן לאימוג'י להישאר מחובר לקצב של הטקסט */
+}
+
+/* אנימציית הלחישה (האטימות והצל) */
 @keyframes whisperBreatheMobile {
     0% {
-        opacity: 0.85; /* התחלה: קריאה, חדה ויציבה מאוד מעל הנייר */
-        color: #1B5565 !important;
-        -webkit-text-fill-color: #1B5565 !important;
+        opacity: 0.85;
         transform: scale(1);
         text-shadow: 0 0 2px rgba(27, 85, 101, 0.2) !important;
     }
     50% {
-        opacity: 0.5; /* שיא הלחישה: האטימות יורדת בצורה מבוקרת שלא נעלמת בשמש */
-        
-        /* הטריק הארכיטקטוני: הפיכת גוף האות לשקוף חלקית והעברת המשקל לצל מטושטש.
-           זה מייצר אשליה אופטית מושלמת של התערפלות ועשן, בלי להשתמש ב-filter: blur הקורס. */
-        color: rgba(27, 85, 101, 0.3) !important;
-        -webkit-text-fill-color: rgba(27, 85, 101, 0.3) !important;
-        
-        transform: scale(0.97); /* כיווץ מיקרוסקופי חלק שנותן תחושה של התרחקות של הלחישה */
-        text-shadow: 0 0 6px rgba(27, 85, 101, 0.85) !important; /* הילת עשן עשירה ורכה מסביב */
+        opacity: 0.5;
+        transform: scale(0.97);
+        text-shadow: 0 0 6px rgba(27, 85, 101, 0.85) !important;
     }
     100% {
         opacity: 0.85;
-        color: #1B5565 !important;
-        -webkit-text-fill-color: #1B5565 !important;
         transform: scale(1);
         text-shadow: 0 0 2px rgba(27, 85, 101, 0.2) !important;
     }
@@ -537,79 +456,62 @@ span {
 
 /* 9. מרקר */
 /* אפקט מרקר צהוב זרחני - מיוצב לחלוטין לקריאות ומניעת רווחים במובייל */
-.effect-h,
-.text-container span.effect-h,
-.text-container span.effect-h.ink-wet {
+/* 1. הליבה: הגדרות בסיס משותפות (Stacking Context) */
+.effect-h {
     position: relative;
-    
-    /* 1. תצוגת בלוק בשורה בשילוב יישור אנכי מאפשרת למרקר להימתח נכון בסלולר */
     display: inline-block !important;
-    vertical-align: top;
-    
-    /* 2. ניקוי מוחלט של הריווח הצידי והקיזוז כדי לאפשר לאפקט הרווח החיצוני שלך לשלוט */
     padding: 0 !important;
     margin: 0 !important;
-    
-    /* 3. משקל גופן מיושר המונע מריחת פיקסלים ושומר על אות חדה וברורה */
     font-weight: 600 !important;
-    
-    /* 4. צבע פחם-מותג עמוק המייצר ניגודיות מושלמת מעל המרקר הבהיר */
-    color: #0f2e36 !important; 
-    -webkit-text-fill-color: #0f2e36 !important;
-    
-    /* 5. יצירת סביבת שכבות מבודדת (Stacking Context) חסינת-מובייל.
-       זה מכריח את הדפדפן להשאיר את המרקר מעל הנייר הלבן ומונע את היעלמותו באייפון ובסלולר. */
     isolation: isolate;
     z-index: 1;
-    
-    /* 6. נטרול צל האב הגלובלי למניעת מריחה של האות הכהה */
+}
+
+/* 2. עיצוב לטקסט רגיל: הצבע והמרקר (ה-before) */
+.effect-h:not(.is-emoji) {
+    color: #0f2e36 !important; 
+    -webkit-text-fill-color: #0f2e36 !important;
     text-shadow: none !important;
 }
 
-/* אלמנט המרקר הצהוב הזרחני - נמתח בצורה חלקה ויציבה */
-.effect-h::before {
+.effect-h:not(.is-emoji)::before {
     content: "";
     position: absolute;
-    
-    /* מיקום וכיסוי פרופורציונלי המדמה ראש מרקר אמיתי */
     top: 8%;
     left: 0;
     width: 100%;
     height: 84%; 
-    
-    /* גרדיאנט מרקר זרחני, עשיר ואלגנטי */
     background: linear-gradient(
         100deg, 
         rgba(255, 235, 59, 0.75) 0%, 
         rgba(255, 241, 118, 0.85) 50%, 
         rgba(255, 214, 0, 0.65) 100%
     ) !important;
-    
-    /* קצוות א-סימטריים עדינים שמדמים חיתוך ידני של מרקר */
     border-radius: 4px 2px 3px 5px !important;
-    
-    /* מיקום קבוע ובטוח מאחורי הכתב הכהה בזכות ה-isolation שבאב */
     z-index: -1; 
-    
-    /* הדמיית שילוב צבעים אורגני וחי עם הנייר של הגלויה */
     mix-blend-mode: multiply;
-    
-    /* הגדרת נקונד מוצא מימין לשמאל (RTL) עבור המתיחה האנימטיבית */
     transform: scaleX(0);
     transform-origin: right; 
-    
-    /* הפעלת האנימציה שמותחת את המרקר אקטיבית עם הגעת המילה */
     animation: markerDrawMobile 0.55s cubic-bezier(0.23, 1, 0.32, 1) forwards !important;
     animation-delay: 0.1s !important; 
-    
-    /* ייעול ביצועי כרטיס המסך למניעת קפיצות או השהיות במובייל */
     will-change: transform;
 }
 
+/* 3. עיצוב לאימוג'י: נטרול המרקר והחזרת צבע מקורי */
+.effect-h.is-emoji {
+    color: initial !important;
+    -webkit-text-fill-color: initial !important;
+    background: none !important;
+}
+
+/* ביטול המרקר מתחת לאימוג'י */
+.effect-h.is-emoji::before {
+    display: none !important;
+}
+
+/* אנימציה משותפת */
 @keyframes markerDrawMobile {
-    to {
-        transform: scaleX(1);
-    }
+    to { transform: scaleX(1); }
 }
 
 
@@ -621,64 +523,57 @@ span {
 
 /* 10. פופ-אפ */
 /* אפקט פופ אלסטי ותלת-ממדי - גרסה מיוצבת, חלקה וחסינת רעידות לסלולר */
-.effect-r,
-.text-container span.effect-r,
-.text-container span.effect-r.ink-wet {
-    /* 1. שינוי ל-inline-block בשילוב יישור אנכי מאפשר ל-scale ולרוטציה לעבוד חלק בנייד */
+/* 1. הליבה: הגדרות בסיס ואנימציה משותפות */
+.effect-r {
     display: inline-block !important;
     vertical-align: top;
     position: relative;
-    
-    /* 2. קיזוז ארכיטקטוני: מונע מהסלולר להקפיץ את המילים השכנות הצידה בזמן הזינוק */
     margin: 0 -0.03em !important;
     padding: 0 !important;
-    
-    /* 3. התאמת משקל הגופן ל-600 של ה-page-content למניעת מריחה ועיוות הגרדיאנט */
     font-weight: 600 !important;
+    transform-style: preserve-3d;
     
-    /* 4. הגדרת הגרדיאנט המלוטש והעמוק בתוך האותיות */
+    /* האנימציה האלסטית עובדת על כולם */
+    animation: elasticPopMobile 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+    will-change: transform, text-shadow, opacity;
+}
+
+/* 2. עיצוב לטקסט רגיל: הגרדיאנט והקו */
+.effect-r:not(.is-emoji) {
     background: linear-gradient(135deg, #1B5565 0%, #3A8E9E 50%, #1B5565 100%) !important;
     background-size: 200% auto !important;
     -webkit-background-clip: text !important;
     background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
-    
-    /* 5. קו מתאר כהה מסביב לאות השקופה השומר על גבולות חדים ומגן מפני הלובן של הדף */
     -webkit-text-stroke: 0.5px #1B5565 !important;
-    
-    /* 6. נטרול צל האב הגלובלי כדי למנוע כפלי רינדור עם הצל הדינמי של ה-Pop */
     text-shadow: none !important;
-
-    /* 7. הפעלת מנוע הרינדור התלת-ממדי והחלקה בכרטיס המסך */
-    transform-style: preserve-3d;
-    
-    /* הפעלת האנימציה האלסטית המהירה */
-    animation: elasticPopMobile 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
-    
-    /* אופטימיזציה מקסימלית לתנועה חלקה ב-60 פריימים בשנייה */
-    will-change: transform, text-shadow, opacity;
 }
 
-/* מנוע הפופ האלסטי המעודכן והמיוצב עבור דפדפני מובייל */
+/* 3. עיצוב לאימוג'י: ניקוי גרדיאנטים ושמירה על צבע מקורי */
+.effect-r.is-emoji {
+    background: none !important;
+    -webkit-text-fill-color: initial !important;
+    color: initial !important;
+    -webkit-text-stroke: 0 !important;
+    /* השארנו את ה-text-shadow מה-keyframes שיצטרף לאימוג'י בזינוק */
+}
+
+/* אנימציית הזינוק האלסטי המשותפת */
 @keyframes elasticPopMobile {
     0% {
         transform: scale(0) rotate(-4deg);
-        text-shadow: 0 0 0 rgba(27, 85, 101, 0) !important;
         opacity: 0;
     }
     60% {
-        /* הזינוק המרבי: המילה גדלה ומקבלת את צל העומק התלת-ממדי בצורה מבוקרת */
         transform: scale(1.2) rotate(1deg);
         text-shadow: 0 6px 10px rgba(27, 85, 101, 0.25) !important;
         opacity: 1;
     }
     80% {
-        /* אפקט הגומי (Bounce): כיווץ מיקרוסקופי חזרה לייצוב התנועה */
         transform: scale(0.97) rotate(-0.5deg);
         text-shadow: 0 2px 4px rgba(27, 85, 101, 0.15) !important;
     }
     100% {
-        /* נחיתה רכה ומדויקת בגודל המקורי (1) עם צל קבוע, עשיר ואלגנטי */
         transform: scale(1) rotate(0deg);
         text-shadow: 1.5px 2px 4px rgba(27, 85, 101, 0.25) !important;
         opacity: 1;
@@ -689,15 +584,17 @@ span {
 
 /****************************************************************************************************/
 /* 11. קו כפול (Double Underline) */
-.effect-d,
-.text-container span.effect-d {
+/* 1. הליבה: הגדרות בסיס משותפות */
+.effect-d {
     position: relative;
     display: inline-block;
     vertical-align: top;
     margin: 0 -0.01em !important;
     padding: 0 !important;
 }
-.effect-d::after {
+
+/* 2. עיצוב לטקסט רגיל: הוספת הקו הכפול */
+.effect-d:not(.is-emoji)::after {
     content: "";
     position: absolute;
     bottom: -3px;
@@ -709,13 +606,17 @@ span {
     box-sizing: border-box;
 }
 
+/* 3. עיצוב לאימוג'י: נטרול מוחלט של הקישוט */
+.effect-d.is-emoji::after {
+    display: none !important;
+}
+
 /****************************************************************************************************/
 
 /* 12. כתב חלול (Outline Text) - גרסת קונטרסט גבוה חסינת-מובייל */
 /* המילה מקבלת רקע כהה אחיד והאותיות נצבעות בלבן מוחלט - מייצר אפקט של חיתוך חלול וקריא בטרוף */
-.effect-o,
-.text-container span.effect-o {
-    /* המבנה המקורי והמהודק של "חלול" */
+/* 1. הליבה: הגדרות בסיס ואנימציה משותפות */
+.effect-o {
     display: inline-block !important;
     vertical-align: middle;
     font-weight: 700 !important;
@@ -724,23 +625,34 @@ span {
     padding: 1px 2px !important;
     margin: 0 -0.5px !important;
     border-radius: 2px;
-    background: #1B5565 !important;
     
-    /* אותיות לבנות נקיות */
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
-    text-shadow: none !important;
-
-    /* הפעלת אפקט ההבלחה - דופק כל 3 שניות */
+    /* האנימציה המשותפת */
     animation: pulseGlint 3s ease-in-out infinite !important;
 }
 
+/* 2. עיצוב לטקסט רגיל: הרקע הכחול והאותיות הלבנות */
+.effect-o:not(.is-emoji) {
+    background: #1B5565 !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    text-shadow: none !important;
+}
+
+/* 3. עיצוב לאימוג'י: הסרת הרקע, הצבע והתיבה */
+.effect-o.is-emoji {
+    background: none !important;
+    color: initial !important;
+    -webkit-text-fill-color: initial !important;
+    padding: 0 !important; /* מסיר את המרווח הלבן של התיבה */
+    margin: 0 !important;
+}
+
+/* אנימציה משותפת */
 @keyframes pulseGlint {
     0%, 100% {
         filter: brightness(1) drop-shadow(0 0 0 rgba(255, 255, 255, 0));
     }
     50% {
-        /* בשיא הדופק - האות מתבהרת והילה לבנה רכה מקיפה אותה */
         filter: brightness(1.6) drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
     }
 }
@@ -751,43 +663,43 @@ span {
 
 /* 13. ריצוד/מים */
 /* 1. רישום המשתנה הדינמי בכרטיס המסך כדי לאפשר אנימציה חלקה של אחוזים */
-.effect-t,
-.text-container span.effect-t {
-
-    filter: drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.3)) !important;
-    /* תוחם דק מאוד שמונע מהאות להיעלם */
-    -webkit-text-stroke: 0.4px rgba(0, 0, 0, 0.5) !important;
-    /* 1. מבנה יציב */
+/* 1. הליבה: הגדרות בסיס ואנימציה משותפות */
+.effect-t {
     display: inline-block !important;
     vertical-align: middle;
     font-weight: 700 !important;
     position: relative;
     padding: 1px 2px !important;
     margin: 0 -0.5px !important;
-    
-    /* 2. סטייל נקי - בלי צבעים משתנים, רק עיוות של החומר */
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
-    
-    /* 3. הגדרת האנימציה - מהירה ועדינה (1.5 שניות) */
-    animation: liquidDistortion 1.5s ease-in-out infinite !important;
     transform-origin: center center;
+    
+    /* האנימציה המשותפת */
+    animation: liquidDistortion 1.5s ease-in-out infinite !important;
     will-change: transform;
 }
 
+/* 2. עיצוב לטקסט רגיל: הצללים, הסטרוק והצבע הלבן */
+.effect-t:not(.is-emoji) {
+    filter: drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.3)) !important;
+    -webkit-text-stroke: 0.4px rgba(0, 0, 0, 0.5) !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+/* 3. עיצוב לאימוג'י: ניקוי הסטרוק והצבעים כדי לחשוף את האימוג'י */
+.effect-t.is-emoji {
+    filter: drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.3)) !important;
+    -webkit-text-stroke: 0 !important;
+    color: initial !important;
+    -webkit-text-fill-color: initial !important;
+}
+
+/* אנימציית העיוות המשותפת */
 @keyframes liquidDistortion {
-    0%, 100% {
-        transform: skewX(0deg) scale(1);
-    }
-    25% {
-        transform: skewX(25deg) scale(1.02);
-    }
-    50% {
-        transform: skewX(0deg) scale(1);
-    }
-    75% {
-        transform: skewX(-25deg) scale(1.02);
-    }
+    0%, 100% { transform: skewX(0deg) scale(1); }
+    25% { transform: skewX(25deg) scale(1.02); }
+    50% { transform: skewX(0deg) scale(1); }
+    75% { transform: skewX(-25deg) scale(1.02); }
 }
 
 
@@ -795,34 +707,36 @@ span {
 
 
 /* 14. נדנדה (Seesaw) */
-.effect-y,
-.text-container span.effect-y {
-    /* 1. תצוגת בלוק בשורה יציבה, יישור אנכי עליון למניעת קפיצות שורה */
+/* 1. הליבה: הגדרות בסיס ואנימציה משותפות */
+.effect-y {
     display: inline-block;
     vertical-align: top;
-    
-    /* 2. נקודת ציר במרכז ובסיס האות - מעגן את האות לנייר בזמן שהראש שלה נזרק הצידה */
     transform-origin: center bottom;
     
-    /* 3. הארכת הזמן ל-2.4 שניות בשילוב גרף תנועה רך (ease-in-out) לקבלת נדנוד אלגנטי וזורם */
+    /* האנימציה המשותפת */
     animation: liquidStretchModerate 2.4s ease-in-out infinite;
-    
-    /* 4. האצה חומרתית מלאה של כרטיס המסך למניעת קפיצות פיקסלים במובייל */
     will-change: transform;
 }
 
+/* 2. עיצוב לטקסט רגיל (אם יש גרדיאנטים או צבעים מיוחדים שתרצה להוסיף כאן) */
+.effect-y:not(.is-emoji) {
+    /* כרגע אין כאן עיצוב ספציפי, אבל ניתן להוסיף כאן צבעים לטקסט */
+}
+
+/* 3. עיצוב לאימוג'י: ניקוי כל הגדרה שעלולה להפריע לנראות */
+.effect-y.is-emoji {
+    background: none !important;
+    color: initial !important;
+}
+
+/* אנימציה משותפת */
 @keyframes liquidStretchModerate {
-    /* 0%, 50%, 100%: מצב מוצא מאוזן - הטקסט נח בגודלו הטבעי */
     0%, 50%, 100% { 
         transform: skewX(0deg) scale(1) translateY(0); 
     }
-    
-    /* 25%: נטייה מתונה שמאלה (12 מעלות) בשילוב פעימת נפח של 15% והרמה קלה של 2 פיקסלים */
     25% { 
         transform: skewX(-12deg) scale(1.15) translateY(-2px); 
     }
-    
-    /* 75%: נטייה מתונה ימינה (12 מעלות) בשילוב פעימת נפח של 15% והרמה קלה של 2 פיקסלים */
     75% { 
         transform: skewX(12deg) scale(1.15) translateY(-2px); 
     }
@@ -831,13 +745,28 @@ span {
 /****************************************************************************************************/
 
 /* 15. דופק (Pulse) */
-.effect-p,
-.text-container span.effect-p {
+/* 1. הליבה: הגדרות בסיס ואנימציה משותפות */
+.effect-p {
     display: inline-block;
     vertical-align: top;
+    
+    /* האנימציה המשותפת */
     animation: pulseAnim 1.8s ease-in-out infinite;
     will-change: transform;
 }
+
+/* 2. עיצוב לטקסט רגיל (אופציונלי - כאן אין הגדרות צבע מיוחדות) */
+.effect-p:not(.is-emoji) {
+    /* הוסף כאן גרדיאנטים או צבעים אם תרצה שהטקסט יהיה שונה */
+}
+
+/* 3. עיצוב לאימוג'י: ניקוי כל הגדרה */
+.effect-p.is-emoji {
+    background: none !important;
+    color: initial !important;
+}
+
+/* אנימציה משותפת */
 @keyframes pulseAnim {
     0%, 100% { transform: scale(1); }
     14% { transform: scale(1.12); }
@@ -850,16 +779,33 @@ span {
 
 
 /* 16. זינוק (Slide-In Entrance) */
-.effect-m,
-.text-container span.effect-m {
+/* 1. הליבה: הגדרות בסיס ואנימציה משותפות */
+.effect-m {
     display: inline-block;
     vertical-align: top;
-    opacity: 0;
-    transform: translateY(12px);
+    
+    /* האנימציה המשותפת לכניסה */
     animation: slideInAnim 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards;
     will-change: transform, opacity;
 }
+
+/* 2. עיצוב לטקסט רגיל (כאן אין הגדרות צבע ספציפיות, ניתן להוסיף) */
+.effect-m:not(.is-emoji) {
+    /* הוסף כאן גרדיאנטים או סגנונות נוספים אם תרצה */
+}
+
+/* 3. עיצוב לאימוג'י: וודא שהאטימות והמיקום יתחילו נכון */
+.effect-m.is-emoji {
+    background: none !important;
+    color: initial !important;
+}
+
+/* אנימציית הכניסה המשותפת */
 @keyframes slideInAnim {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
     to {
         opacity: 1;
         transform: translateY(0);
@@ -872,45 +818,49 @@ span {
 
 /* 17. אולטרה ניאון (Neon Glow) - גרסת ליבת פחם מוארת חסינת-מובייל */
 /* שילוב של אותיות כהות למחצה לקריאות מושלמת על רקע לבן, עם השתקפות אור פנימית */
-.effect-n,
-.text-container span.effect-n,
-span[class*="effect-n"] {
+/* 1. הליבה: הגדרות בסיס משותפות */
+.effect-n {
     position: relative;
     display: inline-block !important;
     vertical-align: top;
-    font-weight: 800 !important; /* גופן עבה המבטיח נוכחות וקריאות */
-    
-    /* הפיכת גוף האות לכהה למחצה בצבע המותג - מייצר קונטרסט מושלם על הנייר הלבן */
-    color: rgba(27, 85, 101, 0.55) !important;
-    -webkit-text-fill-color: rgba(27, 85, 101, 0.55) !important;
-    
-    /* הילת אור טורקיז פנימית עדינה שנדבקת לאותיות עצמן */
-    text-shadow: 0 0 4px rgba(0, 229, 255, 0.6) !important;
-    animation: none !important;
+    font-weight: 800 !important;
 }
 
-/* פס הלד הניאוני שמתחת למילה המפיץ אור סביבתי */
-.effect-n::after {
+/* 2. עיצוב לטקסט רגיל: הצבע הכהה והילה פנימית */
+.effect-n:not(.is-emoji) {
+    color: rgba(27, 85, 101, 0.55) !important;
+    -webkit-text-fill-color: rgba(27, 85, 101, 0.55) !important;
+    text-shadow: 0 0 4px rgba(0, 229, 255, 0.6) !important;
+}
+
+/* הגדרת הניאון (::after) רק לטקסט רגיל */
+.effect-n:not(.is-emoji)::after {
     content: "";
     position: absolute;
     bottom: -1px;
     left: 0;
     width: 100%;
     height: 3px;
-    
-    /* גרדיאנט הניאון הזרחני הקיים שלך */
     background: linear-gradient(90deg, #00e5ff 0%, #39ff14 100%) !important;
     border-radius: 2px;
-    
-    /* הילת האור הרכה והמלוטשת שמפיצה אור סביב המילה */
     box-shadow: 0 0 8px rgba(0, 229, 255, 0.9), 
                 0 2px 12px rgba(57, 255, 20, 0.6) !important;
-    
-    /* פעימת האור הנושמת בכרטיס המסך */
     animation: neonAmbientPulseMobile 2.5s ease-in-out infinite alternate !important;
     will-change: box-shadow, opacity;
 }
 
+/* 3. עיצוב לאימוג'י: חשיפת צבעי האימוג'י ונטרול ה"פס" התחתון */
+.effect-n.is-emoji {
+    color: initial !important;
+    -webkit-text-fill-color: initial !important;
+    text-shadow: none !important;
+}
+
+.effect-n.is-emoji::after {
+    display: none !important;
+}
+
+/* אנימציה משותפת לניאון */
 @keyframes neonAmbientPulseMobile {
     0% {
         opacity: 0.7;
@@ -930,26 +880,35 @@ span[class*="effect-n"] {
 /* 18. שקיעת בריזה (Sunset Gradient) - גרסה משודרגת חסינת-מובייל */
 /* במקום גרדיאנט שנחתך ונשבר באותיות מבודדות, נהפוך את זה לאפקט "ציפה ושקיעה" (Wave Floating) קולנועי */
 /* האותיות יעלו וירדו אחת אחרי השנייה ברצף זורם המדמה גל ים אמיתי, עם צבע חם קבוע */
-.effect-z,
-.text-container span.effect-z {
+/* 1. הליבה: הגדרות בסיס ואנימציה משותפות */
+.effect-z {
     display: inline-block;
     vertical-align: top;
-    color: #ff5722 !important; /* צבע שקיעה חם, קריא ועמוק */
-    -webkit-text-fill-color: #ff5722 !important;
-    text-shadow: 1px 1px 1px rgba(0,0,0,0.1) !important;
     
-    /* הפעלת האנימציה הפיזיקלית */
+    /* האנימציה המשותפת לכולם */
     animation: sunsetWaveFloatMobile 2s ease-in-out infinite !important;
     will-change: transform;
 }
-/* הטריק הארכיטקטוני: מאחר שה-JavaScript שלך מייצר לכל אות אינדקס, הן יקבלו השהיית אנימציה טבעית בריצה */
+
+/* 2. עיצוב לטקסט רגיל: הצבע והצל */
+.effect-z:not(.is-emoji) {
+    color: #ff5722 !important;
+    -webkit-text-fill-color: #ff5722 !important;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.1) !important;
+}
+
+/* 3. עיצוב לאימוג'י: חשיפת הצבעים המקוריים */
+.effect-z.is-emoji {
+    background: none !important;
+    color: initial !important;
+    -webkit-text-fill-color: initial !important;
+    text-shadow: none !important; /* אופציונלי: אפשר להשאיר אם רוצים צל גם לאימוג'י */
+}
+
+/* אנימציה משותפת */
 @keyframes sunsetWaveFloatMobile {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-6px); /* ציפה חלקה למעלה בכרטיס המסך */
-    }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
 }
 
 
@@ -957,43 +916,81 @@ span[class*="effect-n"] {
 
 /* 19. כסף מטאלי (Silver Stamp) - גרסה משודרגת חסינת-מובייל */
 /* שינוי מהות לאפקט "ההשתקפות המטאלית" (Scale Pulse) - האותיות גדלות וקטנות בזו אחר זו בצבע כסוף אלגנטי */
-.effect-c,
-.text-container span.effect-c {
+/* 1. הליבה: הגדרות בסיס ואנימציה משותפות */
+.effect-c {
     display: inline-block;
     vertical-align: top;
-    color: #78909c !important; /* גוון כסף מטאלי עמוק ומיוצב לקריאות */
-    -webkit-text-fill-color: #78909c !important;
-    font-weight: 600 !important;
-    text-shadow: none !important;
     
-    /* פעימה אלגנטית המדמה תנועת השתקפות אור על מתכת */
+    /* האנימציה המשותפת לכולם */
     animation: silverReflectionPulseMobile 3s ease-in-out infinite !important;
     will-change: transform, color;
 }
+
+/* 2. עיצוב לטקסט רגיל: הגוון הכסוף והשינוי שלו */
+.effect-c:not(.is-emoji) {
+    color: #78909c !important;
+    -webkit-text-fill-color: #78909c !important;
+    font-weight: 600 !important;
+    text-shadow: none !important;
+}
+
+/* 3. עיצוב לאימוג'י: הסרת הצבעים והשארת התנועה בלבד */
+.effect-c.is-emoji {
+    background: none !important;
+    color: initial !important;
+    -webkit-text-fill-color: initial !important;
+}
+
+/* אנימציה משותפת */
 @keyframes silverReflectionPulseMobile {
     0%, 100% {
         transform: scale(1);
-        color: #78909c !important;
-        -webkit-text-fill-color: #78909c !important;
+        /* הטקסט בלבד משנה צבע */
     }
     50% {
-        transform: scale(1.35); /* התרחבות מטאלית עדינה */
-        color: #b0bec5 !important; /* הארה של הכסף ללבן-מתכתי בשיא הפעימה */
-        -webkit-text-fill-color: #b0bec5 !important;
+        transform: scale(1.35);
     }
+}
+
+/* התאמת צבעים רק לטקסט בתוך ה-keyframes */
+.effect-c:not(.is-emoji) {
+    animation-name: silverReflectionPulseMobile, colorPulse;
+}
+
+@keyframes colorPulse {
+    0%, 100% { color: #78909c !important; -webkit-text-fill-color: #78909c !important; }
+    50% { color: #b0bec5 !important; -webkit-text-fill-color: #b0bec5 !important; }
 }
 
 
 /****************************************************************************************************/
 
 /* 20. הבלש (Blur Reveal) */
-.effect-k,
-.text-container span.effect-k {
-    display: inline-block;
+/* 1. הליבה: הגדרות בסיס ואנימציה משותפות */
+.effect-k {
+    display: inline-block !important;
     vertical-align: top;
-    animation: blurRevealAnim 5s ease-in-out infinite alternate;
+    
+    /* אנימציית החשיפה עובדת מעולה על טקסט ועל אימוג'ים כאחד */
+    animation: blurRevealAnim 5s ease-in-out infinite alternate !important;
     will-change: filter, opacity;
 }
+
+/* 2. עיצוב לטקסט רגיל: הכנה לעיצוב עתידי */
+.effect-k:not(.is-emoji) {
+    /* נכון לעכשיו אין כאן הגדרות מיוחדות. 
+       אם תרצה להוסיף צבע, גרדיאנט או צל מיוחד לטקסט - זה המקום! */
+}
+
+/* 3. עיצוב לאימוג'י: שמירה על ניקיון מצבעי רקע */
+.effect-k.is-emoji {
+    background: none !important;
+    color: initial !important;
+    -webkit-text-fill-color: initial !important;
+    text-shadow: none !important;
+}
+
+/* אנימציית טשטוש וחשיפה משותפת */
 @keyframes blurRevealAnim {
     0%, 20% {
         filter: blur(5px);
