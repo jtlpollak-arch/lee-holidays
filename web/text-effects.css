@@ -467,14 +467,15 @@ span {
     z-index: 1;
 }
 
-/* 2. עיצוב לטקסט רגיל: הצבע והמרקר (ה-before) */
+/* עיצוב לטקסט רגיל: צבע פחם כהה */
 .effect-h:not(.is-emoji) {
     color: #0f2e36 !important; 
     -webkit-text-fill-color: #0f2e36 !important;
     text-shadow: none !important;
 }
 
-.effect-h:not(.is-emoji)::before {
+/* המרקר חל כעת על הכל - גם על טקסט וגם על אימוג'ים */
+.effect-h::before {
     content: "";
     position: absolute;
     top: 8%;
@@ -497,16 +498,11 @@ span {
     will-change: transform;
 }
 
-/* 3. עיצוב לאימוג'י: נטרול המרקר והחזרת צבע מקורי */
+/* עיצוב לאימוג'י: שמירה על הצבעים המקוריים שלו כדי שלא יהפוך לכהה כמו הטקסט */
 .effect-h.is-emoji {
     color: initial !important;
     -webkit-text-fill-color: initial !important;
     background: none !important;
-}
-
-/* ביטול המרקר מתחת לאימוג'י */
-.effect-h.is-emoji::before {
-    display: none !important;
 }
 
 /* אנימציה משותפת */
@@ -626,25 +622,25 @@ span {
     margin: 0 -0.5px !important;
     border-radius: 2px;
     
+    /* העברנו את הרקע לכאן כדי שיעטוף גם את הטקסט וגם את האימוג'י */
+    background: #1B5565 !important;
+    
     /* האנימציה המשותפת */
     animation: pulseGlint 3s ease-in-out infinite !important;
 }
 
-/* 2. עיצוב לטקסט רגיל: הרקע הכחול והאותיות הלבנות */
+/* 2. עיצוב לטקסט רגיל: האותיות הלבנות בלבד */
 .effect-o:not(.is-emoji) {
-    background: #1B5565 !important;
     color: #ffffff !important;
     -webkit-text-fill-color: #ffffff !important;
     text-shadow: none !important;
 }
 
-/* 3. עיצוב לאימוג'י: הסרת הרקע, הצבע והתיבה */
+/* 3. עיצוב לאימוג'י: שמירה על הצבע המקורי בתוך הקובייה הכחולה */
 .effect-o.is-emoji {
-    background: none !important;
     color: initial !important;
     -webkit-text-fill-color: initial !important;
-    padding: 0 !important; /* מסיר את המרווח הלבן של התיבה */
-    margin: 0 !important;
+    /* איפוסי הרקע והריווחים הוסרו, כך שהאימוג'י חולק את המבנה המלא */
 }
 
 /* אנימציה משותפת */
@@ -826,15 +822,15 @@ span {
     font-weight: 800 !important;
 }
 
-/* 2. עיצוב לטקסט רגיל: הצבע הכהה והילה פנימית */
+/* עיצוב לטקסט רגיל: הצבע הכהה והילה פנימית */
 .effect-n:not(.is-emoji) {
     color: rgba(27, 85, 101, 0.55) !important;
     -webkit-text-fill-color: rgba(27, 85, 101, 0.55) !important;
     text-shadow: 0 0 4px rgba(0, 229, 255, 0.6) !important;
 }
 
-/* הגדרת הניאון (::after) רק לטקסט רגיל */
-.effect-n:not(.is-emoji)::after {
+/* פס הלד הניאוני חל כעת על הכל - טקסט ואימוג'ים כאחד */
+.effect-n::after {
     content: "";
     position: absolute;
     bottom: -1px;
@@ -849,15 +845,11 @@ span {
     will-change: box-shadow, opacity;
 }
 
-/* 3. עיצוב לאימוג'י: חשיפת צבעי האימוג'י ונטרול ה"פס" התחתון */
+/* עיצוב לאימוג'י: חשיפת צבעי האימוג'י וביטול הילה פנימית כדי לשמור על חדות */
 .effect-n.is-emoji {
     color: initial !important;
     -webkit-text-fill-color: initial !important;
     text-shadow: none !important;
-}
-
-.effect-n.is-emoji::after {
-    display: none !important;
 }
 
 /* אנימציה משותפת לניאון */

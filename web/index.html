@@ -957,7 +957,6 @@
     </div>
 
     <script>
-        let cachedFlatData = null;
         let isEnvelopeOpen = false;
 
         const firebaseConfig = {
@@ -998,7 +997,7 @@
 
             setTimeout(() => {
                 document.getElementById('cardElement').classList.add('open');
-                launchContextualConfetti(cachedFlatData);
+                launchContextualConfetti();
                 runTypingEffect();
             }, 400);
         }
@@ -1074,39 +1073,59 @@
 
         let autoNavigateTimeout = null;
 
-        function launchContextualConfetti(text) {
+        function launchContextualConfetti() {
             const container = document.getElementById('confetti-container');
             if (!container) return;
+            
             container.innerHTML = ''; 
-            let emojiPool = ['✨', '🌸', '😊', '⭐', '💖', '💐', '🏡', '🔑', '🎉', '🌟', '🌷', '🧡', '🌞'];
 
-            if (text && (text.includes('יום הולדת') || text.includes('יומולדת'))) {
-                emojiPool = ['🎂', '🎉', '🎈', '🎁', '🎊', '🥳', '✨', '💖', '👑', '🥂', '💐', '🌟', '🧁'];
-            } else if (text && (text.includes('תודה') || text.includes('מעריכה'))) {
-                emojiPool = ['💖', '🙏', '🌸', '🌷', '😊', '✨', '⭐', '🧡', '💐', '🎀', '💌', '🍃', '💫'];
-            } else if (text && (text.includes('בית') || text.includes('מפתח') || text.includes('דירה'))) {
-                emojiPool = ['🏡', '🔑', '🥂', '✨', '🌸', '⭐', '🗝️', '🏗️', '📦', '💖', '🥂', '🪴', '☀️'];
-            }            
+            // 1. הגדרת מאגרי האווירה שלנו
+            const moods = {
+                celebration: ['🎂', '🎉', '🎈', '🎁', '🎊', '🥳', '✨', '💖', '👑', '🥂', '💐', '🌟', '🧁'],
+                elegant: ['✨', '⭐', '💫', '🌟', '🤍', '🕊️', '🥂', '💎', '🦢', '🌟', '❄️', '✨'],
+                nature: ['🌸', '🌷', '🌿', '🍃', '☀️', '🌼', '🦋', '✨', '💐', '🧡', '🌷', '🌞'],
+                realEstate: ['🏡', '🔑', '🏠', '🗝️', '🏗️', '📦', '✨', '⭐', '☀️', '💖', '🪴', '🥂']
+            };
+
+            // בחירה אקראית של אחת מהאווירות
+            const moodKeys = Object.keys(moods);
+            const chosenMood = moodKeys[Math.floor(Math.random() * moodKeys.length)];
+            const emojiPool = moods[chosenMood];
+
             const numberOfEmojis = 45;
+            const fragment = document.createDocumentFragment();
+
             for (let i = 0; i < numberOfEmojis; i++) {
                 const emojiItem = document.createElement('div');
                 emojiItem.classList.add('confetti-item');
-                emojiItem.innerText = emojiPool[Math.floor(Math.random() * emojiPool.length)];
+
+                // הסתברות ל"אלמנט נדיר": 10% סיכוי להוסיף משהו מיוחד מהנדל"ן
+                if (Math.random() < 0.1) {
+                    emojiItem.innerText = '🔑'; 
+                } else {
+                    emojiItem.innerText = emojiPool[Math.floor(Math.random() * emojiPool.length)];
+                }
+
                 const angle = (Math.random() * 120 + 30) * (Math.PI / 180);
                 const velocity = Math.random() * 250 + 200;
                 const xDest = Math.cos(angle) * velocity;
                 const yDest = -Math.sin(angle) * velocity;
                 const rotDest = (Math.random() * 720 - 360) + 'deg';
                 const finalScale = (Math.random() * 0.6 + 0.8);
+
                 emojiItem.style.setProperty('--x-dest', xDest + 'px');
                 emojiItem.style.setProperty('--y-dest', yDest + 'px');
                 emojiItem.style.setProperty('--rot-dest', rotDest);
                 emojiItem.style.setProperty('--final-scale', finalScale);
+
                 emojiItem.style.animationDuration = (Math.random() * 3.0 + 3.0) + 's';
                 emojiItem.style.animationDelay = (Math.random() * 0.3) + 's';
-                container.appendChild(emojiItem);
-                setTimeout(() => { emojiItem.remove(); }, 3000);
+
+                fragment.appendChild(emojiItem);
+                setTimeout(() => { emojiItem.remove(); }, 6500);
             }
+
+            container.appendChild(fragment);
         }
 
         async function loadGreetingCard() {
@@ -1180,9 +1199,6 @@
                 }
 
                 await waitForEnvelope();
-                
-                // כעת, כשה-Delta כולל את שם הלקוח באופן אורגני, המנוע יפרק ויעמד אותו נכון
-//                cachedFlatData = flattenDelta(delta);
                 
                 // העברת המערך המעודכן והמחושב לרינדור ולחלוקת עמודים דינמית
                 paginateTextAndRender(flattenDelta(delta)); 
