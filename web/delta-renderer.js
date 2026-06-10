@@ -15,6 +15,35 @@ window.isPausedByClick = false;
 
 const isEmoji = (char) => /\p{Extended_Pictographic}/u.test(char);
 
+// 1. הגדרה גלובלית
+let penSound = null;
+let isAudioUnlocked = false;
+
+// 2. פונקציית אתחול שתיקרא ברגע שהמשתמש לוחץ על משהו (למשל כפתור "התחל" או אפילו לחיצה על המעטפה)
+async function unlockAudio() {
+    if (isAudioUnlocked) return;
+    
+    console.log("--> [DEBUG] ניסיון פתיחת אודיו התחיל...");
+    
+    try {
+        penSound = new Audio('sound/pen-click.mp3');
+        penSound.volume = 0.1;
+        
+        // הוספת האזנה לשגיאה פנימית של האובייקט
+        penSound.addEventListener('error', (e) => {
+            console.error("--> [DEBUG] שגיאת טעינת אודיו פיזית:", e);
+        });
+
+        await penSound.play();
+        penSound.pause();
+        penSound.currentTime = 0;
+        isAudioUnlocked = true;
+        console.log("--> [DEBUG] אודיו נפתח בהצלחה!");
+    } catch (e) {
+        console.error("--> [DEBUG] ה-Promise נכשל, שגיאה:", e.name, e.message);
+    }
+}
+
 // פונקציית תשתית חדשה - ברז החירום של המנוע (Refactoring)
 function stopAndResetEngine() {
     console.log("<--stopAndResetEngine--> עצירת שעונים ואיפוס דגלים ומחלקות");
@@ -318,8 +347,18 @@ function renderNextToken(item, container) {
         return;
     }
 
+    // הפעלת צליל כתיבת העט - מתאפס ומנגן בכל אות חדשה
+    if (isAudioUnlocked && penSound) {
+        penSound.currentTime = 0;
+        penSound.play().catch(e => console.log("Playback failed"));
+    }
+
     const isTargetEmoji = isEmoji(item.char);
     const effectClasses = (item.classes || []).map(c => c.trim()).filter(c => c.length > 0);
+
+    // חישוב זמן ייבוש דינמי: בדיוק חצי ממהירות ההקלדה הנוכחית (ברירת מחדל 100ms אם לא מוגדר)
+    const currentSpeed = window.TYPING_SPEED || 120;
+    const dryDelay = currentSpeed * 0.5;
 
     if (effectClasses.length > 0) {
         let outermostSpan = null;
@@ -343,31 +382,37 @@ function renderNextToken(item, container) {
             currentInnerSpan = newSpan;
         }
 
-        // השכבה הפנימית ביותר מקבלת את התו ואת הדיו הרטוב
+        // השכבה הפנימית ביותר מקבלת רק את תו הטקסט
         currentInnerSpan.textContent = item.char;
-        currentInnerSpan.classList.add('ink-wet');
+
+        // הלבשת הדיו הרטוב והסמן על השכבה החיצונית ביותר (מניעת שכפול ורעשי ירושה במטריושקה)
+        outermostSpan.classList.add('active-typing');
 
         container.appendChild(outermostSpan);
 
-        // מנגנון ייבוש אוטומטי לשכבה הפנימית
+        // מנגנון ייבוש והעלמת סמן אוטומטי ומתוזמן מהשכבה החיצונית
         setTimeout(() => {
-            currentInnerSpan.classList.remove('ink-wet');
-        }, 60);
+            outermostSpan.classList.remove('active-typing');
+        }, dryDelay);
 
     } else {
         // מקרה קצה: תו ללא אפקטים
         const span = document.createElement('span');
         span.textContent = item.char;
+        
         if (isTargetEmoji) {
             span.classList.add('is-emoji');
         }
-        span.classList.add('ink-wet');
+        
+        // הלבשת הדיו הרטוב והסמן על התו הפשוט
+        span.classList.add('active-typing');
         
         container.appendChild(span);
         
+        // מנגנון ייבוש והעלמת סמן אוטומטי ומתוזמן מהתו הפשוט
         setTimeout(() => {
-            span.classList.remove('ink-wet');
-        }, 60);
+            span.classList.remove('active-typing');
+        }, dryDelay);
     }
 }
 

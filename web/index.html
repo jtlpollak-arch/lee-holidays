@@ -6,7 +6,7 @@
     <title>גלויה דיגיטלית אישית | לי אטדגי - תיווך וייעוץ נדל"ן</title>
 
     <script src="text-effects.js" defer></script><link rel="stylesheet" href="text-effects.css">
-    <script src="delta-renderer.js" defer></script> <link rel="stylesheet" href="text-effects.css">
+    <script src="delta-renderer.js" defer></script> 
 
     <style>
         @font-face {
@@ -806,42 +806,7 @@
     clip-path: polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%);
 }
 
-/* 1. הגדרת בסיס לכל אות (Span) שנכתבת - תמיכה במעבר חלק של ייבוש */
-.text-container span {
-    display: inline-block;
-    transition: color 0.6s ease, text-shadow 0.6s ease, transform 0.6s ease, filter 0.6s ease;
-    transform: scale(1);
-    filter: blur(0px);
-}
-
-/* 2. מצב "דיו רטוב" - האות ברגע הולדתה כהה יותר, עבה, ועם אפקט ספיגה זעיר בנייר */
-.text-container span.ink-wet {
-/*    color: #3d2e11 !important;
-    filter: blur(0.2px);       
-    text-shadow: 0 0 1px rgba(61, 46, 17, 0.6); 
-    transform: scale(1.08);    
-    */
-}
-
-/* סמן כתיבה (Cursor) אלגנטי ודק שצמוד תמיד לאות האחרונה משמאל */
-.text-container span:last-child::after {
-/*    content: '';
-    display: inline-block;
-    width: 2px;
-    height: 1.1em;
-    background-color: #856526; 
-    margin-right: 2px;
-    vertical-align: middle;
-    animation: cursor-blink 0.8s infinite;
-*/    
-}
-
-/* אנימציית הבהוב עדינה של הסמן */
-@keyframes cursor-blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
-}
-    </style>
+   </style>
 
     <svg style="position: absolute; width: 0; height: 0;">
         <filter id="deckled-edge-filter">
@@ -980,6 +945,8 @@
             document.getElementById('envelopeWrapper').classList.add('open');
 
             isEnvelopeOpen = true;
+
+            unlockAudio();
 
             setTimeout(() => {
                 document.getElementById('cardElement').classList.add('open');
