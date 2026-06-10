@@ -1012,11 +1012,30 @@ span {
     display: inline-block;
 }
 
-/* המצב ה"רטוב" - כהה, גדול ומטושטש */
+/* האות במצב "נכתבת" - הילה זהובה רכה */
 .active-typing {
-    color: #3d2e11 !important; 
-    filter: blur(1px) !important;
-    text-shadow: 0 0 2px rgba(61, 46, 17, 0.4) !important;
-    transform: scale(1.1) !important; 
-    transition: none !important; /* רטוב מיידית */
+    /* צבע הטקסט - חום כהה עמוק לקריאות מקסימלית */
+    color: #3d2e11 !important;
+    
+    /* הילה "בשרנית" - שכבה כפולה שנותנת נפח */
+    /* השכבה הראשונה (צמודה) נותנת חדות, השנייה (רחבה) נותנת זוהר */
+    text-shadow: 0 0 4px rgba(212, 175, 55, 0.8), 
+                 0 0 12px rgba(212, 175, 55, 0.6) !important;
+    
+    /* הגדלה קלה מאוד כדי לא לשבור את הפריסה של המשפט */
+    transform: scale(1.05) !important;
+    
+    /* ייבוש הדרגתי: המפתח להילה שנראית "אורגנית" */
+    transition: all 0.8s ease-out !important;
+    
+    font-weight: 600 !important;
+    position: relative;
+    display: inline-block;
+}
+
+/* טיפול באימוג'ים כדי שלא יקבלו את ההילה המרובעת */
+.active-typing.is-emoji {
+    text-shadow: none !important;
+    filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.7)) !important;
+    transform: scale(1.1) !important;
 }
