@@ -1,29 +1,44 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:holidays/presentation/widgets/greeting_preview_page.dart';
 import 'package:holidays/presentation/widgets/text_style_helper.dart';
-// וודא שאתה מייבא את הדפים והעזרים הרלוונטיים שלך
-// import 'your_text_style_helper.dart';
-// import 'greeting_preview_page.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class EffectsShowcaseManager {
-  // 1. מיפוי אימוג'ים לכל אפקט (כדי שה-Showcase ייראה חי)
-  static final Map<String, String> _emojiMap = {'i': '✨', 'g': '👑', 'b': '💫', 'u': '🌊', 's': '↔️', 'v': '🫨', 'f': '🔥', 'w': '🤫', 'h': '🏷️', 'r': '🚀', 'd': '👯', 'o': '🟦', 't': '❌', 'y': '🎈', 'p': '💓', 'm': '⚡', 'n': '💡', 'z': '🌅', 'c': '🪙', 'k': '🕵️'};
+  // מיפוי אימוג'ים ייחודיים לכל אפקט (כדי שה-Showcase ייראה עשיר וחי)
+  static final Map<String, String> _emojiMap = {'i': '✨', 'g': '👑', 'b': '💫', 'u': '🌊', 's': '👀', 'v': '🫨', 'f': '🔥', 'w': '🤫', 'h': '🏷️', 'r': '🚀', 'd': '👯', 'o': '💥', 't': '❌', 'y': '🎈', 'p': '💓', 'm': '⚡', 'n': '💡', 'z': '🌅', 'c': '🪙', 'k': '🕵️'};
 
-  // 2. הגדרת קומבינציות מנצחות (שילובים שעובדים היטב יחד)
-  static final List<Map<String, dynamic>> _combinations = [
-    {'text': 'גל + דופק', 'tags': 'i,p', 'emoji': '✨💓'},
-    {'text': 'ניאון + חלול', 'tags': 'n,o', 'emoji': '💡🟦'},
-    {'text': 'מרקר + זהב', 'tags': 'h,g', 'emoji': '🏷️👑'},
-    {'text': 'הילה + זינוק', 'tags': 'f,m', 'emoji': '🔥⚡'},
-  ];
+  /// מתודת עזר שמקבלת מחרוזת תגיות גולמית (למשל "n,o,i"), וממיינת אותן לפי ה-priority ב-styleMap
+  static String _sortTagsByPriority(String tagsString) {
+    List<String> tags = tagsString.split(',');
+
+    tags.sort((a, b) {
+      // שליפת ה-priority מתוך ה-styleMap לפי ה-tag
+      int priorityA = 2; // ברירת מחדל אם לא נמצא
+      int priorityB = 2;
+
+      for (var entry in TextStyleHelper.styleMap.values) {
+        if (entry['tag'] == a) priorityA = entry['priority'] as int;
+        if (entry['tag'] == b) priorityB = entry['priority'] as int;
+      }
+
+      return priorityA.compareTo(priorityB);
+    });
+
+    return tags.join(',');
+  }
 
   static void openShowcase(BuildContext context) {
     final List<Map<String, dynamic>> deltaOperations = [];
     final allEntries = TextStyleHelper.styleMap.entries.toList();
 
-    // --- שלב א': רינדור אפקטים בודדים עם אימוג'י ---
-    deltaOperations.add({'insert': 'אפקטים בודדים:\n'});
+    // =================================================================
+    // חלק 1: אפקטים בודדים (כל אפקט מקבל את האימוג'י הצמוד שלו)
+    // =================================================================
+    deltaOperations.add({
+      'insert': 'אפקטים בודדים:\n',
+      'attributes': {'b': true},
+    });
+
     for (int i = 0; i < allEntries.length; i++) {
       final String name = allEntries[i].key;
       final String tag = allEntries[i].value['tag'] as String;
@@ -34,24 +49,62 @@ class EffectsShowcaseManager {
         'attributes': {'effect': tag},
       });
 
-      // שבירת שורות כל 5 אפקטים למראה מסודר
-      if ((i + 1) % 5 == 0) deltaOperations.add({'insert': '\n'});
+      // ירידת שורה בכל 5 אפקטים לשמירה על מבנה מטריצה נקי
+      if ((i + 1) % 10 == 0) {
+        deltaOperations.add({'insert': '\n'});
+      }
     }
 
-    // --- שלב ב': רינדור קומבינציות ---
-    deltaOperations.add({'insert': '\n\nקומבינציות משולבות:\n'});
-    for (var combo in _combinations) {
+    // =================================================================
+    // חלק 2: מנוע קומבינציות משולשות ומרובעות (חופש מלא, ללא מגבלות)
+    // =================================================================
+    deltaOperations.add({
+      'insert': '\n קומבינציות:\n',
+      'attributes': {'b': true},
+    });
+
+    // הגדרת קומבינציות מורכבות המשלבות תנועה, סטייל ומבנה
+    final List<Map<String, String>> rawCombinations = [
+      // קומבינציות כפולות משופרות
+      {'text': 'מרקר + זהב', 'tags': 'h,g', 'emojis': '🏷️👑'},
+      {'text': 'ניאון + חלול', 'tags': 'n,o', 'emojis': '💡👀'},
+
+      // קומבינציות משולשות (Triple Threat)
+      {'text': 'גל + הילה + רווח', 'tags': 'i,f,s', 'emojis': '✨🔥↔️'},
+      {'text': 'דופק + ניאון + חלול', 'tags': 'p,n,o', 'emojis': '💓💡🥸'},
+      {'text': 'שקיעה + כסף + מרקר', 'tags': 'z,c,h', 'emojis': '🌅🪙🏷️'},
+
+      // קומבינציות מרובעות (Quad Overkill - השתוללות מלאה)
+      {'text': 'קפיצה + רטט + זהב + חלול', 'tags': 'r,v,g,o', 'emojis': '🚀🫨👑🐮'},
+      {'text': 'זינוק + נדנדה + הילה + קו', 'tags': 'm,y,f,u', 'emojis': '⚡🎈🔥🌊'},
+    ];
+
+    for (var combo in rawCombinations) {
+      final String rawTags = combo['tags']!;
+      // הרצת מנוע המיון האוטומטי לפני יצירת ה-attribute
+      final String sortedTags = _sortTagsByPriority(rawTags);
+      final String displayName = combo['text']!;
+      final String emojis = combo['emojis']!;
+
       deltaOperations.add({
-        'insert': '${combo['text']} ${combo['emoji']}\n',
-        'attributes': {'effect': combo['tags']},
+        'insert': '$displayName $emojis\n',
+        'attributes': {'effect': sortedTags},
       });
     }
 
-    // --- שלב ג': שליחה ל-Preview (לוגיקה מוכרת) ---
-    final previewMap = {'clientName': 'דוגמאות', 'text': jsonEncode(deltaOperations)};
-    final base64String = base64UrlEncode(utf8.encode(jsonEncode(previewMap)));
-    final url = 'https://lee-greetings.web.app/?preview=$base64String';
+    // הוספת ירידת שורה סופית כמקובל ב-Quill
+    deltaOperations.add({'insert': '\n'});
 
-    Navigator.push(context, MaterialPageRoute(builder: (context) => GreetingPreviewPage(url: url)));
+    // =================================================================
+    // חלק 3: קידוד ושילוח ל-Base64 וטעינת ה-Preview
+    // =================================================================
+    final previewMap = {'clientName': 'דוגמה', 'text': jsonEncode(deltaOperations)};
+    final jsonString = jsonEncode(previewMap);
+    final bytes = utf8.encode(jsonString);
+    final base64String = base64UrlEncode(bytes);
+
+    final url = 'https://lee-greetings.web.app/?preview=$base64String';
+    launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    //    Navigator.push(context, MaterialPageRoute(builder: (context) => GreetingPreviewPage(url: url)));
   }
 }

@@ -13,6 +13,8 @@ window.typingTimeoutId = null;
 window.isErasingNow = false;
 window.isPausedByClick = false;
 
+const isEmoji = (char) => /\p{Extended_Pictographic}/u.test(char);
+
 // פונקציית תשתית חדשה - ברז החירום של המנוע (Refactoring)
 function stopAndResetEngine() {
     console.log("<--stopAndResetEngine--> עצירת שעונים ואיפוס דגלים ומחלקות");
@@ -118,7 +120,6 @@ function buildPagesLayout(rawTokens) {
 // 3. הפיכת ה-Layout לתווים שטוחים עם זיהוי אימוג'י
 function flattenLayoutToChars(pages) {
     let flatResult = [];
-    const isEmoji = (char) => /\p{Extended_Pictographic}/u.test(char);
 
     pages.forEach((page, pIdx) => {
         page.forEach(line => {
@@ -282,28 +283,165 @@ function paginateTextAndRender(delta) {
     typeNextChar();
 }
 
-// 5. מנוע ההקלדה הויזואלי (פועל על המיקומים והעמודים המוגמרים שחושבו מראש)
-function typeNextChar() {
-    if (window.globalCharIndex >= window.globalFlatData.length) {
-        console.log("<--typeNextChar--> תהליך ההקלדה הסתיים בהצלחה לכל העמודים");
-        
-        // מוצאים את העמוד הפעיל הנוכחי (שהוא העמוד האחרון שבו הסתיימה ההקלדה)
-        const activePage = document.querySelector('.page-content.active');
-        if (activePage) {
-            // מחפשים בתוכו את מיכל החתימה שהזרקנו מראש
-            const signatureWrapper = activePage.querySelector('.signature-wrapper');
-            if (signatureWrapper) {
-                // מדליקים את הקלאס שמפעיל את ה-CSS ואת האנימציה של הזהב
-                signatureWrapper.classList.add('show-signature');
-                console.log("<--typeNextChar--> ההקלדה הסתיימה, החתימה הודלקה בהצלחה!");
-            }
+
+
+
+
+
+
+
+
+
+
+
+/**********************************************************
+ * 
+ * typeNextChar()
+ * 
+ ***********************************************************/
+function handleTypingComplete() {
+    console.log("<--typeNextChar--> תהליך ההקלדה הסתיים בהצלחה לכל העמודים");
+    
+    const activePage = document.querySelector('.page-content.active');
+    if (activePage) {
+        const signatureWrapper = activePage.querySelector('.signature-wrapper');
+        if (signatureWrapper) {
+            signatureWrapper.classList.add('show-signature');
+            console.log("<--typeNextChar--> ההקלדה הסתיימה, החתימה הודלקה בהצלחה!");
         }
+    }
+}
+
+function renderNextToken(item, container) {
+    if (item.char === '\n') {
+        container.appendChild(document.createElement('br'));
+        return;
+    }
+
+    const isTargetEmoji = isEmoji(item.char);
+    const effectClasses = (item.classes || []).map(c => c.trim()).filter(c => c.length > 0);
+
+    if (effectClasses.length > 0) {
+        let outermostSpan = null;
+        let currentInnerSpan = null;
+
+        // בניית השרשרת המקוננת (מבנה -> סטייל -> תנועה)
+        for (let i = 0; i < effectClasses.length; i++) {
+            const newSpan = document.createElement('span');
+            newSpan.classList.add(effectClasses[i]);
+            
+            if (isTargetEmoji) {
+                newSpan.classList.add('is-emoji');
+            }
+
+            if (i === 0) {
+                outermostSpan = newSpan;
+            } else {
+                currentInnerSpan.appendChild(newSpan);
+            }
+            
+            currentInnerSpan = newSpan;
+        }
+
+        // השכבה הפנימית ביותר מקבלת את התו ואת הדיו הרטוב
+        currentInnerSpan.textContent = item.char;
+        currentInnerSpan.classList.add('ink-wet');
+
+        container.appendChild(outermostSpan);
+
+        // מנגנון ייבוש אוטומטי לשכבה הפנימית
+        setTimeout(() => {
+            currentInnerSpan.classList.remove('ink-wet');
+        }, 60);
+
+    } else {
+        // מקרה קצה: תו ללא אפקטים
+        const span = document.createElement('span');
+        span.textContent = item.char;
+        if (isTargetEmoji) {
+            span.classList.add('is-emoji');
+        }
+        span.classList.add('ink-wet');
+        
+        container.appendChild(span);
+        
+        setTimeout(() => {
+            span.classList.remove('ink-wet');
+        }, 60);
+    }
+}
+
+
+function handlePageTransition(item, pageDiv) {
+    if (window.isPausedByClick) {
+        console.log("<- מוד ידני פעיל -> נשארים בעמוד הנוכחי, חוסמים מעבר אוטומטי");
+        return true; // חסום המשך
+    }
+    
+    if (window.isErasingNow) {
+        return true; // חסום המשך
+    }
+
+    const oldActivePage = document.querySelector('.page-content.active');
+    
+    if (oldActivePage) {
+        const oldContainer = oldActivePage.querySelector('.text-container');
+        if (oldContainer) {
+            console.log("<--typeNextChar--> מפעיל מחיקה אלקטרונית עדינה על עמוד ישן");
+            
+            window.isErasingNow = true;
+            oldContainer.classList.add('erase-active');
+            
+            window.typingTimeoutId = setTimeout(() => {
+                oldContainer.classList.remove('erase-active');
+                
+                // מעבר פיזי לעמוד החדש
+                document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+                pageDiv.classList.add('active');
+                
+                // עדכון נקודות הניווט
+                const dots = document.querySelectorAll('.dot');
+                if (dots.length > 0) {
+                    document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
+                    const currentDot = document.getElementById(`dot-idx-${item.pageIndex}`);
+                    if (currentDot) currentDot.classList.add('active');
+                }
+                
+                window.isErasingNow = false;
+                
+                // שחרור המנוע להמשך הקלדה בעמוד החדש
+                window.globalCharIndex++;
+                window.typingTimeoutId = setTimeout(typeNextChar, window.TYPING_SPEED);
+            }, 2100);
+            
+            return true; // מעבר מנוהל אסינכרונית, חסום ריצה רגילה
+        }
+    }
+    
+    // הגנה והפעלה לעמוד הראשון ללא טיימר
+    document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+    pageDiv.classList.add('active');
+    const dots = document.querySelectorAll('.dot');
+    if (dots.length > 0) {
+        document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
+        const currentDot = document.getElementById(`dot-idx-${item.pageIndex}`);
+        if (currentDot) currentDot.classList.add('active');
+    }
+    
+    return false; // אל תחסום ריצה רגילה
+}
+
+function typeNextChar() {
+    // 1. בדיקת סיום חלוטין של המערך
+    if (window.globalCharIndex >= window.globalFlatData.length) {
+        handleTypingComplete();
         return;
     }
 
     const item = window.globalFlatData[window.globalCharIndex];
     const pageDiv = document.getElementById(`page-${item.pageIndex}`);
     
+    // 2. בדיקת קיום הדף
     if (!pageDiv) {
         window.globalCharIndex++;
         typeNextChar();
@@ -312,93 +450,46 @@ function typeNextChar() {
 
     const container = pageDiv.querySelector('.text-container');
 
-    if (item.char === '\n') {
-        container.appendChild(document.createElement('br'));
-    } else {
-        const span = document.createElement('span');
-        span.textContent = item.char;
-        item.classes.forEach(c => span.classList.add(c));
-        
-        // הופכים את האות ל"רטובה" ברגע הולדתה על הנייר
-        span.classList.add('ink-wet');
-        
-        container.appendChild(span);
-        
-        // מנגנון ייבוש אוטומטי (הסמן של ה-CSS מופיע אוטומטית על ה-span האחרון שנוסף)
-        setTimeout(() => {
-            span.classList.remove('ink-wet');
-        }, 60);
-    }
+    // 3. רינדור התו הנוכחי לתוך הקונטיינר (מנוע המטריושקה)
+    renderNextToken(item, container);
 
-    // ניהול החלפת העמוד הויזואלי הפעיל עם אפקט מחיקה אלקטרונית עדינה ושומר סף
+    // 4. ניהול מעברי עמודים במידה והעמוד משתנה
     if (!pageDiv.classList.contains('active')) {
-
-        if (window.isPausedByClick) {
-            console.log("<- מוד ידני פעיל -> נשארים בעמוד הנוכחי, חוסמים מעבר אוטומטי");
-            return; 
-        }
-        
-        // חסימת כפל הרצות: אם המנוע כבר נמצא בתהליך מחיקה, עצור מיד!
-        if (window.isErasingNow) {
-            return;
-        }
-
-        const oldActivePage = document.querySelector('.page-content.active');
-        
-        if (oldActivePage) {
-            const oldContainer = oldActivePage.querySelector('.text-container');
-            if (oldContainer) {
-                console.log("<--typeNextChar--> מפעיל מחיקה אלקטרונית עדינה על עמוד ישן");
-                
-                // נועלים את השער כדי למנוע מטיימרים מקבילים להיכנס לכאן
-                window.isErasingNow = true;
-                
-                // 1. מדליקים את אפקט הניגוב ב-CSS
-                oldContainer.classList.add('erase-active');
-                
-                // 2. מקפיאים את מנוע ההקלדה למשך 2100 מילישניות כדי לתת לאפקט להסתיים בחלקות
-                window.typingTimeoutId = setTimeout(() => {
-                    // מנקים את אפקט המחיקה מהקונטיינר הישן
-                    oldContainer.classList.remove('erase-active');
-                    
-                    // 3. מבצעים את המעבר הפיזי לעמוד החדש
-                    document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
-                    pageDiv.classList.add('active');
-                    
-                    // עדכון נקודות הניווט (Dots) בהתאמה לעמוד החדש
-                    const dots = document.querySelectorAll('.dot');
-                    if (dots.length > 0) {
-                        document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
-                        const currentDot = document.getElementById(`dot-idx-${item.pageIndex}`);
-                        if (currentDot) currentDot.classList.add('active');
-                    }
-                    
-                    // פותחים את השער בחזרה לקראת מעבר העמוד הבא בעתיד
-                    window.isErasingNow = false;
-                    
-                    // 4. משחררים את המנוע להמשיך להקליד את התו הבא על דף נקי
-                    window.globalCharIndex++;
-                    window.typingTimeoutId = setTimeout(typeNextChar, window.TYPING_SPEED);
-                }, 2100);
-                
-                return; // עוצרים את הלולאה הנוכחית בזמן ההמתנה
-            }
-        }
-        
-        // הגנה לעמוד הראשון בהתחלה
-        document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
-        pageDiv.classList.add('active');
-        const dots = document.querySelectorAll('.dot');
-        if (dots.length > 0) {
-            document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
-            const currentDot = document.getElementById(`dot-idx-${item.pageIndex}`);
-            if (currentDot) currentDot.classList.add('active');
-        }
+        const isHandled = handlePageTransition(item, pageDiv);
+        if (isHandled) return; // עוצרים כאן אם המעבר מנוהל בטיימר של המחיקה
     }
 
+    // 5. קידום לתו הבא במצב רגיל
     window.globalCharIndex++;
     window.typingTimeoutId = setTimeout(typeNextChar, window.TYPING_SPEED);
 }
+
+
+/********************************************************************************* */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /*
 

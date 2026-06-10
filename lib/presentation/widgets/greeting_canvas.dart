@@ -38,7 +38,6 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
   final Color _lightBgColor = const Color(0xFFF4F7F8);
 
   @override
-  @override
   void initState() {
     super.initState();
     _quillController = QuillController.basic();
