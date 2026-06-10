@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:holidays/presentation/widgets/effects_showcase_manager.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // ייבוא רשמי לעבודה מול בסיס הנתונים בענן
 import '../../data/models/client_model.dart';
@@ -135,44 +136,6 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
     final previewMap = {'clientName': widget.client.firstName, 'text': jsonEncode(deltaMap)};
 
     // הופכים את ה-JSON למחרוזת של בתים ומקודדים ל-Base64 בטוח ל-URL
-    final jsonString = jsonEncode(previewMap);
-    final bytes = utf8.encode(jsonString);
-    final base64String = base64UrlEncode(bytes);
-
-    final url = 'https://lee-greetings.web.app/?preview=$base64String';
-    Navigator.push(context, MaterialPageRoute(builder: (context) => GreetingPreviewPage(url: url)));
-  }
-
-  void _openAllEffectsShowcasePreview() {
-    final List<Map<String, dynamic>> deltaOperations = [];
-    final List<MapEntry<String, Map<String, dynamic>>> allEntries = TextStyleHelper.styleMap.entries.toList();
-
-    for (int i = 0; i < allEntries.length; i++) {
-      final String name = allEntries[i].key;
-      final String tag = allEntries[i].value['tag'] as String;
-
-      // 1. הזרקת המילה של האפקט עם ה-Attribute של ה-effect
-      deltaOperations.add({
-        'insert': name,
-        'attributes': {'effect': tag},
-      });
-
-      // 2. הזרקת רווח מפריד או ירידת שורה בכל 5 אפקטים (להתאמה למטריצה)
-      if (i < allEntries.length - 1) {
-        if ((i + 1) % 10 == 0) {
-          deltaOperations.add({'insert': '\n'});
-        } else {
-          deltaOperations.add({'insert': ' '});
-        }
-      }
-    }
-    // הוספת ירידת שורה סופית כמקובל במבנה של Quill Document
-    deltaOperations.add({'insert': '\n'});
-
-    // בניית ה-Map בדיוק לפי הפורמט של _openPreview ששלחת
-    final previewMap = {'clientName': 'דוגמה', 'text': jsonEncode(deltaOperations)};
-
-    // קידוד ל-Base64 בטוח ל-URL
     final jsonString = jsonEncode(previewMap);
     final bytes = utf8.encode(jsonString);
     final base64String = base64UrlEncode(bytes);
@@ -796,7 +759,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                 child: IconButton(
                   icon: const Icon(Icons.science_outlined, size: 16, color: Color(0xFF1B5565)),
                   tooltip: "איך זה ייראה (כל האפקטים)",
-                  onPressed: _openAllEffectsShowcasePreview,
+                  onPressed: () => EffectsShowcaseManager.openShowcase(context),
                   padding: EdgeInsets.zero,
                 ),
               ),
