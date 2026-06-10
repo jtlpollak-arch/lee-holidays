@@ -5,7 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 class EffectsShowcaseManager {
   // מיפוי אימוג'ים ייחודיים לכל אפקט (כדי שה-Showcase ייראה עשיר וחי)
-  static final Map<String, String> _emojiMap = {'i': '✨', 'g': '👑', 'b': '💫', 'u': '🌊', 's': '👀', 'v': '🫨', 'f': '🔥', 'w': '🤫', 'h': '🏷️', 'r': '🚀', 'd': '👯', 'o': '💥', 't': '❌', 'y': '🎈', 'p': '💓', 'm': '⚡', 'n': '💡', 'z': '🌅', 'c': '🪙', 'k': '🕵️'};
+  static final Map<String, String> _emojiMap = {'i': '✨', 'g': '👑', 'b': '💫', 'u': '🌷', 's': '👀', 'v': '🫨', 'f': '🔥', 'w': '🤫', 'h': '🍒', 'r': '🚀', 'd': '👯', 'o': '💥', 't': '❌', 'y': '🐟', 'p': '💓', 'm': '⚡', 'n': '💡', 'z': '🌅', 'c': '🪙', 'k': '🕵️'};
 
   /// מתודת עזר שמקבלת מחרוזת תגיות גולמית (למשל "n,o,i"), וממיינת אותן לפי ה-priority ב-styleMap
   static String _sortTagsByPriority(String tagsString) {
@@ -50,7 +50,7 @@ class EffectsShowcaseManager {
       });
 
       // ירידת שורה בכל 5 אפקטים לשמירה על מבנה מטריצה נקי
-      if ((i + 1) % 10 == 0) {
+      if ((i + 1) % 2 == 0) {
         deltaOperations.add({'insert': '\n'});
       }
     }
@@ -66,7 +66,7 @@ class EffectsShowcaseManager {
     // הגדרת קומבינציות מורכבות המשלבות תנועה, סטייל ומבנה
     final List<Map<String, String>> rawCombinations = [
       // קומבינציות כפולות משופרות
-      {'text': 'מרקר + זהב', 'tags': 'h,g', 'emojis': '🏷️👑'},
+      {'text': 'מרקר + זהב', 'tags': 'h,g', 'emojis': '🦜👑'},
       {'text': 'ניאון + חלול', 'tags': 'n,o', 'emojis': '💡👀'},
 
       // קומבינציות משולשות (Triple Threat)

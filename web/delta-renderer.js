@@ -20,6 +20,7 @@ let penSound = null;
 let isAudioUnlocked = false;
 
 // 2. פונקציית אתחול שתיקרא ברגע שהמשתמש לוחץ על משהו (למשל כפתור "התחל" או אפילו לחיצה על המעטפה)
+/*
 async function unlockAudio() {
     if (isAudioUnlocked) return;
     
@@ -43,6 +44,7 @@ async function unlockAudio() {
         console.error("--> [DEBUG] ה-Promise נכשל, שגיאה:", e.name, e.message);
     }
 }
+*/
 
 // פונקציית תשתית חדשה - ברז החירום של המנוע (Refactoring)
 function stopAndResetEngine() {
@@ -347,73 +349,52 @@ function renderNextToken(item, container) {
         return;
     }
 
-    // הפעלת צליל כתיבת העט - מתאפס ומנגן בכל אות חדשה
-    if (isAudioUnlocked && penSound) {
-        penSound.currentTime = 0;
-        penSound.play().catch(e => console.log("Playback failed"));
-    }
-
     const isTargetEmoji = isEmoji(item.char);
     const effectClasses = (item.classes || []).map(c => c.trim()).filter(c => c.length > 0);
-
-    // חישוב זמן ייבוש דינמי: בדיוק חצי ממהירות ההקלדה הנוכחית (ברירת מחדל 100ms אם לא מוגדר)
+    
+    // חישוב זמן הייבוש הדינמי
     const currentSpeed = window.TYPING_SPEED || 120;
-    const dryDelay = currentSpeed * 0.5;
+    const dryDelay = currentSpeed * 0.8; // זמן מעט ארוך יותר כדי שהעין תספיק לראות את האפקט
+
+    let targetElement = null; // זה יהיה האלמנט שעליו נלביש את הדיו
 
     if (effectClasses.length > 0) {
         let outermostSpan = null;
         let currentInnerSpan = null;
 
-        // בניית השרשרת המקוננת (מבנה -> סטייל -> תנועה)
         for (let i = 0; i < effectClasses.length; i++) {
             const newSpan = document.createElement('span');
             newSpan.classList.add(effectClasses[i]);
             
-            if (isTargetEmoji) {
-                newSpan.classList.add('is-emoji');
-            }
+            if (isTargetEmoji) newSpan.classList.add('is-emoji');
 
-            if (i === 0) {
-                outermostSpan = newSpan;
-            } else {
-                currentInnerSpan.appendChild(newSpan);
-            }
+            if (i === 0) outermostSpan = newSpan;
+            else currentInnerSpan.appendChild(newSpan);
             
             currentInnerSpan = newSpan;
         }
 
-        // השכבה הפנימית ביותר מקבלת רק את תו הטקסט
         currentInnerSpan.textContent = item.char;
-
-        // הלבשת הדיו הרטוב והסמן על השכבה החיצונית ביותר (מניעת שכפול ורעשי ירושה במטריושקה)
-        outermostSpan.classList.add('active-typing');
-
+        targetElement = outermostSpan;
         container.appendChild(outermostSpan);
-
-        // מנגנון ייבוש והעלמת סמן אוטומטי ומתוזמן מהשכבה החיצונית
-        setTimeout(() => {
-            outermostSpan.classList.remove('active-typing');
-        }, dryDelay);
-
     } else {
-        // מקרה קצה: תו ללא אפקטים
         const span = document.createElement('span');
         span.textContent = item.char;
+        if (isTargetEmoji) span.classList.add('is-emoji');
         
-        if (isTargetEmoji) {
-            span.classList.add('is-emoji');
-        }
-        
-        // הלבשת הדיו הרטוב והסמן על התו הפשוט
-        span.classList.add('active-typing');
-        
+        targetElement = span;
         container.appendChild(span);
-        
-        // מנגנון ייבוש והעלמת סמן אוטומטי ומתוזמן מהתו הפשוט
-        setTimeout(() => {
-            span.classList.remove('active-typing');
-        }, dryDelay);
     }
+
+    // הלבשת הדיו הרטוב על האלמנט הסופי
+    targetElement.classList.add('active-typing');
+
+    // ייבוש הדרגתי: הסרת הקלאס לאחר הזמן המוגדר
+    setTimeout(() => {
+        if (targetElement && targetElement.parentNode) {
+            targetElement.classList.remove('active-typing');
+        }
+    }, dryDelay);
 }
 
 

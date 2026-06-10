@@ -1006,36 +1006,17 @@
    מערכת הולדת אות מאוחדת: דיו רטוב וסמן דינמי
    ========================================================================== */
 
-/* המצב הרטוב: מופעל למשך חלקיק שנייה בלבד על האות שנכתבת כרגע */
-.active-typing {
-    color: #3d2e11 !important; /* גוון דיו כהה וטרי שמכסה זמנית את האפקטים */
-    filter: blur(0.2px) !important; /* טשטוש מיקרוסקופי של נוזל */
-    text-shadow: 0 0 1px rgba(61, 46, 17, 0.6) !important;
-    transform: scale(1.08) !important; /* האות בולטת ברגע הולדתה */
-    position: relative;
+/* הגנת מטריושקה: מונע מהסמן להשתכפל אם הקלאס מולבש על שכבות מקוננות */
+span {
+    transition: all 0.8s ease-out !important; /* זמן הייבוש */
     display: inline-block;
 }
 
-/* הגנת מטריושקה: מונע מהסמן להשתכפל אם הקלאס מולבש על שכבות מקוננות */
-.active-typing::after {
-    content: "|" !important;
-    position: absolute !important;
-    
-    /* התיקון לעברית: מעבירים את הסמן לצד שמאל של האות */
-    left: -6px !important; 
-    right: auto !important;
-    
-    top: 0 !important;
-    color: #1B5565 !important;
-    font-weight: bold !important;
-    z-index: 9999 !important;
-    display: inline-block !important;
-    animation: quick-blink 0.8s infinite alternate;
-}
-
-/* אנימציית הבהוב מהירה ונקייה עבור הסמן הדינמי */
-@keyframes quick-blink {
-    0% { opacity: 1; }
-    50% { opacity: 1; } /* נשאר דלוק יותר זמן */
-    100% { opacity: 0; }
+/* המצב ה"רטוב" - כהה, גדול ומטושטש */
+.active-typing {
+    color: #3d2e11 !important; 
+    filter: blur(1px) !important;
+    text-shadow: 0 0 2px rgba(61, 46, 17, 0.4) !important;
+    transform: scale(1.1) !important; 
+    transition: none !important; /* רטוב מיידית */
 }
