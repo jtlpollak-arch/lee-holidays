@@ -147,24 +147,20 @@
     position: relative;
     display: inline-block;
     vertical-align: top;
-    padding: 0 !important;
     margin: 0 !important;
     font-weight: 600 !important;
-}
-
-/* 2. עיצוב לטקסט רגיל: הגרדיאנט והקו התחתי (הגל) */
-.effect-u:not(.is-emoji) {
+    
+    /* עיצוב אחיד לכולם */
     background: linear-gradient(135deg, #1B5565 0%, #3A8E9E 100%) !important;
     background-size: 200% auto !important;
     -webkit-background-clip: text !important;
     background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
     -webkit-text-stroke: 0.5px #1B5565 !important;
-    text-shadow: none !important;
 }
 
-/* הגדרת הגל רק לטקסט רגיל */
-.effect-u:not(.is-emoji)::after {
+/* הגדרת הגל לכולם ללא יוצא מן הכלל */
+.effect-u::after {
     content: "";
     position: absolute;
     bottom: -2px; 
@@ -176,21 +172,9 @@
     background-size: 14px 5px !important;
     animation: waveMoveMobile 1.8s linear infinite !important;
     will-change: transform;
+    pointer-events: none;
 }
 
-/* 3. עיצוב לאימוג'י: ביטול גרדיאנט, נטרול הגל (::after) והחזרת צבע מקורי */
-.effect-u.is-emoji {
-    background: none !important;
-    -webkit-text-fill-color: initial !important;
-    color: initial !important;
-    -webkit-text-stroke: 0 !important;
-}
-
-.effect-u.is-emoji::after {
-    display: none !important; /* ביטול הגל מתחת לאימוג'י */
-}
-
-/* אנימציה משותפת */
 @keyframes waveMoveMobile {
     0% { transform: translateX(0); }
     100% { transform: translateX(-50%); }
