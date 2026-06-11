@@ -4,45 +4,38 @@
 /* 1. הגדרות התנועה המשותפות (הליבה) */
 .effect-i {
     display: inline-block;
-    font-style: italic;
-    font-weight: 800;
+    font-weight: 600;
     transform-style: preserve-3d;
     will-change: transform, background-position;
-    /* האנימציות עובדות על כולם */
+    
+    /* אנימציות: הורדתי את ה-rotate כדי שהאות לא "תישבר" */
     animation: italicFloat 3s ease-in-out infinite,
                italicShimmer 6s linear infinite;
     filter: drop-shadow(2px 2px 2px rgba(27, 85, 101, 0.2));
 }
 
-/* 2. עיצוב לטקסט רגיל בלבד (באמצעות :not(.is-emoji)) */
+/* 2. עיצוב לטקסט רגיל (ללא Mask, משתמשים ב-background-clip) */
 .effect-i:not(.is-emoji) {
     background: linear-gradient(120deg, #1B5565 0%, #3A8E9E 50%, #1B5565 100%);
     background-size: 200% auto;
     
-    /* חיתוך לצורת הטקסט */
-    -webkit-mask-image: linear-gradient(black, black);
-    mask-image: linear-gradient(black, black);
-    -webkit-mask-composite: source-in;
-    mask-composite: intersect;
-    
-    /* מילוי הטקסט בצבע השקוף כדי שהגרדיאנט ייראה */
+    /* הדרך הבטוחה לצבוע טקסט ללא חיתוך */
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
-/* 3. עיצוב לאימוג'י - ניקוי כל השכבות המציקות */
+/* 3. עיצוב לאימוג'י - ניקוי */
 .effect-i.is-emoji {
     background: none !important;
-    -webkit-mask-image: none !important;
-    mask-image: none !important;
     -webkit-text-fill-color: initial !important;
     color: initial !important;
 }
 
-/* אנימציות נשארות כפי שהיו */
+/* אנימציות - מבוססות תנועה בלבד, ללא סיבוב ששובר את האות */
 @keyframes italicFloat {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-4px) rotate(-1deg); }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
 }
 
 @keyframes italicShimmer {
