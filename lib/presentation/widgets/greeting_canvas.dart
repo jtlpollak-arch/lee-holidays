@@ -39,6 +39,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
   bool _isProcessing = false;
   String? _uploadedVoiceUrl;
   bool _isUploading = false;
+  bool _isEffectActive = false;
 
   final Color _tealColor = const Color(0xFF1B5565);
   final Color _goldColor = const Color(0xFF8B7355);
@@ -51,11 +52,26 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
 
     // הוספת האזנה גם לשינויי בחירה וגם לשינויי תוכן
     _quillController.addListener(_updateActiveTags);
+    _quillController.addListener(_checkSelectionStyle);
+  }
+
+  void _checkSelectionStyle() {
+    // בודק את האטריביוטים של מה שנבחר כרגע
+    final attributes = _quillController.getSelectionStyle().attributes;
+
+    // בודק האם המפתח 'effect' קיים (תחליף את 'effect' בשם שבו אתה משתמש)
+    final effectAttr = attributes['effect'];
+    final bool hasEffect = effectAttr != null && effectAttr.value != null && effectAttr.value != "";
+
+    if (_isEffectActive != hasEffect) {
+      setState(() => _isEffectActive = hasEffect);
+    }
   }
 
   @override
   void dispose() {
     _quillController.removeListener(_updateActiveTags);
+    _quillController.removeListener(_checkSelectionStyle);
     _quillController.dispose();
     super.dispose();
   }
@@ -763,20 +779,16 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
               // 2. צד שמאל: כפתור הפתיחה של לוח האפקטים המרוכז
               TextButton.icon(
                 onPressed: () {
-                  // 1. הסרת הפוקוס מהעורך - מעלים מיד את המקלדת ואת ידיות הבחירה (הטיפות) מהמסך
                   _focusNode.unfocus();
-
-                  // 2. פתיחת הדיאלוג המרוכז
                   _showEffectsDialog();
                 },
-                icon: const Icon(Icons.palette_outlined, size: 16, color: Color(0xFF1B5565)),
-                label: const Text(
-                  "אפקטים 💥",
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1B5565)),
+                icon: Icon(
+                  Icons.palette_outlined,
+                  color: _isEffectActive ? Colors.white : const Color(0xFF1B5565), // צבע משתנה
                 ),
+                label: Text("אפקטים 💥", style: TextStyle(color: _isEffectActive ? Colors.white : const Color(0xFF1B5565))),
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  minimumSize: const Size(0, 40), // מתאים לגובה השורה
+                  backgroundColor: _isEffectActive ? const Color(0xFF1B5565) : Colors.transparent, // רקע משתנה
                 ),
               ),
 
