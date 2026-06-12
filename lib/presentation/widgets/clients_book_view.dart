@@ -165,14 +165,14 @@ class ClientsBookViewState extends State<ClientsBookView> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(10),
-                              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))],
+                              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 4, offset: const Offset(0, 2))],
                             ),
                             child: Row(
                               children: [
                                 // עוגן חזותי: CircleAvatar יציב עם התאמה עיצובית לסטטוס
                                 CircleAvatar(
                                   radius: 20,
-                                  backgroundColor: isActive ? const Color(0xFF1B5565).withOpacity(0.1) : Colors.grey.shade200,
+                                  backgroundColor: isActive ? const Color(0xFF1B5565).withValues(alpha: 0.1) : Colors.grey.shade200,
                                   child: Text(
                                     firstLetter,
                                     style: TextStyle(color: isActive ? const Color(0xFF1B5565) : Colors.grey.shade600, fontWeight: FontWeight.bold, fontSize: 16),

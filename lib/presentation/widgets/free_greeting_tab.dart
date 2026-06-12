@@ -71,7 +71,7 @@ class _FreeGreetingTabState extends State<FreeGreetingTab> {
           ),
 
           DropdownButtonFormField<ContactType>(
-            value: _contactType,
+            initialValue: _contactType,
             decoration: const InputDecoration(labelText: 'סוג יצירת קשר'),
             items: const [
               DropdownMenuItem(value: ContactType.phone, child: Text('טלפון')),
@@ -117,7 +117,7 @@ class _FreeGreetingTabState extends State<FreeGreetingTab> {
           ),
 
           DropdownButtonFormField<String>(
-            value: _selectedEvent,
+            initialValue: _selectedEvent,
             hint: const Text('בחרי אירוע מתוך הרשימה'),
             items: _eventOptions.map((String value) {
               return DropdownMenuItem<String>(value: value, child: Text(value));

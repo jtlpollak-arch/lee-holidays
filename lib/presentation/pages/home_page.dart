@@ -295,7 +295,7 @@ class _HomePageState extends State<HomePage> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16.0),
-                color: const Color(0xFF1B5565).withOpacity(0.05),
+                color: const Color(0xFF1B5565).withValues(alpha: 0.05),
                 child: Text(
                   'לי היקרה! שלום! להלן הברכות המתוזמנות להיום (${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}):',
                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1B5565)),

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:holidays/presentation/widgets/effects_showcase_manager.dart';
+import 'package:holidays/presentation/widgets/voice_management_dialog.dart';
 import 'package:holidays/presentation/widgets/voice_recorder_studio.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // ייבוא רשמי לעבודה מול בסיס הנתונים בענן
@@ -100,9 +101,13 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
     if (selection.isCollapsed) {
       final text = _quillController.document.toPlainText();
       int start = selection.start;
-      while (start > 0 && text[start - 1] != ' ' && text[start - 1] != '\n') start--;
+      while (start > 0 && text[start - 1] != ' ' && text[start - 1] != '\n') {
+        start--;
+      }
       int end = selection.start;
-      while (end < text.length && text[end] != ' ' && text[end] != '\n') end++;
+      while (end < text.length && text[end] != ' ' && text[end] != '\n') {
+        end++;
+      }
       selection = TextSelection(baseOffset: start, extentOffset: end);
       _quillController.updateSelection(selection, ChangeSource.local);
     }
@@ -682,9 +687,6 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                         child: _buildQuillEditorComponent(),
                       ),
 
-                      // בתוך ה-build של GreetingCanvas, לפני ה-Stack של ה-TextField:
-                      const SizedBox(height: 24),
-
                       const SizedBox(height: 24), // הוגדל מעט מ-20 לרווח נקי לפני הכפתורים
                       // 4. אזור לחצני הפעולה - ממוקם בתחתית הרשימה
                       // לפני ה-return של ה-build או בתוכו, הגדר את הרשימה:
@@ -738,42 +740,39 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
               Container(
                 width: 36,
                 height: 36,
-                decoration: BoxDecoration(color: const Color(0xFF1B5565).withOpacity(0.08), shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  // צבע בוהק כשיש הקלטה, צבע שקוף כשהוא ריק
+                  color: _uploadedVoiceUrl != null ? const Color(0xFF1B5565) : const Color(0xFF1B5565).withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
                 child: IconButton(
-                  icon: const Icon(Icons.mic_none_outlined, size: 16, color: Color(0xFF1B5565)),
-                  tooltip: "הוספת ברכה קולית",
-                  onPressed: () {
-                    _focusNode.unfocus(); // סגירת המקלדת
-
-                    // קריאה ישירה לקלאס החדש שיצרנו
-                    showDialog(
-                      context: context,
-                      builder: (context) => VoiceRecorderStudio(
-                        onRecordingSaved: (File? recordedFile) async {
-                          if (recordedFile == null) return;
-                          if (_isUploading) return; // הגנה נוספת ליתר ביטחון
-
-                          setState(() => _isUploading = true);
-
-                          try {
-                            String downloadUrl = await uploadAudioToFirebase(recordedFile, widget.client.id) ?? '';
-
-                            setState(() {
-                              _uploadedVoiceUrl = downloadUrl;
-                              _isUploading = false;
-                            });
-
-                            // סגירת הדיאלוג מיד אחרי ההצלחה - זה מונע לחיצות כפולות בצורה מושלמת
-                            if (mounted) Navigator.of(context).pop();
-                          } catch (e) {
-                            setState(() => _isUploading = false);
-                            // כאן תוסיף הצגת שגיאה למשתמש
-                          }
-                        },
-                      ),
-                    );
-                  },
+                  icon: Icon(_uploadedVoiceUrl != null ? Icons.play_circle_fill : Icons.mic_none_outlined, size: 16, color: _uploadedVoiceUrl != null ? Colors.white : const Color(0xFF1B5565)),
+                  tooltip: _uploadedVoiceUrl != null ? "ניהול ברכה קולית" : "הוספת ברכה קולית",
                   padding: EdgeInsets.zero,
+                  onPressed: () {
+                    _focusNode.unfocus();
+
+                    if (_uploadedVoiceUrl != null) {
+                      // מצב ניהול: כבר יש הקלטה - פתיחת דיאלוג ניהול
+                      showDialog(
+                        context: context,
+                        builder: (context) => VoiceManagementDialog(
+                          voiceUrl: _uploadedVoiceUrl!,
+                          onDelete: () {
+                            setState(() => _uploadedVoiceUrl = null);
+                            Navigator.pop(context);
+                          },
+                          onReRecord: () {
+                            Navigator.pop(context); // סגירת הניהול
+                            _openVoiceRecorder(); // פתיחת ההקלטה מחדש
+                          },
+                        ),
+                      );
+                    } else {
+                      // מצב הקלטה חדשה: אין הקלטה - פתיחת הסטודיו
+                      _openVoiceRecorder();
+                    }
+                  },
                 ),
               ),
 
@@ -805,7 +804,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
               Container(
                 width: 36,
                 height: 36,
-                decoration: BoxDecoration(color: const Color(0xFF1B5565).withOpacity(0.08), shape: BoxShape.circle),
+                decoration: BoxDecoration(color: const Color(0xFF1B5565).withValues(alpha: 0.08), shape: BoxShape.circle),
                 child: IconButton(
                   icon: const Icon(Icons.science_outlined, size: 16, color: Color(0xFF1B5565)),
                   tooltip: "איך זה ייראה (כל האפקטים)",
@@ -837,7 +836,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                 top: 8,
                 right: 8,
                 child: Container(
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.8), borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.8), borderRadius: BorderRadius.circular(8)),
                   child: IconButton(
                     icon: const Icon(Icons.auto_awesome, color: Color(0xFF1B5565)),
                     onPressed: () => _showTemplatesDialog(widget.event.eventType),
@@ -852,10 +851,41 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
     );
   }
 
-  Future<String?> uploadAudioToFirebase(File file, String clientId) async {
+  void _openVoiceRecorder() {
+    showDialog(
+      context: context,
+      builder: (context) => VoiceRecorderStudio(
+        onRecordingSaved: (File? recordedFile) async {
+          if (recordedFile == null) return;
+          if (_isUploading) return;
+
+          setState(() => _isUploading = true);
+
+          try {
+            // שים לב: העברתי כאן את ה-client.id כפי שהיה אצלך במקור
+            String downloadUrl = await uploadAudioToFirebase(recordedFile) ?? '';
+
+            setState(() {
+              _uploadedVoiceUrl = downloadUrl;
+              _isUploading = false;
+            });
+
+            if (mounted) Navigator.of(context).pop();
+          } catch (e) {
+            setState(() => _isUploading = false);
+            // אפשר להוסיף כאן ScaffoldMessenger להצגת שגיאה
+          }
+        },
+      ),
+    );
+  }
+
+  Future<String?> uploadAudioToFirebase(File file) async {
+    String clientId = widget.client.id;
+    String eventName = widget.event.eventType;
     try {
       // בניית נתיב ייחודי: greetings / {clientId} / {greetingId} / voice.aac
-      final String path = 'greetings/$clientId/voice.aac';
+      final String path = 'greetings/$clientId/$eventName/voice.aac';
       final Reference ref = FirebaseStorage.instance.ref().child(path);
 
       // העלאת הקובץ ל-Storage

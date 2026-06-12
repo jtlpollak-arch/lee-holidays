@@ -16,7 +16,7 @@ function initThankButton() {
 
     container.addEventListener('click', () => {
         // הטקסט עצמו מקודד (כפי שעשית), וזה מעולה
-        const message = `לי,היי! קראתי את הברכה המקסימה! תודה רבה, חיממת לי את הלב.`;
+        const message = `לי,היי! רק רציתי לומר תודה רבה!! חיממת לי את הלב.`;
         const phone = "972533386345";
         
         // יצירת הלינק המלא עם הקידוד

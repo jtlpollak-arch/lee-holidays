@@ -80,7 +80,7 @@ class DailyEventsList extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(10),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2))],
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 2))],
               border: Border(
                 left: BorderSide(color: eventColor, width: 5), // פס צבע אנכי שמאלי
               ),
@@ -95,7 +95,7 @@ class DailyEventsList extends StatelessWidget {
                   const SizedBox(width: 10),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(color: eventColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                    decoration: BoxDecoration(color: eventColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                     child: Text(
                       '$eventEmoji${e.event.eventType}',
                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: eventColor),

@@ -53,6 +53,7 @@ dependencies:
   flutter_quill: ^11.5.0
   webview_flutter: ^4.13.1
   firebase_storage: ^12.4.10
+  audioplayers: ^6.0.0
 
 dev_dependencies:
   flutter_test:

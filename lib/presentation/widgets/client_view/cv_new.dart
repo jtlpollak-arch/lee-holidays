@@ -82,7 +82,7 @@ class _CVNewEventFormState extends State<CVNewEventForm> {
             DropdownButtonFormField<String>(
               isExpanded: true,
               decoration: const InputDecoration(labelText: 'סוג אירוע', border: OutlineInputBorder()),
-              value: _selectedEventType,
+              initialValue: _selectedEventType,
               items: _eventTypes
                   .map(
                     (t) => DropdownMenuItem<String>(
