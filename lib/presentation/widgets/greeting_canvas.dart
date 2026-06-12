@@ -720,22 +720,6 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
           child: Row(
             children: [
               // 1. צד ימין: כפתור תצוגה מקדימה הרחב והראשי פותח את השורה מיד בתחילתה
-              TextButton.icon(
-                onPressed: _openPreview,
-                icon: const Icon(Icons.visibility_rounded, size: 16, color: Color(0xFF1B5565)),
-                label: const Text(
-                  "תצוגה מקדימה",
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1B5565)),
-                ),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  minimumSize: const Size(0, 40), // מתאים לגובה השורה
-                ),
-              ),
-
-              // Spacer דוחף את כל שאר הכפתורים (העיצוב והבדיקה) לצד שמאל באופן מוחלט
-              const SizedBox(width: 2),
-
               // כפתור הקלטת קול
               Container(
                 width: 36,
@@ -776,8 +760,6 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                 ),
               ),
 
-              const Spacer(),
-
               // 2. צד שמאל: כפתור הפתיחה של לוח האפקטים המרוכז
               TextButton.icon(
                 onPressed: () {
@@ -798,7 +780,20 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                 ),
               ),
 
-              const SizedBox(width: 2),
+              const Spacer(),
+
+              TextButton.icon(
+                onPressed: _openPreview,
+                icon: const Icon(Icons.visibility_rounded, size: 16, color: Color(0xFF1B5565)),
+                label: const Text(
+                  "תצוגה מקדימה",
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1B5565)),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(0, 40), // מתאים לגובה השורה
+                ),
+              ),
 
               // 3. צמוד לשמאל הקיצוני: כפתור המבחנה לבדיקת כל 20 האפקטים יחד
               Container(
@@ -806,7 +801,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                 height: 36,
                 decoration: BoxDecoration(color: const Color(0xFF1B5565).withValues(alpha: 0.08), shape: BoxShape.circle),
                 child: IconButton(
-                  icon: const Icon(Icons.science_outlined, size: 16, color: Color(0xFF1B5565)),
+                  icon: const Icon(Icons.draw, size: 16, color: Color(0xFF1B5565)),
                   tooltip: "איך זה ייראה (כל האפקטים)",
                   onPressed: () => EffectsShowcaseManager.openShowcase(context),
                   padding: EdgeInsets.zero,
