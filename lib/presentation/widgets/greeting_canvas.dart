@@ -827,7 +827,12 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
                 child: QuillEditor.basic(
                   controller: _quillController,
                   focusNode: _focusNode,
-                  config: const QuillEditorConfig(placeholder: "הקלידי ברכה אישית או בחרי מהמאגר ✨", padding: EdgeInsets.only(top: 16, left: 16, bottom: 16, right: 60)),
+                  config: QuillEditorConfig(
+                    // הורדנו את ה-const מכאן
+                    placeholder: "הקלידי ברכה אישית או בחרי מהמאגר ✨",
+                    padding: const EdgeInsets.only(top: 16, left: 16, bottom: 16, right: 60),
+                    contextMenuBuilder: (context, editableTextState) => const SizedBox.shrink(),
+                  ),
                 ),
               ),
 

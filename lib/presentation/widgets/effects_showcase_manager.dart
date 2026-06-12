@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:holidays/presentation/widgets/greeting_preview_page.dart';
 import 'package:holidays/presentation/widgets/text_style_helper.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class EffectsShowcaseManager {
   // מיפוי אימוג'ים ייחודיים לכל אפקט (כדי שה-Showcase ייראה עשיר וחי)
@@ -104,7 +104,6 @@ class EffectsShowcaseManager {
     final base64String = base64UrlEncode(bytes);
 
     final url = 'https://lee-greetings.web.app/?preview=$base64String';
-    launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-    //    Navigator.push(context, MaterialPageRoute(builder: (context) => GreetingPreviewPage(url: url)));
+    Navigator.push(context, MaterialPageRoute(builder: (context) => GreetingPreviewPage(url: url)));
   }
 }
