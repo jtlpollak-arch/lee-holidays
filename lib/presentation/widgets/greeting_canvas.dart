@@ -51,8 +51,19 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
     _quillController = QuillController.basic();
 
     // הוספת האזנה גם לשינויי בחירה וגם לשינויי תוכן
-    _quillController.addListener(_updateActiveTags);
-    _quillController.addListener(_checkSelectionStyle);
+    _quillController.addListener(quillListeners);
+  }
+
+  @override
+  void dispose() {
+    _quillController.removeListener(quillListeners);
+    _quillController.dispose();
+    super.dispose();
+  }
+
+  void quillListeners() {
+    _checkSelectionStyle();
+    _updateActiveTags();
   }
 
   void _checkSelectionStyle() {
@@ -66,14 +77,6 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
     if (_isEffectActive != hasEffect) {
       setState(() => _isEffectActive = hasEffect);
     }
-  }
-
-  @override
-  void dispose() {
-    _quillController.removeListener(_updateActiveTags);
-    _quillController.removeListener(_checkSelectionStyle);
-    _quillController.dispose();
-    super.dispose();
   }
 
   void _updateActiveTags() {
