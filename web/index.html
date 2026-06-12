@@ -9,6 +9,7 @@
     <script src="delta-renderer.js" defer></script> 
     
     <script src="audio-player.js" defer></script><link rel="stylesheet" href="audio-player.css">
+    <script src="thank-button.js" defer></script><link rel="stylesheet" href="thank-button.css">
 
     <style>
         @font-face {
@@ -1196,6 +1197,7 @@
                 if (voiceUrl && voiceUrl.trim() !== "") {
                     initAudioPlayer(voiceUrl);
                 }
+                initThankButton(clientName);
                 
                 applyDynamicTheme(messageContent);
 //                setupClickNavigation();
