@@ -232,7 +232,6 @@ class EventRepositoryImpl implements EventRepository {
 
     final List<String> googleCalendarIdsToClean = [];
     final List<sheets.ValueRange> sheetsUpdateBatch = [];
-    final List<EventModel> updatedLocalEvents = [];
 
     // 2. מעבר על האירועים ומיפוי השורות הפיזיות לצורך בניית ה-Batch
     for (int i = 0; i < cloudEvents.length; i++) {

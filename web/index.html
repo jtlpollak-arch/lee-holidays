@@ -7,6 +7,8 @@
 
     <script src="text-effects.js" defer></script><link rel="stylesheet" href="text-effects.css">
     <script src="delta-renderer.js" defer></script> 
+    
+    <script src="audio-player.js" defer></script><link rel="stylesheet" href="audio-player.css">
 
     <style>
         @font-face {
@@ -213,7 +215,7 @@
             height: 50px;
             z-index: 10;
             pointer-events: none;
-            opacity: 0.2;
+            opacity: 0.3;
             transform: rotate(40deg);
         }
 
@@ -234,7 +236,7 @@
             height: 70px;
             z-index: 10;
             pointer-events: none;
-            opacity: 0.4;
+            opacity: 0.2;
         }
 
         .lee-course-svg svg {
@@ -254,7 +256,7 @@
             height: 70px;
             z-index: 10;
             pointer-events: none;
-            opacity: 0.5;
+            opacity: 0.3;
         }
 
         .lee-safe-home-svg svg{
@@ -1125,7 +1127,7 @@
                     const decodedString = atob(previewData.replace(/-/g, '+').replace(/_/g, '/'));
                     const decoded = JSON.parse(decodeURIComponent(escape(decodedString)));
                     
-                    handleGreetingDisplay(decoded.clientName, decoded.text);
+                    handleGreetingDisplay(decoded.clientName, decoded.text, decoded.voiceUrl);
                     return;
                 } catch (e) {
                     console.error("Error parsing base64 preview data:", e);
@@ -1148,8 +1150,9 @@
                     const data = docSnap.data();
                     const clientName = data.clientName || "לקוח יקר";
                     const messageContent = data.text || "";
+                    const voiceUrl = data.voiceUrl || "";
                     
-                    handleGreetingDisplay(clientName, messageContent);
+                    handleGreetingDisplay(clientName, messageContent, voiceUrl);
                 } else {
                     document.getElementById('clientName').innerText = "יום נפלא ומבורך ✨";
                     document.getElementById('initialLoadingPage').innerText = "הגלויה לא נמצאה.";
@@ -1160,10 +1163,9 @@
         }
 
         // בתוך index.html
-        async function handleGreetingDisplay(clientName, messageContent) {
+        async function handleGreetingDisplay(clientName, messageContent, voiceUrl) {
             // הגרסה החדשה:
             try {
-
                 document.getElementById('actualRecipientName').innerText = clientName; 
 
                 const delta = JSON.parse(messageContent);
@@ -1187,9 +1189,13 @@
                 }
 
                 await waitForEnvelope();
-                
+
                 // העברת המערך המעודכן והמחושב לרינדור ולחלוקת עמודים דינמית
                 paginateTextAndRender(flattenDelta(delta)); 
+
+                if (voiceUrl && voiceUrl.trim() !== "") {
+                    initAudioPlayer(voiceUrl);
+                }
                 
                 applyDynamicTheme(messageContent);
 //                setupClickNavigation();

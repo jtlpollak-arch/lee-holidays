@@ -1,5 +1,9 @@
+import 'dart:io';
+
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:holidays/presentation/widgets/effects_showcase_manager.dart';
+import 'package:holidays/presentation/widgets/voice_recorder_studio.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // ייבוא רשמי לעבודה מול בסיס הנתונים בענן
 import '../../data/models/client_model.dart';
@@ -32,6 +36,8 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
   final FocusNode _focusNode = FocusNode();
   final ValueNotifier<List<String>> _activeTagsNotifier = ValueNotifier<List<String>>([]);
   bool _isProcessing = false;
+  String? _uploadedVoiceUrl;
+  bool _isUploading = false;
 
   final Color _tealColor = const Color(0xFF1B5565);
   final Color _goldColor = const Color(0xFF8B7355);
@@ -132,7 +138,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
     final deltaMap = _quillController.document.toDelta().toJson();
 
     // 2. בניית ה-Map עבור ה-Preview, כאשר שדה ה-text מכיל את ה-Delta כסטרינג של JSON
-    final previewMap = {'clientName': widget.client.firstName, 'text': jsonEncode(deltaMap)};
+    final previewMap = {'clientName': widget.client.firstName, 'text': jsonEncode(deltaMap), 'voiceUrl': _uploadedVoiceUrl ?? ''};
 
     // הופכים את ה-JSON למחרוזת של בתים ומקודדים ל-Base64 בטוח ל-URL
     final jsonString = jsonEncode(previewMap);
@@ -154,7 +160,7 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
       final String greetingId = greetingsRef.doc().id;
 
       // 2. העלאת נתוני הגלויה לשרת הענן בזמן אמת
-      await greetingsRef.doc(greetingId).set({'id': greetingId, 'clientName': widget.client.firstName, 'text': jsonEncode(_quillController.document.toDelta().toJson()), 'createdAt': FieldValue.serverTimestamp()});
+      await greetingsRef.doc(greetingId).set({'id': greetingId, 'clientName': widget.client.firstName, 'text': jsonEncode(_quillController.document.toDelta().toJson()), 'voiceUrl': _uploadedVoiceUrl ?? '', 'createdAt': FieldValue.serverTimestamp()});
 
       // 3. בניית כתובת הקישור הרשמית המצביעה ישירות על ה-index.html ב-Hosting
       final String cloudCardUrl = 'https://lee-greetings.web.app/?id=$greetingId';
@@ -726,6 +732,51 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
               ),
 
               // Spacer דוחף את כל שאר הכפתורים (העיצוב והבדיקה) לצד שמאל באופן מוחלט
+              const SizedBox(width: 2),
+
+              // כפתור הקלטת קול
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(color: const Color(0xFF1B5565).withOpacity(0.08), shape: BoxShape.circle),
+                child: IconButton(
+                  icon: const Icon(Icons.mic_none_outlined, size: 16, color: Color(0xFF1B5565)),
+                  tooltip: "הוספת ברכה קולית",
+                  onPressed: () {
+                    _focusNode.unfocus(); // סגירת המקלדת
+
+                    // קריאה ישירה לקלאס החדש שיצרנו
+                    showDialog(
+                      context: context,
+                      builder: (context) => VoiceRecorderStudio(
+                        onRecordingSaved: (File? recordedFile) async {
+                          if (recordedFile == null) return;
+                          if (_isUploading) return; // הגנה נוספת ליתר ביטחון
+
+                          setState(() => _isUploading = true);
+
+                          try {
+                            String downloadUrl = await uploadAudioToFirebase(recordedFile, widget.client.id) ?? '';
+
+                            setState(() {
+                              _uploadedVoiceUrl = downloadUrl;
+                              _isUploading = false;
+                            });
+
+                            // סגירת הדיאלוג מיד אחרי ההצלחה - זה מונע לחיצות כפולות בצורה מושלמת
+                            if (mounted) Navigator.of(context).pop();
+                          } catch (e) {
+                            setState(() => _isUploading = false);
+                            // כאן תוסיף הצגת שגיאה למשתמש
+                          }
+                        },
+                      ),
+                    );
+                  },
+                  padding: EdgeInsets.zero,
+                ),
+              ),
+
               const Spacer(),
 
               // 2. צד שמאל: כפתור הפתיחה של לוח האפקטים המרוכז
@@ -799,5 +850,28 @@ class _GreetingCanvasState extends State<GreetingCanvas> {
         ),
       ],
     );
+  }
+
+  Future<String?> uploadAudioToFirebase(File file, String clientId) async {
+    try {
+      // בניית נתיב ייחודי: greetings / {clientId} / {greetingId} / voice.aac
+      final String path = 'greetings/$clientId/voice.aac';
+      final Reference ref = FirebaseStorage.instance.ref().child(path);
+
+      // העלאת הקובץ ל-Storage
+      final UploadTask uploadTask = ref.putFile(file);
+
+      // המתנה לסיום ההעלאה
+      final TaskSnapshot snapshot = await uploadTask;
+
+      // שליפת ה-URL הציבורי
+      final String downloadUrl = await snapshot.ref.getDownloadURL();
+
+      debugPrint("הקובץ הועלה בהצלחה. URL: $downloadUrl");
+      return downloadUrl;
+    } catch (e) {
+      debugPrint("שגיאה בהעלאת האודיו ל-Firebase: $e");
+      return null; // מחזירים null אם נכשל
+    }
   }
 }
