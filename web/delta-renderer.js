@@ -307,14 +307,21 @@ function paginateTextAndRender(delta) {
 function injectSignatureWithEffect(pageDiv) {
     const originalSignature = document.querySelector('.lee-signature');
     if (originalSignature) {
-        const signatureDiv = document.createElement('div');
+        const signatureDiv = document.createElement('span');
         signatureDiv.className = 'signature-wrapper';
         
-        // שכפול ה-SVG המקורי על כל תכונותיו ומבנה הקווים הפנימיים שלו
         const sigSvg = originalSignature.cloneNode(true);
-        signatureDiv.appendChild(sigSvg);
         
-        // הזרקה ישירה לתוך העמוד, מחוץ ומסביב ל-text-container
+        // --- ניקוי מאפיינים שעלולים להסתיר את החתימה ---
+        sigSvg.style.display = 'block'; 
+        sigSvg.style.position = 'static';
+        sigSvg.style.visibility = 'visible';
+        sigSvg.style.opacity = '1';
+        sigSvg.style.width = '40px'; 
+        sigSvg.style.height = '40px';
+        // ----------------------------------------------
+        
+        signatureDiv.appendChild(sigSvg);
         pageDiv.appendChild(signatureDiv);
     }
 }

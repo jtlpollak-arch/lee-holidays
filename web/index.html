@@ -797,39 +797,37 @@
 }
 
 .signature-wrapper {
-    display: flex !important;       /* שינוי מ-block ל-flex */
-    justify-content: center;        /* ממקם הכל במרכז אופקית */
-    align-items: center;            /* ממקם הכל במרכז אנכית */
-    width: 100%;
+    display: inline-flex !important; /* גורם ל-wrapper להתנהג כמו מילה בטקסט */
+    justify-content: flex-start;     /* מצמיד לשמאל */
+    align-items: center;             /* מיישר אנכית */
+    margin-left: -30px;          /* הזזה של 20 פיקסלים ימינה (או שמאלה אם תשתמש בערך שלילי) */
+    margin-top: -5px;                 /* חצי שורה למטה */
     opacity: 0;
     visibility: hidden;
     transition: opacity 1.5s ease, transform 1.5s ease;
     transform: translateY(10px);
-    margin-top: 10px;               /* מרווח מלמעלה */
-    gap: -10px;                      /* מרווח קטן בין החתימה ללב */
+    gap: 0px;                       /* מרווח בין חתימה ללב */
 }
 
+/* החתימה - שינינו ל-block כדי שיוכל לקבל רוחב וגובה בתוך ה-flex */
+.signature-wrapper .lee-signature {
+    display: block !important; 
+    width: 40px; 
+    height: 40px;
+    fill: #856526 !important;
+}
+
+/* הלב - פשוט שומר על הגודל שלו */
 .signature-heart-wrapper {
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.signature-wrapper .lee-signature {
-    position: static; 
-    display: inline-block !important; /* מאפשר ל-text-align center למקם אותו באמצע */
-    width: 40px;                  /* גודל חגיגי וברור לחתימה */
-    height: 40px;
-    opacity: 1 !important;        
-    fill: #856526 !important;     /* צבע הזהב היוקרתי שלך */
-}
-
-/* הרגע שבו מנוע ההקלדה מוסיף את הקלאס בסיום */
 .signature-wrapper.show-signature {
-    opacity: 1 !important;        /* חשיפה מלאה */
-    visibility: visible;          /* החזרה ל-visible */
-    transform: translateY(0);     /* השלמת תנועת הברקה החלקה */
-    
+    opacity: 1 !important;
+    visibility: visible;
+    transform: translateY(0);
 }
 
 /* 1. מצב רגיל של קונטיינר הטקסט */
