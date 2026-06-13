@@ -191,8 +191,6 @@
 
         .lee-signature{
             position: absolute;
-            bottom: 50px;
-            left: 60px;
             width: 30px;
             height: 30px;
             z-index: 4;
@@ -799,14 +797,22 @@
 }
 
 .signature-wrapper {
-    display: block;
-    width: 100%;                  /* תופס את כל רוחב העמוד */
-    text-align: center;           /* ממקם את התוכן במרכז */
-    opacity: 0;                   /* חבוי לחלוטין כל עוד מקלידים */
-    visibility: hidden;           /* מונע לחיצות או תפיסת מקום אקטיבית */
+    display: flex !important;       /* שינוי מ-block ל-flex */
+    justify-content: center;        /* ממקם הכל במרכז אופקית */
+    align-items: center;            /* ממקם הכל במרכז אנכית */
+    width: 100%;
+    opacity: 0;
+    visibility: hidden;
     transition: opacity 1.5s ease, transform 1.5s ease;
-    transform: translateY(10px);  /* אפקט כניסה עדין מלמטה למעלה */
-    margin-top: -5px;             /* מרווח קבוע מתחת לטקסט שהוקלד */
+    transform: translateY(10px);
+    margin-top: 10px;               /* מרווח מלמעלה */
+    gap: -10px;                      /* מרווח קטן בין החתימה ללב */
+}
+
+.signature-heart-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .signature-wrapper .lee-signature {
@@ -823,6 +829,7 @@
     opacity: 1 !important;        /* חשיפה מלאה */
     visibility: visible;          /* החזרה ל-visible */
     transform: translateY(0);     /* השלמת תנועת הברקה החלקה */
+    
 }
 
 /* 1. מצב רגיל של קונטיינר הטקסט */
@@ -1028,6 +1035,7 @@
             document.querySelectorAll('.lee-key-container-svg, .lee-course-svg, .lee-safe-home-svg, .logo-wrapper')
                 .forEach(el => el.classList.remove('visible-corner'));
             document.querySelectorAll('.signature-wrapper').forEach(s => s.classList.remove('show-signature'));
+            
             // סוף נקיון
 
             console.log(`<--switchToTargetPage--> ניווט יזום לעמוד: ${pageIndex}`);

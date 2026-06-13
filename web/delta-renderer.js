@@ -354,10 +354,37 @@ function handleTypingComplete() {
     const activePage = document.querySelector('.page-content.active');
     if (activePage) {
         const signatureWrapper = activePage.querySelector('.signature-wrapper');
+        
         if (signatureWrapper) {
+            const existingHeart = signatureWrapper.querySelector('.signature-heart-wrapper');
+            if (existingHeart) {
+                existingHeart.remove();
+            }
+
+            // 1. הפעלת ה-Transition של החתימה הקיימת
             signatureWrapper.classList.add('show-signature');
             
+            // 2. יצירת הלב בצורה דינמית ונקייה
+            // אנחנו לא מוסיפים div חדש כדי לא לשבור את הפריסה, 
+            // פשוט מוסיפים את ה-SVG ישירות ל-wrapper
+            const heartHtml = `
+                <div class="signature-heart-wrapper" style="display: inline-flex; align-items: center;">
+                    <svg viewBox="0 0 32 32" style="width: 20px; height: 20px; fill: #B8860B;">
+                        <!-- הלב הראשי -->
+                        <path d="M16 28.5l-1.3-1.2C6.8 20.2 2 15.9 2 10.5 2 6.1 5.3 2.8 9.5 2.8c2.4 0 4.7 1.1 6.5 2.8 1.8-1.7 4.1-2.8 6.5-2.8C26.7 2.8 30 6.1 30 10.5c0 5.4-4.8 9.7-12.7 16.8L16 28.5z"/>
+                        <!-- בית חתוך בפנים (בצבע הרקע - לבן) -->
+                        <path d="M16 9l-6 5.5v7.5h4v-4h4v4h4v-7.5L16 9z" fill="#FFFFFF"/>
+                    </svg>
+                </div>
+            `;
+
+            
+            // הוספת הלב ל-wrapper
+            signatureWrapper.insertAdjacentHTML('beforeend', heartHtml);
+            
+            // 3. דיליי של 2.5 שניות ל-WOW הסופי
             setTimeout(() => {
+                // מפעיל את העמעום והדגשת הפינות
                 highlightCornersAndDimPage(activePage);
             }, 2500);
         }
