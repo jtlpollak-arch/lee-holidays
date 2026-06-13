@@ -216,7 +216,7 @@
             height: 50px;
             z-index: 10;
             pointer-events: none;
-            opacity: 0.3;
+            opacity: 0.1;
             transform: rotate(40deg);
         }
 
@@ -231,13 +231,13 @@
 
         .lee-course-svg {
             position: absolute;
-            top: 15px;
-            right: 15px;
+            top: 25px;
+            right: 25px;
             width: 70px;
             height: 70px;
             z-index: 10;
             pointer-events: none;
-            opacity: 0.2;
+            opacity: 0.1;
         }
 
         .lee-course-svg svg {
@@ -257,7 +257,7 @@
             height: 70px;
             z-index: 10;
             pointer-events: none;
-            opacity: 0.3;
+            opacity: 0.1;
         }
 
         .lee-safe-home-svg svg{
@@ -839,6 +839,17 @@
     clip-path: polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%);
 }
 
+.dim-page {
+    opacity: 0.3 !important;
+    transition: opacity 1.5s ease;
+}
+
+/* הפינות הופכות לברורות */
+.visible-corner {
+    opacity: 2 !important;
+    transition: opacity 1.5s ease;
+}
+
    </style>
 
     <svg style="position: absolute; width: 0; height: 0;">
@@ -1000,6 +1011,13 @@
         }
 
         function switchToTargetPage(pageIndex) {
+            //נקיון
+            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('dim-page'));
+            document.querySelectorAll('.lee-key-container-svg, .lee-course-svg, .lee-safe-home-svg, .logo-wrapper')
+                .forEach(el => el.classList.remove('visible-corner'));
+            document.querySelectorAll('.signature-wrapper').forEach(s => s.classList.remove('show-signature'));
+            // סוף נקיון
+
             console.log(`<--switchToTargetPage--> ניווט יזום לעמוד: ${pageIndex}`);
 
             window.isPausedByClick = true;

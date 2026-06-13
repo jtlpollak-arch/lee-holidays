@@ -271,19 +271,7 @@ function paginateTextAndRender(delta) {
         
         // אם הגענו לעמוד האחרון בסדרה, נשכפל את החתימה ונכניס אותה
         if (i === maxPage) {
-            const originalSignature = document.querySelector('.lee-signature');
-            if (originalSignature) {
-                const signatureDiv = document.createElement('div');
-                signatureDiv.className = 'signature-wrapper';
-                
-                // שכפול ה-SVG המקורי על כל תכונותיו ומבנה הקווים הפנימיים שלו
-                const sigSvg = originalSignature.cloneNode(true);
-                signatureDiv.appendChild(sigSvg);
-                
-                // הזרקה ישירה לתוך העמוד, מחוץ ומסביב ל-text-container
-                pageDiv.appendChild(signatureDiv);
-                console.log("<--paginateTextAndRender--> חתימת ה-SVG שוכפלה בהצלחה לעמוד האחרון (" + i + ")");
-            }
+            injectSignatureWithEffect(pageDiv);
         }
         
         container.appendChild(pageDiv);
@@ -316,7 +304,37 @@ function paginateTextAndRender(delta) {
 
 
 
+function injectSignatureWithEffect(pageDiv) {
+    const originalSignature = document.querySelector('.lee-signature');
+    if (originalSignature) {
+        const signatureDiv = document.createElement('div');
+        signatureDiv.className = 'signature-wrapper';
+        
+        // שכפול ה-SVG המקורי על כל תכונותיו ומבנה הקווים הפנימיים שלו
+        const sigSvg = originalSignature.cloneNode(true);
+        signatureDiv.appendChild(sigSvg);
+        
+        // הזרקה ישירה לתוך העמוד, מחוץ ומסביב ל-text-container
+        pageDiv.appendChild(signatureDiv);
+    }
+}
 
+function highlightCornersAndDimPage(pageDiv) {
+    // 1. שינינו ל-document במקום pageDiv כדי למצוא את האלמנטים בפינות
+    const cornerElements = document.querySelectorAll('.lee-key-container-svg, .lee-course-svg, .lee-safe-home-svg, .logo-wrapper');
+    
+    console.log("<--highlightCornersAndDimPage--> נמצאו אלמנטים בפינות:", cornerElements.length);
+
+    // 2. החלשת העמוד עצמו
+    pageDiv.classList.add('dim-page'); 
+
+    // 3. חיזוק האלמנטים בפינות
+    cornerElements.forEach(el => {
+        el.classList.add('visible-corner');
+    });
+
+    console.log("<--highlightCornersAndDimPage--> הושלם: הפינות הודגשו, העמוד הוחלש");
+}
 
 
 
@@ -338,7 +356,10 @@ function handleTypingComplete() {
         const signatureWrapper = activePage.querySelector('.signature-wrapper');
         if (signatureWrapper) {
             signatureWrapper.classList.add('show-signature');
-            console.log("<--typeNextChar--> ההקלדה הסתיימה, החתימה הודלקה בהצלחה!");
+            
+            setTimeout(() => {
+                highlightCornersAndDimPage(activePage);
+            }, 2500);
         }
     }
 }
