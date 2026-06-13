@@ -328,7 +328,7 @@ function injectSignatureWithEffect(pageDiv) {
 
 function highlightCornersAndDimPage(pageDiv) {
     // 1. שינינו ל-document במקום pageDiv כדי למצוא את האלמנטים בפינות
-    const cornerElements = document.querySelectorAll('.lee-key-container-svg, .lee-course-svg, .lee-safe-home-svg, .logo-wrapper');
+    const cornerElements = document.querySelectorAll('.lee-key-container-svg, .lee-course-svg, .lee-safe-home-svg, .logo-wrapper, .lee-handshake-svg');
     
     console.log("<--highlightCornersAndDimPage--> נמצאו אלמנטים בפינות:", cornerElements.length);
 
