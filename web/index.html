@@ -217,7 +217,7 @@
             z-index: 10;
             pointer-events: none;
             opacity: 0.1;
-            transform: rotate(40deg);
+            transform: rotate(45deg);
         }
 
         .lee-key-container-svg svg {
@@ -238,6 +238,7 @@
             z-index: 10;
             pointer-events: none;
             opacity: 0.1;
+            transform: rotate(120deg);
         }
 
         .lee-course-svg svg {
@@ -258,6 +259,7 @@
             z-index: 10;
             pointer-events: none;
             opacity: 0.1;
+            transform: rotate(120deg);
         }
 
         .lee-safe-home-svg svg{
@@ -297,7 +299,8 @@
         }
 
         .logo-wrapper {
-            margin-bottom: 5px; 
+            margin-left: 20px; /* דוחף 10 פיקסלים מהצד הימני */
+            margin-top: 10px;   /* דוחף 10 פיקסלים מהחלק העליון (מוריד אותו למטה) */
             transform: translateZ(20px); 
             display: flex; 
             justify-content: flex-end;
@@ -306,7 +309,7 @@
             width: 100%;
 
             /* שינויים: */
-            opacity: 0.8; /* העלינו מעט את האטימות כדי שיהיה נוכח אבל עדין */
+            opacity: 0.5; /* העלינו מעט את האטימות כדי שיהיה נוכח אבל עדין */
             filter: grayscale(20%) opacity(0.8); /* נותן מראה של דפוס ישן ולא "שחור דיגיטלי" */
             mix-blend-mode: multiply; 
             pointer-events: none; 
@@ -839,15 +842,24 @@
     clip-path: polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%);
 }
 
+/* העמוד הופך לשקוף, מתכווץ מעט ו"שוקע" אחורה */
 .dim-page {
     opacity: 0.3 !important;
-    transition: opacity 1.5s ease;
+    transform: scale(0.98);
+    /* הוספנו את ה-cubic-bezier כאן */
+    transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1), 
+                transform 1.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* הפינות הופכות לברורות */
+/* הפינות הופכות לברורות, גדלות וזוהרות */
 .visible-corner {
-    opacity: 2 !important;
-    transition: opacity 1.5s ease;
+    opacity: 1 !important;
+    transform: scale(1.1); /* "קפיצה" קדימה */
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5)); /* אפקט הילה/זוהר */
+    /* הוספנו את ה-cubic-bezier כאן */
+    transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1), 
+                transform 1.5s cubic-bezier(0.4, 0, 0.2, 1), 
+                filter 1.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
    </style>
