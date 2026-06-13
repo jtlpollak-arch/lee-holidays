@@ -15,7 +15,7 @@ function initAudioPlayer(voiceUrl) {
     container.className = 'audio-fab-container';
     container.innerHTML = `
         <span class="audio-icon">▶</span>
-        <span class="audio-label">נגיעה קולית שלי</span>
+        <span class="audio-label">נגיעה קולית</span>
     `;
     
     // הזרקה לתוך ה-Body
