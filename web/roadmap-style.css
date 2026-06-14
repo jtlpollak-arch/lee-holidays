@@ -1,0 +1,28 @@
+/* לוח הציור השקוף שמכסה את כל המסך */
+#roadmap-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none; /* חובה: כדי שהלחיצות יעברו לאלמנטים מתחת */
+    z-index: 9; /* ממקם את הקו מתחת לאייקונים (10) ומעל העמעום */
+}
+
+/* עיצוב הקו המקווקו שנוצר דרך ה-JS */
+.roadmap-line {
+    fill: none;
+    stroke: #B8860B;
+    stroke-width: 3.5; /* קצת יותר עבה כדי שהנקודות יבלטו */
+    stroke-linecap: round; /* הקסם שמעגל כל קו לנקודה */
+    stroke-dasharray: 0, 14; /* 0 אורך קו, 14 פיקסלים רווח */
+    opacity: 0;
+    transition: opacity 1.5s ease-in-out;
+    /* בונוס: הילה עדינה מאוד סביב הנקודות */
+    filter: drop-shadow(0 0 3px rgba(184, 134, 11, 0.4));
+}
+
+/* הקלאס שמופעל כדי להציג את הקו באנימציית חשיפה עדינה */
+.roadmap-line.visible {
+    opacity: 1;
+}

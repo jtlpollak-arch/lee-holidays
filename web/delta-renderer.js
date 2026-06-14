@@ -338,9 +338,77 @@ function highlightCornersAndDimPage(pageDiv) {
         el.classList.add('visible-corner');
     });
 
+    if (typeof drawRoadmap === 'function') {
+        setTimeout(() => {
+            drawRoadmap();
+        }, 500); // דיליי של חצי שניה כדי שהאלמנטים יסיימו להתחזק ואז הקו יופיע
+    }
+
     console.log("<--highlightCornersAndDimPage--> הושלם: הפינות הודגשו, העמוד הוחלש");
 }
 
+
+function drawRoadmap() {
+    const canvas = document.getElementById('roadmap-canvas');
+    if (!canvas) return;
+
+    // 1. הסדר שבו הקו יחבר את האלמנטים. 
+    // תוכל לשנות את סדר השורות כאן כדי לשנות את מסלול הקו
+    const connectionOrder = [
+        '.logo-wrapper',
+        '.lee-course-svg',
+        '.lee-key-container-svg',
+        '.lee-safe-home-svg',
+        '.lee-handshake-svg'
+    ];
+
+    const points = [];
+
+    // 2. איסוף נקודות הציון המדויקות של מרכזי האלמנטים
+    connectionOrder.forEach(selector => {
+        const el = document.querySelector(selector);
+        if (el) {
+            const rect = el.getBoundingClientRect();
+            points.push({
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2
+            });
+        }
+    });
+
+    if (points.length < 2) {
+        console.log("לא נמצאו מספיק אלמנטים כדי לצייר מסלול");
+        return;
+    }
+
+    // 3. בניית הציור (נתיב מעוקל)
+    let pathData = `M ${points[0].x} ${points[0].y}`; // מתחיל בנקודה הראשונה
+    
+    for (let i = 1; i < points.length; i++) {
+        const prev = points[i - 1];
+        const curr = points[i];
+        
+        // יצירת נקודות בקרה לעיקול (Bezier Curve) שזורם בצורה אורגנית
+        const cp1X = prev.x;
+        const cp1Y = prev.y + (curr.y - prev.y) / 2;
+        const cp2X = curr.x;
+        const cp2Y = prev.y + (curr.y - prev.y) / 2;
+        
+        pathData += ` C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${curr.x} ${curr.y}`;
+    }
+
+    // 4. הזרקת הציור לקנבס
+    canvas.innerHTML = `<path class="roadmap-line" d="${pathData}"></path>`;
+
+    // 5. הפעלת מופע הכניסה (דיליי קטן כדי לאפשר לדפדפן לרנדר)
+    setTimeout(() => {
+        const line = canvas.querySelector('.roadmap-line');
+        if (line) {
+            line.classList.add('visible');
+            console.log("<--drawRoadmap--> הקו שורטט והוצג בהצלחה");
+        }
+    }, 100);
+}
 
 
 
