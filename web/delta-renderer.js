@@ -459,7 +459,7 @@ function handleTypingComplete() {
             setTimeout(() => {
                 // מפעיל את העמעום והדגשת הפינות
                 highlightCornersAndDimPage(activePage);
-            }, 4000);
+            }, 2500);
         }
     }
 }

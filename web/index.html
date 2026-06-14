@@ -1079,6 +1079,11 @@
             if (roadmapCanvas) {
                 roadmapCanvas.innerHTML = ''; // מוחק לחלוטין את הקווים, הפילטרים וטיפת הזהב מהמסך
             }
+
+            const handshake = document.querySelector('.lee-handshake-svg');
+            if (handshake) {
+                handshake.classList.remove('pulsate-active');
+            }
             // סוף נקיון
 
             console.log(`<--switchToTargetPage--> ניווט יזום לעמוד: ${pageIndex}`);
