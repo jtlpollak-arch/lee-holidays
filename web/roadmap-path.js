@@ -112,3 +112,21 @@ function drawRoadmap() {
         }
     }, 100);
 }
+
+function cleanRoadmap(){
+                //נקיון
+    document.querySelectorAll('.page-content').forEach(p => p.classList.remove('dim-page'));
+    document.querySelectorAll('.lee-key-container-svg, .lee-course-svg, .lee-safe-home-svg, .logo-wrapper, .lee-handshake-svg')
+        .forEach(el => el.classList.remove('visible-corner'));
+    document.querySelectorAll('.signature-wrapper').forEach(s => s.classList.remove('show-signature'));
+    
+    const roadmapCanvas = document.getElementById('roadmap-canvas');
+    if (roadmapCanvas) {
+        roadmapCanvas.innerHTML = '';
+    }
+
+    const handshake = document.querySelector('.lee-handshake-svg');
+    if (handshake) {
+        handshake.classList.remove('pulsate-active');
+    }
+}
