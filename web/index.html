@@ -319,7 +319,7 @@
 
         .logo-wrapper {
             position: absolute;
-            top: 20px;
+            top: 10px;
             left: 30px;
             width: 70px; 
             height: 70px;
@@ -1075,6 +1075,10 @@
                 .forEach(el => el.classList.remove('visible-corner'));
             document.querySelectorAll('.signature-wrapper').forEach(s => s.classList.remove('show-signature'));
             
+            const roadmapCanvas = document.getElementById('roadmap-canvas');
+            if (roadmapCanvas) {
+                roadmapCanvas.innerHTML = ''; // מוחק לחלוטין את הקווים, הפילטרים וטיפת הזהב מהמסך
+            }
             // סוף נקיון
 
             console.log(`<--switchToTargetPage--> ניווט יזום לעמוד: ${pageIndex}`);
