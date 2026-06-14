@@ -16,3 +16,25 @@
     50% { transform: translateY(-3px); } 
 }
 
+
+
+.dry-ink {
+    display: inline-block;
+    /* אנימציה חדה ומהירה, בלי שום קשר ל-opacity */
+    animation: ink-spread-to-dry 0.4s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+}
+
+@keyframes ink-spread-to-dry {
+    0% {
+        /* מצב "רטוב": מטושטש, עם הילה של נוזל סביב האות */
+        filter: blur(2.5px); 
+        text-shadow: 0 0 6px rgba(27, 85, 101, 0.7); /* הילת נוזל */
+        color: #000; /* דיו מרוכז ושחור לפני הספיגה */
+    }
+    100% {
+        /* מצב "יבש": חד, יציב ובצבע הממותג */
+        filter: blur(0px);
+        text-shadow: none; /* הדיו נספג, ההילה נעלמת */
+        color: #1B5565; 
+    }
+}

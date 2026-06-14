@@ -165,6 +165,8 @@ function flattenLayoutToChars(pages) {
                         // אנחנו כבר לא מוחקים את קלאס האפקט, כי ה-CSS שלנו יודע
                         // לטפל בהפרדה באמצעות הקלאס החדש שאנחנו מוסיפים כאן
                         finalClasses.push('is-emoji');
+                    }else{
+                        finalClasses.push('dry-ink');
                     }
 
                     flatResult.push({ char: char, classes: finalClasses, pageIndex: pIdx });
