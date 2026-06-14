@@ -14,6 +14,9 @@ window.isErasingNow = false;
 window.isPausedByClick = false;
 
 const isEmoji = (char) => /\p{Extended_Pictographic}/u.test(char);
+const typingCursor = document.createElement('span');
+typingCursor.className = 'typing-cursor';
+typingCursor.textContent = '✎';
 
 // 1. הגדרה גלובלית
 let penSound = null;
@@ -454,6 +457,10 @@ function handleTypingComplete() {
             
             // הוספת הלב ל-wrapper
             signatureWrapper.insertAdjacentHTML('beforeend', heartHtml);
+
+            if (typingCursor.parentNode) {
+                typingCursor.parentNode.removeChild(typingCursor);
+            }
             
             // 3. דיליי של 2.5 שניות ל-WOW הסופי
             setTimeout(() => {
@@ -599,6 +606,8 @@ function typeNextChar() {
 
     // 3. רינדור התו הנוכחי לתוך הקונטיינר (מנוע המטריושקה)
     renderNextToken(item, container);
+
+    container.appendChild(typingCursor);
 
     // 4. ניהול מעברי עמודים במידה והעמוד משתנה
     if (!pageDiv.classList.contains('active')) {
