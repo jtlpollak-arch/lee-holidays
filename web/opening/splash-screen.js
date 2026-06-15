@@ -54,7 +54,7 @@ function runSplashScreen(parentSelector, clientName, onCompleteCallback) {
     setTimeout(() => {
         wrappers.forEach(w => w.classList.add('wow-effect'));
         nameEl.classList.add('reveal-name');
-    }, 100);
+    }, 1000);
 
     setTimeout(() => {
         overlay.classList.add('fade-out');
@@ -63,5 +63,5 @@ function runSplashScreen(parentSelector, clientName, onCompleteCallback) {
     setTimeout(() => {
         overlay.remove();
         if (typeof onCompleteCallback === 'function') onCompleteCallback();
-    }, 4500);
+    }, 3500);
 }
