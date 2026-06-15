@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>גלויה דיגיטלית אישית | לי אטדגי - תיווך וייעוץ נדל"ן</title>
 
-    <script src="text-effects.js" defer></script><link rel="stylesheet" href="text-effects.css">
+    </script><link rel="stylesheet" href="text-effects.css">
     <script src="delta-renderer.js" defer></script> <link rel="stylesheet" href="delta-renderer.css">
     
     <script src="audio-player.js" defer></script><link rel="stylesheet" href="audio-player.css">
     <script src="thank-button.js" defer></script><link rel="stylesheet" href="thank-button.css">
     <script src="roadmap-path.js" defer></script><link rel="stylesheet" href="roadmap-style.css">
+
+    <script src="./opening/splash-screen.js" defer></script><link rel="stylesheet" href="./opening/splash-screen.css">
 
     <style>
         @font-face {
@@ -1071,15 +1073,18 @@
             });
         }
 
-        function openEnvelope() {
+        async function openEnvelope() {
             document.getElementById('holidayBackdrop').style.transition = "filter 1s ease";
             document.getElementById('holidayBackdrop').style.filter = "blur(8px)";
 
             document.getElementById('envelopeWrapper').classList.add('open');
 
-            isEnvelopeOpen = true;
+            await new Promise((resolve) => {
+                runSplashScreen(document.getElementById('actualRecipientName').innerText, resolve);
+            });
 
-//            unlockAudio();
+
+            isEnvelopeOpen = true;
 
             setTimeout(() => {
                 document.getElementById('cardElement').classList.add('open');
@@ -1275,22 +1280,6 @@
                 
                 document.getElementById('clientName').innerText = ""; 
                 
-                // בדיקה שקיים שם לקוח ושדה ה-ops קיים ב-Delta לפני ההזרקה
-                if (clientName && clientName.trim() !== "" && Array.isArray(delta)) {
-                    // הוספת ירידת שורה מיד אחרי השם כדי להפריד מגוף הברכה
-                    delta.unshift({
-                        insert: "\n"
-                    });
-                    
-                    // הזרקת שם הלקוח לפוזיציה הראשונה במערך עם האפקט המבוקש
-                    delta.unshift({
-                        insert: clientName + "!!",
-                        attributes: {
-                            effect: "o"
-                        }
-                    });
-                }
-
                 await waitForEnvelope();
 
                 // העברת המערך המעודכן והמחושב לרינדור ולחלוקת עמודים דינמית

@@ -1,18 +1,24 @@
+/* סמן ההקלדה (טיפת הדיו הממתינה) */
 .typing-cursor {
     display: inline-block;
-    font-size: 1.2em;        /* גודל העט */
+    font-size: 0.75em; /* הקטנת המשקל הויזואלי כך שיתאים לעובי הקו של הטקסט */
+    vertical-align: baseline; 
+    position: relative;
+    top: 3px; /* כוונון אופטי עדין כדי להבטיח מגע מושלם עם קו הבסיס התחתון */
+    color: inherit; /* ירושה אוטומטית של צבע הטקסט (הדיו) באותו רגע */
     
-    /* 1. משיכת העט שמאלה כדי לסגור את הרווח */
-    
-    vertical-align: middle;
-    animation: cursor-bounce 1s infinite ease-in-out;
-    
-    /* 2. אם אתה ממש רוצה להפוך את כיוון העט (לפעמים נראה מוזר כי האותיות הופכות לראי, תבדוק אם זה מתאים לך): */
-    transform: scaleX(-1); 
+    /* הפעלת אנימציית נשימה חיה */
+    animation: ink-breathe 0.8s infinite alternate ease-in-out;
 }
 
-@keyframes cursor-bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-3px); } 
+/* פעימות הדיו - כיווץ ושקיפות */
+@keyframes ink-breathe {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    100% {
+        opacity: 0.35;
+        transform: scale(0.85);
+    }
 }
-

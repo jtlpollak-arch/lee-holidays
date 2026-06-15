@@ -16,7 +16,7 @@ window.isPausedByClick = false;
 const isEmoji = (char) => /\p{Extended_Pictographic}/u.test(char);
 const typingCursor = document.createElement('span');
 typingCursor.className = 'typing-cursor';
-typingCursor.textContent = '✎';
+typingCursor.textContent = '•';
 
 // 1. הגדרה גלובלית
 let penSound = null;
