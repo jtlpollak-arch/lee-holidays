@@ -1080,7 +1080,9 @@
             document.getElementById('envelopeWrapper').classList.add('open');
 
             await new Promise((resolve) => {
-                runSplashScreen('.envelope-wrapper', document.getElementById('actualRecipientName').innerText, () => {
+                const recipientName = document.getElementById('actualRecipientName').innerText;
+                const msg = `${recipientName} מזל-טוב!`;
+                runSplashScreen('.envelope-wrapper', msg, () => {
                     resolve(); // זה המפתח שמשחרר את ה-await וממשיך לצעד הבא
                 });
             });

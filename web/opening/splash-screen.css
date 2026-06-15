@@ -1,0 +1,73 @@
+.splash-overlay {
+    position: absolute !important;
+    top: 0 !important; 
+    left: 0 !important;
+    width: 100% !important; 
+    height: 100% !important;
+    background: radial-gradient(circle, #1a2436 0%, #0a0f1a 100%) !important;
+    z-index: 999999 !important;
+    overflow: hidden !important;
+    transition: opacity 1s ease-in-out !important;
+    border-radius: inherit !important;
+}
+
+.splash-overlay.fade-out {
+    opacity: 0 !important;
+}
+
+.splash-name-center {
+    position: absolute !important;
+    top: 50% !important; 
+    left: 50% !important;
+    transform: translate(-50%, -50%) scale(0) !important;
+    color: #ffd700 !important;
+    font-size: 2.5rem !important;
+    font-family: 'DanaYad', sans-serif !important;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.8) !important;
+    z-index: 1000 !important;
+    opacity: 0 !important;
+    transition: all 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.5s !important;
+}
+
+.splash-name-center.reveal-name {
+    transform: translate(-50%, -50%) scale(1) !important;
+    opacity: 1 !important;
+}
+
+.splash-icon-wrapper {
+    position: absolute !important;
+    z-index: 999 !important;
+    transition: all 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
+    pointer-events: none !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+.splash-icon-wrapper svg {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    stroke: #00bfff !important;
+    stroke-width: 2px !important;
+    fill: none !important;
+    filter: drop-shadow(0 0 10px #00bfff) !important;
+    animation: none !important;
+}
+
+.splash-icon-wrapper.wow-effect {
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) rotate(var(--orbit-angle)) translateY(-150px) rotate(calc(-1 * var(--orbit-angle))) scale(1.5) !important;
+    animation: pulse-glow 2s ease-in-out infinite alternate !important;
+    animation-delay: var(--delay) !important;
+}
+
+@keyframes pulse-glow {
+    0% {
+        filter: hue-rotate(0deg) brightness(1);
+    }
+    100% {
+        filter: hue-rotate(30deg) brightness(1.5);
+    }
+}
