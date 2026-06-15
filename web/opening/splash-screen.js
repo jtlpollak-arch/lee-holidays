@@ -1,100 +1,94 @@
 /**
- * splash-screen.js - FULL FILE - DO NOT PRUNE
+ * splash-screen.js
  */
 
-function runSplashScreen(clientName, onCompleteCallback) {
-    const overlay = document.createElement('div');
-    overlay.className = 'splash-overlay';
+function runSplashScreen(parentSelector, clientName, onCompleteCallback) {
+    const parent = document.querySelector(parentSelector);
+    if (!parent) return;
+
+    // 1. "צילום" המיקום של הקונטיינר
+    const rect = parent.getBoundingClientRect();
+
+    // 2. יצירת האפקט
+    const overlay = parent.cloneNode(true);
+    overlay.removeAttribute('id');
+    overlay.innerHTML = '';
+    
+    // ניקוי מוחלט של סגנונות ירושים מהבית
+    overlay.className = 'splash-overlay'; 
+    overlay.style.position = 'fixed';
+    overlay.style.top = rect.top + 'px';
+    overlay.style.left = rect.left + 'px';
+    overlay.style.width = rect.width + 'px';
+    overlay.style.height = rect.height + 'px';
+    overlay.style.boxShadow = 'none';
+    overlay.style.border = 'none';
+    overlay.style.margin = '0';
+    overlay.style.padding = '0';
+    overlay.style.backgroundColor = 'transparent';
+    overlay.style.overflow = 'visible';
+
     document.body.appendChild(overlay);
 
+    // 3. הוספת השם
     const nameEl = document.createElement('div');
     nameEl.className = 'splash-name-center';
     nameEl.textContent = clientName;
     overlay.appendChild(nameEl);
 
+    // 4. הוספת האייקונים
     const selectors = [
-        '.lee-key-container-svg', 
-        '.lee-course-svg', 
-        '.lee-safe-home-svg', 
-        '.lee-handshake-svg', 
-        '.logo-wrapper'
+        '.lee-key-container-svg', '.lee-course-svg', 
+        '.lee-safe-home-svg', '.lee-handshake-svg', '.logo-wrapper'
     ];
     
     const wrappers = [];
-    const radius = 220;
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const radius = Math.min(rect.width, rect.height) / 3;
 
     selectors.forEach((s, i) => {
         const el = document.querySelector(s);
         if (el) {
             const svg = el.tagName.toLowerCase() === 'svg' ? el : el.querySelector('svg');
             if (svg) {
-                // 1. יצירת עותק נקי
                 const clone = svg.cloneNode(true);
-                
-                // 2. ניקוי רדיקלי - הסרת כל עיצוב קיים
-                clone.removeAttribute('style');
-                clone.removeAttribute('class');
-                clone.style.cssText = "";
                 clone.classList.add('splash-icon-clean');
                 
-                // 3. יצירת עטיפה
                 const wrapper = document.createElement('div');
                 wrapper.className = 'splash-icon-wrapper';
                 wrapper.appendChild(clone);
                 
+                // חישוב מיקום מעגלי סביב המרכז
                 const angle = (i / selectors.length) * Math.PI * 2;
-                const x = Math.cos(angle) * radius;
-                const y = Math.sin(angle) * radius;
-                
-                wrapper.style.transform = `translate(${x}px, ${y}px)`;
+                wrapper.style.left = `${centerX + Math.cos(angle) * radius - 20}px`;
+                wrapper.style.top = `${centerY + Math.sin(angle) * radius - 20}px`;
                 
                 overlay.appendChild(wrapper);
-                wrappers.push({ wrapper, clone, x, y });
+                wrappers.push({ wrapper, clone });
             }
         }
     });
 
-    // 4. נתיב וכדור אור
-    if (wrappers.length > 0) {
-        const networkSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        networkSvg.className = 'splash-network-svg';
-        const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        pathEl.className = 'splash-network-path';
-        
-        let d = `M ${centerX + wrappers[0].x} ${centerY + wrappers[0].y} `;
-        wrappers.forEach(w => d += `L ${centerX + w.x} ${centerY + w.y} `);
-        d += 'Z';
-        pathEl.setAttribute('d', d);
-        networkSvg.appendChild(pathEl);
-        overlay.appendChild(networkSvg);
+    // 5. הרצת האנימציה
+    wrappers.forEach((w, i) => {
+        setTimeout(() => w.clone.classList.add('ignited'), 300 * (i + 1));
+    });
 
-        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        circle.setAttribute('r', '7');
-        circle.setAttribute('fill', '#ffd700');
-        circle.innerHTML = `<animateMotion dur="2.5s" repeatCount="1" path="${d}" fill="freeze" />`;
-        networkSvg.appendChild(circle);
-
-        // הדלקה (Ignition)
-        wrappers.forEach((w, i) => {
-            setTimeout(() => {
-                w.clone.classList.add('ignited');
-            }, 500 * (i + 1));
-        });
-    }
-
-    // 5. התכנסות וסגירה
+    // שלב ההתכנסות
     setTimeout(() => {
         wrappers.forEach(w => {
-            w.wrapper.style.transform = `translate(0px, 0px) scale(0)`;
+            w.wrapper.style.left = `${centerX - 20}px`;
+            w.wrapper.style.top = `${centerY - 20}px`;
+            w.wrapper.style.transform = 'scale(0.2)';
             w.wrapper.style.opacity = '0';
         });
         overlay.classList.add('fade-out');
-    }, 3000);
+    }, 50000);
 
+    // ניקוי סופי
     setTimeout(() => {
         overlay.remove();
         if (typeof onCompleteCallback === 'function') onCompleteCallback();
-    }, 4000);
+    }, 60000);
 }
