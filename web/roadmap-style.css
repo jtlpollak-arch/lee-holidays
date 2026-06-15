@@ -41,27 +41,44 @@
     transition: opacity 0.3s ease;
 }
 
-/* --- אנימציית הפעימה של לחיצת היד --- */
-@keyframes golden-pulse {
-    0% { 
-        /* שומרים על הזווית הישרה ומשחקים רק עם הגודל וההילה */
-        transform: rotate(0deg) scale(1); 
-        filter: drop-shadow(0 0 10px rgba(184, 134, 11, 0.8)); 
+.lee-handshake-svg.pulsate-active {
+    opacity: 1;
+    /* 1. מכת האור הראשונית אורכת 0.8 שניות.
+       2. הנשימה הקסומה ממתינה 0.8 שניות (delay) ואז פועלת בלופ אינסופי של הלוך-חזור (alternate).
+    */
+    animation: 
+        patina-impact 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards,
+        magical-breathing 3s ease-in-out 0.8s infinite alternate;
+}
+
+/* חלק 1: הפיצוץ הראשוני בעת הפגיעה */
+@keyframes patina-impact {
+    0% {
+        transform: scale(1);
+        filter: brightness(1) drop-shadow(0 0 0px rgba(255, 215, 0, 0));
     }
-    50% { 
-        /* היד גדלה מעט וההילה מתרחבת ומתחזקת */
-        transform: rotate(0deg) scale(1.15); 
-        filter: drop-shadow(0 0 25px rgba(184, 134, 11, 1)); 
-    }
-    100% { 
-        /* חזרה למצב הראשוני */
-        transform: rotate(0deg) scale(1); 
-        filter: drop-shadow(0 0 10px rgba(184, 134, 11, 0.8)); 
+    100% {
+        /* מגיע לשיא ההתרחבות והאור הטהור */
+        transform: scale(1.15);
+        filter: brightness(0.4) 
+                drop-shadow(0 0 12px rgba(255, 215, 0, 1)) 
+                drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
     }
 }
 
-/* הקלאס שיפעיל את הפעימה ברגע סיום המסע */
-.lee-handshake-svg.pulsate-active {
-    animation: golden-pulse 2s infinite ease-in-out !important;
-    opacity: 1 !important; /* מוודאים שהיא מוצגת וזוהרת */
+/* חלק 2: הלופ האינסופי של נשימה קסומה */
+@keyframes magical-breathing {
+    0% {
+        /* מתחיל בדיוק באותה נקודת שיא שבה הסתיים הפיצוץ - חיבור חלק */
+        transform: scale(1.15);
+        filter: brightness(0.4) 
+                drop-shadow(0 0 12px rgba(255, 215, 0, 1)) 
+                drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
+    }
+    100% {
+        /* מתכווץ ברכות בחזרה לגודל המקורי, קווי הזהב מתבהרים קלות והאור נרגע */
+        transform: scale(1);
+        filter: brightness(0.6) 
+                drop-shadow(0 0 6px rgba(255, 215, 0, 0.5));
+    }
 }

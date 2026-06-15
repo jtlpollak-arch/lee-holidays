@@ -5,7 +5,7 @@
 
 window.MAX_CHARS_PER_LINE = 18;
 window.MAX_LINES_PER_PAGE = 4;
-window.TYPING_SPEED = 150;
+window.TYPING_SPEED = 180;
 
 window.globalFlatData = [];
 window.globalCharIndex = 0;

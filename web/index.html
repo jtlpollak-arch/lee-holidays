@@ -270,9 +270,10 @@
             overflow: visible !important; 
         }
 
+        /* ההגדרות המקוריות - שומרים בדיוק על המיקום ועל ה-170 מעלות */
         .lee-handshake-svg {
             position: absolute;
-            top:40%;
+            top: 40%;
             bottom: 50%;
             width: 40px;
             height: 40px;
@@ -282,12 +283,12 @@
             transform: rotate(170deg);
         }
 
-        .lee-handshake-svg svg{
+        .lee-handshake-svg svg {
             width: 100% !important;
             height: 100% !important;
             /* הופך את המפתח לכזה שמתכווץ לתוך התיבה */
             object-fit: contain !important; 
-            /* מבטיח שכל המפתח ייראה */
+            /* מבטיח שכל המפתח ייראה וההילה התלת-ממדית לא תיחתך */
             overflow: visible !important; 
         }
 
@@ -873,9 +874,47 @@
 }
 
 /* 2. רגע המעבר - הקו העליון של המלבן יורד למטה ל-100%, מה שיוצר מחיקה מושלמת מלמעלה למטה */
+/* מחיקה פיזית - שטיפת דיו */
 .text-container.erase-active {
-    opacity: 0;
-    clip-path: polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%);
+    /* ביטול מאפייני המחיקה הדיגיטליים הישנים */
+    opacity: 1;
+    clip-path: none; 
+    
+    /* הפעלת האנימציה הפיזית */
+    animation: ink-wash-away 2s ease-in forwards;
+}
+
+/* הוספת כובד וצל נוזלי לאותיות עצמן בזמן המחיקה */
+.text-container.erase-active span {
+    text-shadow: 0 5px 8px rgba(27, 85, 101, 0.7) !important;
+    transition: text-shadow 1.8s ease-in;
+}
+
+/* פירוט שלבי הנזילה וההיעלמות */
+@keyframes ink-wash-away {
+    0% {
+        filter: blur(0px);
+        transform: translateY(0);
+        opacity: 1;
+    }
+    40% {
+        /* המים פוגעים: הטקסט מתחיל להימרח ולזלוג קלות */
+        filter: blur(3px);
+        transform: translateY(6px);
+        opacity: 0.9;
+    }
+    80% {
+        /* זליגה משמעותית כלפי מטה וטשטוש כבד */
+        filter: blur(8px);
+        transform: translateY(22px);
+        opacity: 0.4;
+    }
+    100% {
+        /* היעלמות מוחלטת לאחר השטיפה */
+        filter: blur(12px);
+        transform: translateY(40px);
+        opacity: 0;
+    }
 }
 
 /* העמוד הופך לשקוף, מתכווץ מעט ו"שוקע" אחורה */
