@@ -1,76 +1,71 @@
 function launchContextualConfetti() {
+    console.log("[CONF-DEBUG] -> פונקציית הקונפטי התחילה.");
     const container = document.getElementById('confetti-container');
     if (!container) return;
-    
+
+    // וודא קונטיינר פרוס על כל המסך
+    container.style.position = 'fixed';
+    container.style.top = '0px';
+    container.style.left = '0px';
+    container.style.width = '100vw';
+    container.style.height = '100vh';
+    container.style.zIndex = '9999999';
+    container.style.overflow = 'visible';
+    container.style.pointerEvents = 'none';
     container.innerHTML = ''; 
 
-    // הגדרת מאגרי האווירה
-    const moods = {
-        realEstate: ['🏠', '🏡', '🔑', '🗝️', '💖', '🪴', '✨', '💎', '🥂', '🌟', '🌸', '🌷', '🦋', '🧡', '🌞']
-    };
-
-    const moodKeys = Object.keys(moods);
-    const chosenMood = moodKeys[Math.floor(Math.random() * moodKeys.length)];
-    const emojiPool = moods[chosenMood];
-
-    // התאמת כמות החלקיקים לגודל המסך
-    const numberOfEmojis = 25;
+    const emojiPool = ['🏠', '🏡', '🔑', '🗝️', '💖', '🪴', '✨', '💎', '🥂', '🌟', '🌸', '🌷', '🦋', '🧡', '🌞'];
+    const numberOfEmojis = 35; 
     
-    const fragment = document.createDocumentFragment();
-
-    // לקיחת המימד הקטן יותר (רוחב או גובה) כדי לשמור על רדיוס פיצוץ מעגלי ופרופורציונלי
-    const minScreenDimension = Math.min(window.innerWidth, window.innerHeight);
+    // נקודות ייחוס למסך
+    const w = window.innerWidth;
+    const h = window.innerHeight;
 
     for (let i = 0; i < numberOfEmojis; i++) {
         const emojiItem = document.createElement('div');
         emojiItem.classList.add('wow-confetti-item');
+        emojiItem.innerText = Math.random() < 0.1 ? '🔑' : emojiPool[Math.floor(Math.random() * emojiPool.length)];
 
-        if (Math.random() < 0.1) {
-            emojiItem.innerText = '🔑'; 
-        } else {
-            emojiItem.innerText = emojiPool[Math.floor(Math.random() * emojiPool.length)];
-        }
+        // חישוב מיקום אקראי על כל המסך בפיקסלים
+        const startX = Math.random() * w;
+        const startY = -100; // מעט מעל המסך
+        const endX = startX + (Math.random() - 0.5) * (w * 0.5);
+        const endY = h + 100; // מתחת למסך
+        
+        const rotZ = Math.random() * 720;
+        const scale = Math.random() * 0.6 + 0.6;
+        const duration = 6000 + Math.random() * 4000;
+        const delay = i * 200; // דירוג קבוע (מזרקה)
 
-        // חישוב זווית (0 עד 360 מעלות ברדיאנים)
-        const angle = Math.random() * Math.PI * 2; 
-        
-        // עוצמת ההדף כמרחק בפיקסלים (בין 10% ל-45% מהמסך הקטן)
-        const velocity = Math.random() * (minScreenDimension * 0.35) + (minScreenDimension * 0.1); 
-        
-        // חישוב מרחק תנועה אופקי ונקודת שיא הגובה בפיקסלים מדויקים
-        const tx = Math.cos(angle) * velocity;
-        const tyUp = -Math.abs(Math.sin(angle) * velocity) - (minScreenDimension * 0.1); // דחיפה מינימלית למעלה
-        
-        // סיבובים למראה תלת מימדי באוויר
-        const rotX = Math.random() * 1080;
-        const rotY = Math.random() * 1080;
-        const rotZ = Math.random() * 1080;
-        
-        const scale = Math.random() * 0.8 + 0.6;
-        const duration = 10 // בין 5 ל-7 שניות
-        const delay = 0; 
+        // הזרקת סגנון ישירה - זה עוקף את בעיית הפינה
+        Object.assign(emojiItem.style, {
+            position: 'fixed',
+            fontSize: (w < 768 ? '1.6rem' : '2.5rem'),
+            zIndex: '999999',
+            pointerEvents: 'none',
+            left: '0px',
+            top: '0px',
+            opacity: '0'
+        });
 
-        // העברת הנתונים ל-CSS (עכשיו בפיקסלים במקום vw/vh)
-        emojiItem.style.setProperty('--tx', `${tx}px`);
-        emojiItem.style.setProperty('--ty-up', `${tyUp}px`);
-        emojiItem.style.setProperty('--rot-x', `${rotX}deg`);
-        emojiItem.style.setProperty('--rot-y', `${rotY}deg`);
-        emojiItem.style.setProperty('--rot-z', `${rotZ}deg`);
-        emojiItem.style.setProperty('--scale', scale);
-        
-        emojiItem.style.animationDuration = `${duration}s`;
-        emojiItem.style.animationDelay = `${delay}s`;
+        container.appendChild(emojiItem);
 
-        fragment.appendChild(emojiItem);
-        
-        // ניקוי
+        console.log(`[CONF-DEBUG] -> אימוג'י ${i} נוצר במיקום ${startX}, ${startY}`);
+
+        emojiItem.animate([
+            { transform: `translate(${startX}px, ${startY}px) scale(${scale}) rotate(0deg)`, opacity: 0 },
+            { opacity: 0.8, offset: 0.1 },
+            { opacity: 0.8, offset: 0.85 },
+            { transform: `translate(${endX}px, ${endY}px) scale(${scale}) rotate(${rotZ}deg)`, opacity: 0 }
+        ], {
+            duration: duration,
+            delay: delay,
+            fill: 'forwards',
+            easing: 'linear'
+        });
+
         setTimeout(() => { 
-            if (emojiItem.parentNode) {
-                emojiItem.remove(); 
-            }
-            console.log("מחקתי קונפטי");
-        }, (duration + delay) * 1000);
+            if (emojiItem.parentNode) emojiItem.remove(); 
+        }, duration + delay + 500);
     }
-
-    container.appendChild(fragment);
 }
