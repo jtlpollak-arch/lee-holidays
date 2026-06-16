@@ -30,6 +30,18 @@ function drawRoadmap() {
         return;
     }
 
+    // חישוב מרחקים מצטברים לצורך תזמון פעימות הזהב
+    let totalLength = 0;
+    const distanceSegments = [0]; 
+    
+    for (let i = 1; i < points.length; i++) {
+        const dx = points[i].x - points[i-1].x;
+        const dy = points[i].y - points[i-1].y;
+        const length = Math.sqrt(dx * dx + dy * dy);
+        totalLength += length;
+        distanceSegments.push(totalLength);
+    }
+
     // 3. בניית הציור (נתיב גלי ומתפתל)
     let pathData = `M ${points[0].x} ${points[0].y}`; 
     
@@ -75,7 +87,7 @@ function drawRoadmap() {
         <path class="roadmap-line" d="${pathData}"></path>
         
         <circle class="traveling-particle" r="6" fill="#FFD700" filter="url(#particle-glow)">
-            <animateMotion id="particle-motion" dur="3s" repeatCount="1" fill="freeze" path="${pathData}" begin="indefinite" />
+            <animateMotion id="particle-motion" dur="7s" repeatCount="1" fill="freeze" path="${pathData}" begin="indefinite" />
         </circle>
     `;
 
@@ -84,7 +96,7 @@ function drawRoadmap() {
         const line = canvas.querySelector('.roadmap-line');
         const particle = canvas.querySelector('.traveling-particle');
         const motion = canvas.querySelector('#particle-motion');
-        const handshake = document.querySelector('.lee-handshake-svg'); // תופסים את היד
+        const handshake = document.querySelector('.lee-handshake-svg'); 
         
         if (line) {
             line.classList.add('visible');
@@ -96,7 +108,23 @@ function drawRoadmap() {
                 particle.classList.add('active');
                 motion.beginElement(); 
                 
-                // --- הקסם החדש: טיימר לסיום המסע (3 שניות בדיוק) ---
+                // --- תזמון פעימות המעבר לתחנות הביניים ---
+                connectionOrder.forEach((selector, index) => {
+                    // מדלגים על התחנה האחרונה כי יש לה אנימציה קבועה משלה
+                    if (index === connectionOrder.length - 1) return; 
+                    
+                    const el = document.querySelector(selector);
+                    if (!el) return;
+                    
+                    // חישוב הזמן המדויק שבו החלקיק מגיע לתחנה (מתוך 3000 מילישניות)
+                    const delayMs = (distanceSegments[index] / totalLength) * 7000;
+                    
+                    setTimeout(() => {
+                        el.classList.add('node-pulse');
+                    }, delayMs);
+                });
+                
+                // --- טיימר לסיום המסע (3 שניות בדיוק) ---
                 setTimeout(() => {
                     // א. מעלימים את החלקיק (הוא נבלע ביד)
                     particle.classList.add('absorbed');
@@ -106,7 +134,7 @@ function drawRoadmap() {
                         handshake.classList.add('pulsate-active');
                         console.log("<--drawRoadmap--> המסע הושלם! היד פועמת בזהב.");
                     }
-                }, 3000);
+                }, 7000);
 
             }, 500);
         }
@@ -114,10 +142,16 @@ function drawRoadmap() {
 }
 
 function cleanRoadmap(){
-                //נקיון
+    // נקיון
     document.querySelectorAll('.page-content').forEach(p => p.classList.remove('dim-page'));
+    
+    // הוספתי את המחיקה של .node-pulse כדי שאם משחזרים את האנימציה היא תוכל לקרות שוב
     document.querySelectorAll('.lee-key-container-svg, .lee-course-svg, .lee-safe-home-svg, .logo-wrapper, .lee-handshake-svg')
-        .forEach(el => el.classList.remove('visible-corner'));
+        .forEach(el => {
+            el.classList.remove('visible-corner');
+            el.classList.remove('node-pulse');
+        });
+        
     document.querySelectorAll('.signature-wrapper').forEach(s => s.classList.remove('show-signature'));
     
     const roadmapCanvas = document.getElementById('roadmap-canvas');

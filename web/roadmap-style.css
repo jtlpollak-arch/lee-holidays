@@ -59,7 +59,7 @@
     }
     100% {
         /* מגיע לשיא ההתרחבות והאור הטהור */
-        transform: scale(1.15);
+        transform: scale(1.35);
         filter: brightness(0.4) 
                 drop-shadow(0 0 12px rgba(255, 215, 0, 1)) 
                 drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
@@ -70,7 +70,7 @@
 @keyframes magical-breathing {
     0% {
         /* מתחיל בדיוק באותה נקודת שיא שבה הסתיים הפיצוץ - חיבור חלק */
-        transform: scale(1.15);
+        transform: scale(1.35);
         filter: brightness(0.4) 
                 drop-shadow(0 0 12px rgba(255, 215, 0, 1)) 
                 drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
@@ -80,5 +80,26 @@
         transform: scale(1);
         filter: brightness(0.6) 
                 drop-shadow(0 0 6px rgba(255, 215, 0, 0.5));
+    }
+}
+
+
+/* --- אפקט פעימת מעבר לתחנות הביניים במסלול --- */
+.node-pulse {
+    animation: passing-glow 0.8s ease-in-out;
+}
+
+@keyframes passing-glow {
+    0% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 0px rgba(255, 215, 0, 0)) brightness(1);
+    }
+    50% {
+        transform: scale(1.15);
+        filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8)) brightness(1.3);
+    }
+    100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 0px rgba(255, 215, 0, 0)) brightness(1);
     }
 }
