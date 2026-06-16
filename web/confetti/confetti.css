@@ -1,0 +1,43 @@
+.wow-confetti-item {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    font-size: 2.5rem; /* גודל ברירת מחדל לדסקטופ */
+    pointer-events: none;
+    user-select: none;
+    z-index: 999999;
+    will-change: transform, opacity;
+    transform-style: preserve-3d;
+    animation: explode-and-fall ease-in forwards;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+}
+
+/* התאמה למובייל בלבד */
+@media (max-width: 768px) {
+    .wow-confetti-item {
+        font-size: 1.8rem; /* הקטנת האימוג'ים כדי שלא יסתירו אחד את השני במסך קטן */
+    }
+}
+
+@keyframes explode-and-fall {
+    0% {
+        /* תחילת הפיצוץ מהמרכז */
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0);
+    }
+    15% {
+        /* שיא ההדף (משתמש כעת בפיקסלים מחושבים) */
+        opacity: 1;
+        transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty-up))) scale(var(--scale)) rotateX(calc(var(--rot-x) / 4)) rotateY(calc(var(--rot-y) / 4)) rotateZ(calc(var(--rot-z) / 4));
+    }
+    80% {
+        /* שמירה על אטימות בנפילה */
+        opacity: 1;
+    }
+    100% {
+        /* נפילה חופשית למרחק רב יותר (150vh) כדי להתמודד עם שורות כתובת דינמיות בסלולר */
+        opacity: 0;
+        transform: translate(calc(-50% + var(--tx) * 1.5), 150vh) scale(var(--scale)) rotateX(var(--rot-x)) rotateY(var(--rot-y)) rotateZ(var(--rot-z));
+    }
+}
