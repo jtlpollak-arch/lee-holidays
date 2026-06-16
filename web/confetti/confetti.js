@@ -1,23 +1,11 @@
 function launchContextualConfetti() {
-    console.log("[CONF-DEBUG] -> פונקציית הקונפטי התחילה.");
+    console.log("[CONF-DEBUG] -> תחילת הפעלת אפקט מזרקת האימוג'ים.");
     const container = document.getElementById('confetti-container');
     if (!container) return;
 
-    // וודא קונטיינר פרוס על כל המסך
-    container.style.position = 'fixed';
-    container.style.top = '0px';
-    container.style.left = '0px';
-    container.style.width = '100vw';
-    container.style.height = '100vh';
-    container.style.zIndex = '9999999';
-    container.style.overflow = 'visible';
-    container.style.pointerEvents = 'none';
     container.innerHTML = ''; 
-
     const emojiPool = ['🏠', '🏡', '🔑', '🗝️', '💖', '🪴', '✨', '💎', '🥂', '🌟', '🌸', '🌷', '🦋', '🧡', '🌞'];
     const numberOfEmojis = 35; 
-    
-    // נקודות ייחוס למסך
     const w = window.innerWidth;
     const h = window.innerHeight;
 
@@ -26,46 +14,39 @@ function launchContextualConfetti() {
         emojiItem.classList.add('wow-confetti-item');
         emojiItem.innerText = Math.random() < 0.1 ? '🔑' : emojiPool[Math.floor(Math.random() * emojiPool.length)];
 
-        // חישוב מיקום אקראי על כל המסך בפיקסלים
-        const startX = Math.random() * w;
-        const startY = -100; // מעט מעל המסך
-        const endX = startX + (Math.random() - 0.5) * (w * 0.5);
-        const endY = h + 100; // מתחת למסך
+        // שינוי הוקטור: מתחילים מהתחתית (h + 50)
+        const startX = w / 2; // מתחילים מהמרכז
+        const startY = h + 50; 
         
-        const rotZ = Math.random() * 720;
-        const scale = Math.random() * 0.6 + 0.6;
-        const duration = 6000 + Math.random() * 4000;
-        const delay = i * 200; // דירוג קבוע (מזרקה)
+        // יעד: התפזרות אופקית וגובה השיא של המזרקה
+        const endX = startX + (Math.random() - 0.5) * (w * 0.8);
+        const peakY = h * 0.2 + Math.random() * (h * 0.3); // שיא הגובה: בין 20% ל-50% מגובה המסך
+        const finalY = h + 100; // נופלים חזרה למטה
+        
+        const duration = 4000 + Math.random() * 2000;
+        const delay = i * 200; // דירוג יציאה אחד-אחד
 
-        // הזרקת סגנון ישירה - זה עוקף את בעיית הפינה
         Object.assign(emojiItem.style, {
-            position: 'fixed',
-            fontSize: (w < 768 ? '1.6rem' : '2.5rem'),
-            zIndex: '999999',
-            pointerEvents: 'none',
-            left: '0px',
-            top: '0px',
-            opacity: '0'
+            position: 'fixed', fontSize: '2rem', zIndex: '999999', pointerEvents: 'none',
+            left: '0px', top: '0px', opacity: '0'
         });
-
         container.appendChild(emojiItem);
 
-        console.log(`[CONF-DEBUG] -> אימוג'י ${i} נוצר במיקום ${startX}, ${startY}`);
+        console.log(`[CONF-DEBUG] -> משגר אימוג'י ${i} בתזמון ${delay}ms`);
 
+        // אנימציית קשת (מזרקה)
         emojiItem.animate([
-            { transform: `translate(${startX}px, ${startY}px) scale(${scale}) rotate(0deg)`, opacity: 0 },
-            { opacity: 0.8, offset: 0.1 },
-            { opacity: 0.8, offset: 0.85 },
-            { transform: `translate(${endX}px, ${endY}px) scale(${scale}) rotate(${rotZ}deg)`, opacity: 0 }
+            { transform: `translate(${startX}px, ${startY}px) scale(0.5)`, opacity: 0 },
+            { opacity: 1, offset: 0.1 },
+            { transform: `translate(${endX}px, ${peakY}px) scale(1.2) rotate(360deg)`, opacity: 1, offset: 0.5 },
+            { transform: `translate(${endX}px, ${finalY}px) scale(0.5) rotate(720deg)`, opacity: 0 }
         ], {
             duration: duration,
             delay: delay,
             fill: 'forwards',
-            easing: 'linear'
+            easing: 'ease-out'
         });
 
-        setTimeout(() => { 
-            if (emojiItem.parentNode) emojiItem.remove(); 
-        }, duration + delay + 500);
+        setTimeout(() => { if (emojiItem.parentNode) emojiItem.remove(); }, duration + delay + 500);
     }
 }
