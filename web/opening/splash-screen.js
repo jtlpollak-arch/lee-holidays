@@ -13,7 +13,7 @@ function runSplashScreen(parentSelector, clientName, onCompleteCallback) {
 
     const nameEl = document.createElement('div');
     nameEl.className = 'splash-name-center';
-    nameEl.textContent = clientName;
+    nameEl.innerHTML = `${clientName}<br>מזל-טוב!`;
     overlay.appendChild(nameEl);
 
     selectors.forEach((s, index) => {

@@ -1078,8 +1078,7 @@
 
             await new Promise((resolve) => {
                 const recipientName = document.getElementById('actualRecipientName').innerText;
-                const msg = `${recipientName} מזל-טוב!`;
-                runSplashScreen('.envelope-wrapper', msg, () => {
+                runSplashScreen('.envelope-wrapper', recipientName, () => {
                     resolve(); // זה המפתח שמשחרר את ה-await וממשיך לצעד הבא
                 });
             });

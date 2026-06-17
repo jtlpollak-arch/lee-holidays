@@ -1,16 +1,7 @@
 #confetti-container {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    pointer-events: none !important;
-    z-index: 9999999 !important;
+    position: fixed !important; top: 0 !important; left: 0 !important;
+    width: 100vw !important; height: 100vh !important;
+    pointer-events: none !important; z-index: 9999999 !important;
     overflow: visible !important;
-    background: transparent !important;
 }
-
-.wow-confetti-item {
-    position: fixed !important;
-    will-change: transform, opacity;
-}
+.wow-confetti-item { position: fixed !important; will-change: transform, opacity; }

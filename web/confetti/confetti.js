@@ -1,30 +1,53 @@
 function launchContextualConfetti() {
-    console.log("[CONF-DEBUG] -> תחילת הפעלת אפקט מזרקת האימוג'ים.");
+    console.log("[CONF-DEBUG] -> מפעיל מזרקת אימוג'ים עם דחייה מרכזית.");
     const container = document.getElementById('confetti-container');
     if (!container) return;
 
     container.innerHTML = ''; 
-    const emojiPool = ['🏠', '🏡', '🔑', '🗝️', '💖', '🪴', '✨', '💎', '🥂', '🌟', '🌸', '🌷', '🦋', '🧡', '🌞'];
-    const numberOfEmojis = 35; 
+    const emojiPool = [
+        '🏠', '🌱', '🔑', '🗝️', '💖', 
+        '🌷', '🌻', '🌹', '🪻', '🪷',
+        '👑', '🌺', '🌻', '🍃', '🏡',
+        '💐', '🪄', '🧿', '🔮', '💝'
+    ];
     const w = window.innerWidth;
     const h = window.innerHeight;
+    let emojiIndex = 0;
+    let goLeft = true;
 
-    for (let i = 0; i < numberOfEmojis; i++) {
+    for (let i = 0; i < 20; i++) {
         const emojiItem = document.createElement('div');
         emojiItem.classList.add('wow-confetti-item');
-        emojiItem.innerText = Math.random() < 0.1 ? '🔑' : emojiPool[Math.floor(Math.random() * emojiPool.length)];
 
-        // שינוי הוקטור: מתחילים מהתחתית (h + 50)
-        const startX = w / 2; // מתחילים מהמרכז
-        const startY = h + 50; 
+        if(emojiIndex == emojiPool.length) {emojiIndex = 0;}
+        emojiItem.innerText = emojiPool[emojiIndex++ % emojiPool.length];
+
+        // --- לוגיקת הדחייה המרכזית ---
+        const isLeft = goLeft;
+        goLeft = !goLeft;
+
+        // מתחילים מהמרכז התחתון
+        const startX = w / 2;
+        const startY = h + 50;
         
-        // יעד: התפזרות אופקית וגובה השיא של המזרקה
-        const endX = startX + (Math.random() - 0.5) * (w * 0.8);
-        const peakY = h * 0.2 + Math.random() * (h * 0.3); // שיא הגובה: בין 20% ל-50% מגובה המסך
-        const finalY = h + 100; // נופלים חזרה למטה
+        // יעד: אם שמאל - טווח שלילי, אם ימין - טווח חיובי. 
+        // 0.2 עד 0.6 מבטיח שהם נשארים בטווח ה-45 מעלות מהאמצע
+        const minDrift = 0.5; 
+        const randomRange = 0.0; // טווח של 15% בלבד
+
+        const drift = (minDrift + Math.random() * randomRange) * (isLeft ? -w : w);
+        let endX = startX + drift;
+
+        // --- תיקון הסימטריה (קיזוז הקיר הימני) ---
+        if (!isLeft) {
+            endX -= 50; // מפחיתים כ-50 פיקסלים כדי שהאימוג'י הימני לא יצטייר מחוץ למסך
+        }
+
+        const peakY = h * 0.15 + Math.random() * (h * 0.2); 
+        const finalY = h + 100;
         
         const duration = 4000 + Math.random() * 2000;
-        const delay = i * 200; // דירוג יציאה אחד-אחד
+        const delay = i * 200;
 
         Object.assign(emojiItem.style, {
             position: 'fixed', fontSize: '2rem', zIndex: '999999', pointerEvents: 'none',
@@ -32,9 +55,8 @@ function launchContextualConfetti() {
         });
         container.appendChild(emojiItem);
 
-        console.log(`[CONF-DEBUG] -> משגר אימוג'י ${i} בתזמון ${delay}ms`);
+        console.log(`[CONF-DEBUG] -> אימוג'י ${i} משוגר ל${isLeft ? 'שמאל' : 'ימין'} בשיפוע ${drift.toFixed(0)}px`);
 
-        // אנימציית קשת (מזרקה)
         emojiItem.animate([
             { transform: `translate(${startX}px, ${startY}px) scale(0.5)`, opacity: 0 },
             { opacity: 1, offset: 0.1 },
