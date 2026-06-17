@@ -366,26 +366,26 @@ async function highlightCornersAndDimPage(pageDiv) {
  */
 function drawSignatureGoldDots(startX, startY) {
     return new Promise((resolve) => {
+        // יצירת קנבס שמתלבש על כל העמוד (absolute) ולא על החלון (fixed)
         const canvas = document.createElement('canvas');
-        canvas.style.position = 'fixed';
+        canvas.style.position = 'absolute';
         canvas.style.top = '0';
         canvas.style.left = '0';
-        canvas.style.width = '100vw';
-        canvas.style.height = '100vh';
+        canvas.style.width = document.documentElement.scrollWidth + 'px';
+        canvas.style.height = document.documentElement.scrollHeight + 'px';
         canvas.style.zIndex = '99999';
         canvas.style.pointerEvents = 'none';
         document.body.appendChild(canvas);
 
         const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        canvas.width = document.documentElement.scrollWidth;
+        canvas.height = document.documentElement.scrollHeight;
 
-        // נקודת יציאה משמאל למטה
-        const endX = window.innerWidth * 0.15;
-        const endY = window.innerHeight * 0.85;
+        // נקודת יעד (יחסית לעמוד)
+        const endX = window.innerWidth * 0.15 + window.scrollX;
+        const endY = (window.innerHeight * 0.85) + window.scrollY;
 
-        // חישוב נקודת השליטה: מוסטת לימין (cpX) ולמעלה (cpY)
-        // כדי ליצור קשת רחבה שיוצאת ימינה
+        // נקודת שליטה לעקומה
         const cpX = startX + (window.innerWidth * 0.35); 
         const cpY = startY - (window.innerHeight * 0.15); 
 
@@ -397,16 +397,14 @@ function drawSignatureGoldDots(startX, startY) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             t += speed;
             
-            // נוסחת Bézier לקשת רחבה
             const x = Math.pow(1 - t, 2) * startX + 2 * (1 - t) * t * cpX + Math.pow(t, 2) * endX;
             const y = Math.pow(1 - t, 2) * startY + 2 * (1 - t) * t * cpY + Math.pow(t, 2) * endY;
 
             trail.push({ x, y, alpha: 1 });
 
-            // ציור השובל עם דעיכה
             for (let i = 0; i < trail.length; i++) {
                 const dot = trail[i];
-                dot.alpha -= 0.012; // דעיכה עדינה
+                dot.alpha -= 0.012; 
                 if (dot.alpha > 0) {
                     ctx.fillStyle = `rgba(184, 134, 11, ${dot.alpha})`;
                     ctx.beginPath();
