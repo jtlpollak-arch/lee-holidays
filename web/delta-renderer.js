@@ -385,39 +385,69 @@ function drawSignatureGoldDots(startX, startY) {
         const endX = window.innerWidth * 0.15 + window.scrollX;
         const endY = (window.innerHeight * 0.85) + window.scrollY;
 
-        // נקודת שליטה לעקומה
+        // נקודת שליטה לעקומה (הסטה לימין למעלה ליצירת הקשת)
         const cpX = startX + (window.innerWidth * 0.35); 
         const cpY = startY - (window.innerHeight * 0.15); 
 
         let t = 0;
         const speed = 0.007;
         const trail = [];
+        
+        // הגדרת מרחק מינימלי (בפיקסלים) בין נקודה לנקודה
+        const spacing = 10; 
+        let lastDrawnX = startX;
+        let lastDrawnY = startY;
 
         function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             t += speed;
             
-            const x = Math.pow(1 - t, 2) * startX + 2 * (1 - t) * t * cpX + Math.pow(t, 2) * endX;
-            const y = Math.pow(1 - t, 2) * startY + 2 * (1 - t) * t * cpY + Math.pow(t, 2) * endY;
+            // פונקציית Easing (Ease-in-out Quad) לתנועה מואצת וטבעית יותר
+            const easeT = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+            
+            // חישוב המיקום הנוכחי על הקשת לפי ה-t המואץ
+            const x = Math.pow(1 - easeT, 2) * startX + 2 * (1 - easeT) * easeT * cpX + Math.pow(easeT, 2) * endX;
+            const y = Math.pow(1 - easeT, 2) * startY + 2 * (1 - easeT) * easeT * cpY + Math.pow(easeT, 2) * endY;
 
-            trail.push({ x, y, alpha: 1 });
+            // מנגנון ציור מבוסס מרחק (פותר את הפיכת הנקודות לקו רציף בסלולרי)
+            const dist = Math.hypot(x - lastDrawnX, y - lastDrawnY);
+            if (dist >= spacing) {
+                trail.push({ x: x, y: y, alpha: 1 });
+                lastDrawnX = x;
+                lastDrawnY = y;
+            }
 
+            // ציור השובל הדועך מאחור ("דיו נספג")
             for (let i = 0; i < trail.length; i++) {
                 const dot = trail[i];
-                dot.alpha -= 0.012; 
+                dot.alpha -= 0.015; // קצב דעיכת השובל
                 if (dot.alpha > 0) {
                     ctx.fillStyle = `rgba(184, 134, 11, ${dot.alpha})`;
+                    ctx.shadowBlur = 0; // ללא הילה בנקודות שנספגות
                     ctx.beginPath();
                     ctx.arc(dot.x, dot.y, 3, 0, Math.PI * 2);
                     ctx.fill();
                 }
             }
 
+            // ניקוי נקודות שהפכו לשקופות לחלוטין מהזיכרון
             if (trail[0] && trail[0].alpha <= 0) trail.shift();
 
             if (t < 1) {
+                // ציור "ראש השביט" (הנקודה המובילה) עם אפקט זוהר וגודל מעט שונה
+                ctx.fillStyle = 'rgba(255, 215, 0, 1)'; // צבע זהב בהיר וחזק
+                ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
+                ctx.shadowBlur = 12; // יצירת הילה (Glow) סביב הנקודה
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // איפוס אפקטי צלליות כדי לא לפגוע בשובל בפריים הבא
+                ctx.shadowBlur = 0; 
+                
                 requestAnimationFrame(animate);
             } else {
+                // סיום האנימציה - השהייה קלה לסיום הדעיכה לפני ניקוי הקנבס
                 setTimeout(() => {
                     canvas.remove();
                     resolve();
