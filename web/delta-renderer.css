@@ -22,3 +22,35 @@
         transform: scale(0.85);
     }
 }
+
+.visible-corner {
+    transition: all 0.5s ease;
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8));
+    opacity: 1 !important;
+}
+
+/* 4. קנבס האנימציה - שכבת על שקופה */
+#gold-animation-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 99999;
+    pointer-events: none; /* מאפשר לכל מה שמתחתיו להישאר נגיש אם צריך */
+}
+
+/* 5. בונוס: עיצוב הנקודות הזהובות (למקרה שנרצה להוסיף להן הילה ב-CSS) */
+.gold-dot-glow {
+    filter: drop-shadow(0 0 5px rgba(184, 134, 11, 0.9));
+}
+
+.dim-page .signature-wrapper {
+    filter: none !important; /* מבטל את ה-blur וה-brightness של ההורה */
+    opacity: 1 !important;    /* מוודא שהיא נשארת אטומה לגמרי */
+}
+
+/* מוודא שה-Glow של החתימה תמיד מנצח */
+.signature-wrapper {
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8)) !important;
+}

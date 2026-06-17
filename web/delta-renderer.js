@@ -329,25 +329,105 @@ function injectSignatureWithEffect(pageDiv) {
     }
 }
 
-function highlightCornersAndDimPage(pageDiv) {
-    // 1. שינינו ל-document במקום pageDiv כדי למצוא את האלמנטים בפינות
-    const cornerElements = document.querySelectorAll('.lee-key-container-svg, .lee-course-svg, .lee-safe-home-svg, .logo-wrapper, .lee-handshake-svg');
-    
-    // 2. החלשת העמוד עצמו
-    pageDiv.classList.add('dim-page'); 
+async function highlightCornersAndDimPage(pageDiv) {
+    console.log("<--highlightCornersAndDimPage--> מתחיל תהליך מעבר...");
 
-    // 3. חיזוק האלמנטים בפינות
-    cornerElements.forEach(el => {
-        el.classList.add('visible-corner');
-    });
+    const signatureWrapper = pageDiv.querySelector('.signature-wrapper');
+    if (!signatureWrapper) {
+        // אם אין חתימה, פשוט נבצע את הניקוי הרגיל
+        pageDiv.classList.add('dim-page');
+        if (typeof drawRoadmap === 'function') drawRoadmap();
+        return;
+    }
+
+    // חישוב מיקום אבסולוטי עבור ה-Canvas הצף
+    const rect = signatureWrapper.getBoundingClientRect();
+    const startX = rect.left + (rect.width / 2);
+    const startY = rect.top + (rect.height / 2);
+
+    // הפעלת האנימציה (ללא נגיעה ב-DOM הפנימי של המעטפה)
+    await drawSignatureGoldDots(startX, startY);
+
+    // ניקוי המסך והמשך כרגיל
+    pageDiv.classList.add('dim-page'); 
+    const cornerElements = document.querySelectorAll('.lee-key-container-svg, .lee-course-svg, .lee-safe-home-svg, .logo-wrapper, .lee-handshake-svg');
+    cornerElements.forEach(el => el.classList.add('visible-corner'));
 
     if (typeof drawRoadmap === 'function') {
         setTimeout(() => {
             drawRoadmap();
-        }, 500); // דיליי של חצי שניה כדי שהאלמנטים יסיימו להתחזק ואז הקו יופיע
+        }, 300);
     }
+}
 
-    console.log("<--highlightCornersAndDimPage--> הושלם: הפינות הודגשו, העמוד הוחלש");
+
+/**
+ * אנימציית "קשת אקרובטית לימין" - עם שובל זהוב דועך
+ */
+function drawSignatureGoldDots(startX, startY) {
+    return new Promise((resolve) => {
+        const canvas = document.createElement('canvas');
+        canvas.style.position = 'fixed';
+        canvas.style.top = '0';
+        canvas.style.left = '0';
+        canvas.style.width = '100vw';
+        canvas.style.height = '100vh';
+        canvas.style.zIndex = '99999';
+        canvas.style.pointerEvents = 'none';
+        document.body.appendChild(canvas);
+
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // נקודת יציאה משמאל למטה
+        const endX = window.innerWidth * 0.15;
+        const endY = window.innerHeight * 0.85;
+
+        // חישוב נקודת השליטה: מוסטת לימין (cpX) ולמעלה (cpY)
+        // כדי ליצור קשת רחבה שיוצאת ימינה
+        const cpX = startX + (window.innerWidth * 0.35); 
+        const cpY = startY - (window.innerHeight * 0.15); 
+
+        let t = 0;
+        const speed = 0.007;
+        const trail = [];
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            t += speed;
+            
+            // נוסחת Bézier לקשת רחבה
+            const x = Math.pow(1 - t, 2) * startX + 2 * (1 - t) * t * cpX + Math.pow(t, 2) * endX;
+            const y = Math.pow(1 - t, 2) * startY + 2 * (1 - t) * t * cpY + Math.pow(t, 2) * endY;
+
+            trail.push({ x, y, alpha: 1 });
+
+            // ציור השובל עם דעיכה
+            for (let i = 0; i < trail.length; i++) {
+                const dot = trail[i];
+                dot.alpha -= 0.012; // דעיכה עדינה
+                if (dot.alpha > 0) {
+                    ctx.fillStyle = `rgba(184, 134, 11, ${dot.alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(dot.x, dot.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            if (trail[0] && trail[0].alpha <= 0) trail.shift();
+
+            if (t < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                setTimeout(() => {
+                    canvas.remove();
+                    resolve();
+                }, 400);
+            }
+        }
+        animate();
+    });
 }
 
 
