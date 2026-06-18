@@ -1,4 +1,9 @@
+
+window.roadMapIsRunning = false;
+
 function drawRoadmap() {
+    window.roadMapIsRunning = true;
+
     const canvas = document.getElementById('roadmap-canvas');
     if (!canvas) return;
 
@@ -133,6 +138,7 @@ function drawRoadmap() {
                     if (handshake) {
                         handshake.classList.add('pulsate-active');
                         console.log("<--drawRoadmap--> המסע הושלם! היד פועמת בזהב.");
+                        window.roadMapIsRunning = false;
                     }
                 }, 7000);
 

@@ -1109,6 +1109,10 @@
         }
 
         function switchToTargetPage(pageIndex) {
+            if(window.roadMapIsRunning == true){
+                return;
+            }
+
             //נקיון
             cleanRoadmap();
             // סוף נקיון
