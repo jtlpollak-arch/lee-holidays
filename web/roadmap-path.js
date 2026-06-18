@@ -35,7 +35,7 @@ function drawRoadmap() {
     }
 
     // --- הזרקת "תחנת אפס" וירטואלית קולנועית (מחוץ למסך משמאל למטה) ---
-    const startX = -40; 
+    const startX = -5; 
     const startY = window.innerHeight + 40; 
 
     // משתנים למדידה פיזיקלית מדויקת של המסלול
