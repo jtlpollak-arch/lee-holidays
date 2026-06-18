@@ -1,4 +1,3 @@
-
 window.roadMapIsRunning = false;
 
 function drawRoadmap() {
@@ -35,21 +34,33 @@ function drawRoadmap() {
         return;
     }
 
-    // חישוב מרחקים מצטברים לצורך תזמון פעימות הזהב
-    let totalLength = 0;
-    const distanceSegments = [0]; 
-    
-    for (let i = 1; i < points.length; i++) {
-        const dx = points[i].x - points[i-1].x;
-        const dy = points[i].y - points[i-1].y;
-        const length = Math.sqrt(dx * dx + dy * dy);
-        totalLength += length;
-        distanceSegments.push(totalLength);
-    }
+    // --- הזרקת "תחנת אפס" וירטואלית קולנועית (מחוץ למסך משמאל למטה) ---
+    const startX = -40; 
+    const startY = window.innerHeight + 40; 
 
-    // 3. בניית הציור (נתיב גלי ומתפתל)
-    let pathData = `M ${points[0].x} ${points[0].y}`; 
+    // משתנים למדידה פיזיקלית מדויקת של המסלול
+    let exactTotalLength = 0;
+    const distanceSegments = []; 
+    let pathData = "";
     
+    // 3. בניית הציור ומדידת המקטעים
+    
+    // --- מקטע 1: עקומת הטיפוס הקולנועית (Cubic Bézier מלמטה) ---
+    const cp1X = startX;                                      
+    const cp1Y = points[0].y + (startY - points[0].y) * 0.4;  
+    const cp2X = points[0].x * 0.5;                           
+    const cp2Y = points[0].y;                                 
+
+    const firstSegmentD = `M ${startX} ${startY} C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${points[0].x} ${points[0].y}`; 
+    pathData += firstSegmentD;
+
+    // מדידה מדויקת של המקטע הראשון
+    const tempPath0 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    tempPath0.setAttribute("d", firstSegmentD);
+    exactTotalLength += tempPath0.getTotalLength();
+    distanceSegments.push(exactTotalLength); // אינדקס 0: נקודת הזמן המדויקת ללוגו
+    
+    // --- מקטע 2: המשך בניית הנתיב המפותל ומדידת העקומות ---
     for (let i = 1; i < points.length; i++) {
         const prev = points[i - 1];
         const curr = points[i];
@@ -74,7 +85,14 @@ function drawRoadmap() {
         const cpX = midX + perpX * offsetAmount * direction;
         const cpY = midY + perpY * offsetAmount * direction;
         
-        pathData += ` Q ${cpX} ${cpY}, ${curr.x} ${curr.y}`;
+        const segmentD = ` Q ${cpX} ${cpY}, ${curr.x} ${curr.y}`;
+        pathData += segmentD;
+
+        // מדידה מדויקת של המקטע הנוכחי כולל העיקול
+        const tempPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        tempPath.setAttribute("d", `M ${prev.x} ${prev.y}` + segmentD);
+        exactTotalLength += tempPath.getTotalLength();
+        distanceSegments.push(exactTotalLength);
     }
 
     // 4. הזרקת הציור לקנבס
@@ -92,7 +110,7 @@ function drawRoadmap() {
         <path class="roadmap-line" d="${pathData}"></path>
         
         <circle class="traveling-particle" r="6" fill="#FFD700" filter="url(#particle-glow)">
-            <animateMotion id="particle-motion" dur="7s" repeatCount="1" fill="freeze" path="${pathData}" begin="indefinite" />
+            <animateMotion id="particle-motion" dur="10s" repeatCount="1" fill="freeze" path="${pathData}" begin="indefinite" />
         </circle>
     `;
 
@@ -113,23 +131,23 @@ function drawRoadmap() {
                 particle.classList.add('active');
                 motion.beginElement(); 
                 
-                // --- תזמון פעימות המעבר לתחנות הביניים ---
+                // --- תזמון פעימות המעבר לתחנות (במדידה פיזיקלית מדויקת מתוך 10 שניות) ---
                 connectionOrder.forEach((selector, index) => {
-                    // מדלגים על התחנה האחרונה כי יש לה אנימציה קבועה משלה
+                    // מדלגים על לחיצת היד (מטופלת בנפרד בסוף)
                     if (index === connectionOrder.length - 1) return; 
                     
                     const el = document.querySelector(selector);
                     if (!el) return;
                     
-                    // חישוב הזמן המדויק שבו החלקיק מגיע לתחנה (מתוך 3000 מילישניות)
-                    const delayMs = (distanceSegments[index] / totalLength) * 7000;
+                    // חישוב הזמן המדויק לפי האורך האמיתי שהחלקיק נסע עד לנקודה זו
+                    const delayMs = (distanceSegments[index] / exactTotalLength) * 10000;
                     
                     setTimeout(() => {
                         el.classList.add('node-pulse');
                     }, delayMs);
                 });
                 
-                // --- טיימר לסיום המסע (3 שניות בדיוק) ---
+                // --- טיימר לסיום המסע (10 שניות בדיוק) ---
                 setTimeout(() => {
                     // א. מעלימים את החלקיק (הוא נבלע ביד)
                     particle.classList.add('absorbed');
@@ -137,10 +155,10 @@ function drawRoadmap() {
                     // ב. מדליקים את פעימת הזהב של לחיצת היד
                     if (handshake) {
                         handshake.classList.add('pulsate-active');
-                        console.log("<--drawRoadmap--> המסע הושלם! היד פועמת בזהב.");
+                        console.log("<--drawRoadmap--> המסע הושלם! היד פועמת בזהב. סנכרון מדויק.");
                         window.roadMapIsRunning = false;
                     }
-                }, 7000);
+                }, 10000);
 
             }, 500);
         }
@@ -151,7 +169,7 @@ function cleanRoadmap(){
     // נקיון
     document.querySelectorAll('.page-content').forEach(p => p.classList.remove('dim-page'));
     
-    // הוספתי את המחיקה של .node-pulse כדי שאם משחזרים את האנימציה היא תוכל לקרות שוב
+    // מחיקת הקלאסים כדי שאם משחזרים את האנימציה היא תוכל לקרות שוב
     document.querySelectorAll('.lee-key-container-svg, .lee-course-svg, .lee-safe-home-svg, .logo-wrapper, .lee-handshake-svg')
         .forEach(el => {
             el.classList.remove('visible-corner');
