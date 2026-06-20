@@ -22,37 +22,8 @@ typingCursor.textContent = '•';
 let penSound = null;
 let isAudioUnlocked = false;
 
-// 2. פונקציית אתחול שתיקרא ברגע שהמשתמש לוחץ על משהו (למשל כפתור "התחל" או אפילו לחיצה על המעטפה)
-/*
-async function unlockAudio() {
-    if (isAudioUnlocked) return;
-    
-    console.log("--> [DEBUG] ניסיון פתיחת אודיו התחיל...");
-    
-    try {
-        penSound = new Audio('sound/pen-click.mp3');
-        penSound.volume = 0.1;
-        
-        // הוספת האזנה לשגיאה פנימית של האובייקט
-        penSound.addEventListener('error', (e) => {
-            console.error("--> [DEBUG] שגיאת טעינת אודיו פיזית:", e);
-        });
-
-        await penSound.play();
-        penSound.pause();
-        penSound.currentTime = 0;
-        isAudioUnlocked = true;
-        console.log("--> [DEBUG] אודיו נפתח בהצלחה!");
-    } catch (e) {
-        console.error("--> [DEBUG] ה-Promise נכשל, שגיאה:", e.name, e.message);
-    }
-}
-*/
-
 // פונקציית תשתית חדשה - ברז החירום של המנוע (Refactoring)
 function stopAndResetEngine() {
-    console.log("<--stopAndResetEngine--> עצירת שעונים ואיפוס דגלים ומחלקות");
-    
     // 1. עצירה מוחלטת של שעון ההקלדה הראשי
     if (window.typingTimeoutId) {
         clearTimeout(window.typingTimeoutId);
@@ -70,7 +41,6 @@ function stopAndResetEngine() {
 
 // פונקציית הגשר המוזמנת מהדף הראשי
 function runTypingEffect(delta) {
-    console.log("<--runTypingEffect--> גשר מופעל");
     if (!delta) {
         return;
     }
@@ -180,12 +150,9 @@ function flattenLayoutToChars(pages) {
 // הפונקציה הראשית המנהלת את התהליך
 // 4. פונקציה ראשית מנהלת
 function flattenDelta(delta) {
-    console.log("--> [DEBUG] flattenDelta started");
-
     // שומר סף חכם: אם המבנה כבר שטוח (מכיל char או pageIndex), אין מה לנתח שוב!
     // זה מונע את השגיאה שקרתה בהרצה השנייה של פונקציית הרינדור.
     if (Array.isArray(delta) && delta.length > 0 && (delta[0].char !== undefined || delta[0].pageIndex !== undefined)) {
-        console.log("--> [DEBUG] Data already processed, returning directly.");
         return delta;
     }
 
@@ -204,16 +171,12 @@ function flattenDelta(delta) {
     }
 
     // הרצה מסודרת של ה-Pipeline
-    console.log("--> [DEBUG] About to call parseDeltaToTokens");
     const rawTokens = parseDeltaToTokens(data);
     
-    console.log("--> [DEBUG] About to call buildPagesLayout");
     const pages = buildPagesLayout(rawTokens);
     
-    console.log("--> [DEBUG] About to call flattenLayoutToChars");
     const flatResult = flattenLayoutToChars(pages);
     
-    console.log("--> [DEBUG] flattenDelta finished successfully. Result length:", flatResult.length);
     return flatResult;
 }
 
@@ -241,8 +204,6 @@ function flattenDelta(delta) {
 
 // 4. בניית העמודים ב-DOM והכנת התשתית הויזואלית
 function paginateTextAndRender(delta) {
-    console.log("<--paginateTextAndRender--> פונקציית הרינדור הראשית התחילה");
-    
     const flatData = flattenDelta(delta);
     if (!flatData || flatData.length === 0) {
         console.error("<--paginateTextAndRender--> שגיאה: מערך התווים המעובד ריק!");
@@ -264,7 +225,6 @@ function paginateTextAndRender(delta) {
     
     container.innerHTML = '';
     const maxPage = Math.max(...flatData.map(d => d.pageIndex), 0);
-    console.log("<--paginateTextAndRender--> מכין ב-DOM עמודים פיזיים ריקים:", maxPage + 1);
     
     for (let i = 0; i <= maxPage; i++) {
         const pageDiv = document.createElement('div');
@@ -291,7 +251,6 @@ function paginateTextAndRender(delta) {
             dot.setAttribute('onclick', `switchToTargetPage(${i});`);
             dotsContainer.appendChild(dot);
         }
-        console.log("<--paginateTextAndRender--> נקודות הניווט נבנו בהצלחה ב-DOM");
     }
 
     window.globalFlatData = flatData;
@@ -301,7 +260,6 @@ function paginateTextAndRender(delta) {
         clearTimeout(window.typingTimeoutId);
     }
     
-    console.log("<--paginateTextAndRender--> קורא לתו הראשון להקלדה");
     typeNextChar();
 }
 
@@ -322,6 +280,8 @@ function injectSignatureWithEffect(pageDiv) {
         sigSvg.style.opacity = '1';
         sigSvg.style.width = '40px'; 
         sigSvg.style.height = '40px';
+        signatureDiv.style.position = 'relative';
+        signatureDiv.style.top = '10px';
         // ----------------------------------------------
         
         signatureDiv.appendChild(sigSvg);
@@ -330,7 +290,6 @@ function injectSignatureWithEffect(pageDiv) {
 }
 
 async function highlightCornersAndDimPage(pageDiv) {
-    console.log("<--highlightCornersAndDimPage--> מתחיל תהליך מעבר...");
 
     const signatureWrapper = pageDiv.querySelector('.signature-wrapper');
     if (!signatureWrapper) {
@@ -462,82 +421,12 @@ function drawSignatureGoldDots(startX, startY) {
 }
 
 
-function drawRoadmap() {
-    const canvas = document.getElementById('roadmap-canvas');
-    if (!canvas) return;
-
-    // 1. הסדר שבו הקו יחבר את האלמנטים. 
-    // תוכל לשנות את סדר השורות כאן כדי לשנות את מסלול הקו
-    const connectionOrder = [
-        '.logo-wrapper',
-        '.lee-course-svg',
-        '.lee-key-container-svg',
-        '.lee-safe-home-svg',
-        '.lee-handshake-svg'
-    ];
-
-    const points = [];
-
-    // 2. איסוף נקודות הציון המדויקות של מרכזי האלמנטים
-    connectionOrder.forEach(selector => {
-        const el = document.querySelector(selector);
-        if (el) {
-            const rect = el.getBoundingClientRect();
-            points.push({
-                x: rect.left + rect.width / 2,
-                y: rect.top + rect.height / 2
-            });
-        }
-    });
-
-    if (points.length < 2) {
-        console.log("לא נמצאו מספיק אלמנטים כדי לצייר מסלול");
-        return;
-    }
-
-    // 3. בניית הציור (נתיב מעוקל)
-    let pathData = `M ${points[0].x} ${points[0].y}`; // מתחיל בנקודה הראשונה
-    
-    for (let i = 1; i < points.length; i++) {
-        const prev = points[i - 1];
-        const curr = points[i];
-        
-        // יצירת נקודות בקרה לעיקול (Bezier Curve) שזורם בצורה אורגנית
-        const cp1X = prev.x;
-        const cp1Y = prev.y + (curr.y - prev.y) / 2;
-        const cp2X = curr.x;
-        const cp2Y = prev.y + (curr.y - prev.y) / 2;
-        
-        pathData += ` C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${curr.x} ${curr.y}`;
-    }
-
-    // 4. הזרקת הציור לקנבס
-    canvas.innerHTML = `<path class="roadmap-line" d="${pathData}"></path>`;
-
-    // 5. הפעלת מופע הכניסה (דיליי קטן כדי לאפשר לדפדפן לרנדר)
-    setTimeout(() => {
-        const line = canvas.querySelector('.roadmap-line');
-        if (line) {
-            line.classList.add('visible');
-            console.log("<--drawRoadmap--> הקו שורטט והוצג בהצלחה");
-        }
-    }, 100);
-}
-
-
-
-
-
-
-
 /**********************************************************
  * 
  * typeNextChar()
  * 
  ***********************************************************/
 function handleTypingComplete() {
-    console.log("<--typeNextChar--> תהליך ההקלדה הסתיים בהצלחה לכל העמודים");
-    
     const activePage = document.querySelector('.page-content.active');
     if (activePage) {
         const signatureWrapper = activePage.querySelector('.signature-wrapper');
@@ -639,7 +528,6 @@ function renderNextToken(item, container) {
 
 function handlePageTransition(item, pageDiv) {
     if (window.isPausedByClick) {
-        console.log("<- מוד ידני פעיל -> נשארים בעמוד הנוכחי, חוסמים מעבר אוטומטי");
         return true; // חסום המשך
     }
     
@@ -652,8 +540,6 @@ function handlePageTransition(item, pageDiv) {
     if (oldActivePage) {
         const oldContainer = oldActivePage.querySelector('.text-container');
         if (oldContainer) {
-            console.log("<--typeNextChar--> מפעיל מחיקה אלקטרונית עדינה על עמוד ישן");
-            
             window.isErasingNow = true;
             oldContainer.classList.add('erase-active');
             
@@ -730,46 +616,3 @@ function typeNextChar() {
     window.globalCharIndex++;
     window.typingTimeoutId = setTimeout(typeNextChar, window.TYPING_SPEED);
 }
-
-
-/********************************************************************************* */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-להחזיר כדי למנוע הקלקה על המסך ולהפסיק מנוע מעבר בין דפים
-
-document.addEventListener('click', (event) => {
-    // בדיקה אם הלחיצה בוצעה על אלמנט של דף ברכה
-    if (event.target.closest('.page-content')) {
-        
-        // הדלקת המתג למצב פעיל
-        window.isPausedByClick = true;
-        
-        console.log("<- מוד ידני הופעל -> לחיצה על גוף הברכה. העמוד הנוכחי יוקלד עד סופו ויעצר.");
-    }
-});
-*/

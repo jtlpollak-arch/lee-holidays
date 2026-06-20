@@ -1,5 +1,4 @@
 function launchContextualConfetti() {
-    console.log("[CONF-DEBUG] -> מפעיל מזרקת אימוג'ים עם דחייה מרכזית.");
     const container = document.getElementById('confetti-container');
     if (!container) return;
 
@@ -54,8 +53,6 @@ function launchContextualConfetti() {
             left: '0px', top: '0px', opacity: '0'
         });
         container.appendChild(emojiItem);
-
-        console.log(`[CONF-DEBUG] -> אימוג'י ${i} משוגר ל${isLeft ? 'שמאל' : 'ימין'} בשיפוע ${drift.toFixed(0)}px`);
 
         emojiItem.animate([
             { transform: `translate(${startX}px, ${startY}px) scale(0.5)`, opacity: 0 },
