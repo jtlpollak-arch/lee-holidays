@@ -17,9 +17,6 @@ function drawRoadmap() {
     
     renderRoadmap(canvas, pathDataAndMetrics.pathData);
 
-    const labels = ["מגדירים יעדים בבהירות", "מוצאים את הנכס שמתאים בדיוק", "שקיפות וביטחון", "אמינות ויושרה"];
-    placeLabels(points, labels);
-    
     scheduleAnimations(canvas, pathDataAndMetrics, connectionOrder);
 }
 
@@ -123,29 +120,6 @@ function scheduleAnimations(canvas, metrics, connectionOrder) {
             }, 500);
         }
     }, 100);
-}
-
-function placeLabels(points, labels) {
-    labels.forEach((text, index) => {
-        const labelEl = document.querySelector(`.label-item[data-index="${index}"]`);
-        if (!labelEl) return;
-
-        // נקודת האמצע בין תחנה i לתחנה i+1
-        const midX = (points[index].x + points[index + 1].x) / 2;
-        const midY = (points[index].y + points[index + 1].y) / 2;
-
-        // חישוב הזווית לפי הוקטור בין הנקודות
-        const dx = points[index + 1].x - points[index].x;
-        const dy = points[index + 1].y - points[index].y;
-        const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-        const finalAngle = (angle > 90 || angle < -90) ? angle - 180 : angle;
-
-        // החלת העיצוב
-        labelEl.style.left = `${midX}px`;
-        labelEl.style.top = `${midY}px`;
-        labelEl.style.transform = `rotate(${finalAngle}deg) translateY(-30px)`;
-        labelEl.style.opacity = '1';
-    });
 }
 
 /*************************************************************************** */
