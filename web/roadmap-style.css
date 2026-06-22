@@ -127,3 +127,28 @@
 }
 
 /******************************************************************************/
+
+.station-label {
+    position: absolute;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    font-family: DanaYad;
+    font-size: 12px;
+    color: #1a1a1a;
+
+    text-shadow: 0px 0px 5px rgba(255, 255, 255, 0.8), 0px 0px 10px rgba(255, 255, 255, 0.5);
+    font-weight: 600; /* עיבוי קל של הפונט */
+}
+
+.station-label.visible {
+    opacity: 1 !important;
+}
+
+
+#label-logo{ top: 10%; left: 40%; }
+#label-course { top: 40%; right: 17%; transform: rotate(45deg);}
+#label-key { bottom: 32%; right: 35%; transform: rotate(-30deg);}
+#label-safe-home{ bottom: 43%; left: 30%; transform: rotate(-30deg);}
+#label-handshake{ top: 33%; left: 40%; transform: rotate(45deg);} 

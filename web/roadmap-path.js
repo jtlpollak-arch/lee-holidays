@@ -87,6 +87,15 @@ function renderRoadmap(canvas, pathData) {
 
 function scheduleAnimations(canvas, metrics, connectionOrder) {
     const { distanceSegments, exactTotalLength } = metrics;
+
+    // מילון המקשר בין הקלאס של ה-SVG לבין ה-ID של התווית שלו
+    const labelMap = {
+        '.logo-wrapper': '#label-logo',
+        '.lee-course-svg': '#label-course',
+        '.lee-key-container-svg': '#label-key',
+        '.lee-safe-home-svg': '#label-safe-home',
+        '.lee-handshake-svg': '#label-handshake'
+    };
     
     setTimeout(() => {
         const line = canvas.querySelector('.roadmap-line');
@@ -102,12 +111,30 @@ function scheduleAnimations(canvas, metrics, connectionOrder) {
                 motion.beginElement();
 
                 connectionOrder.forEach((selector, index) => {
-                    if (index === connectionOrder.length - 1) return;
+                    // כאן אנחנו משנים את התנאי: אנחנו צריכים להגיע עד התחנה שלפני האחרונה
+                    if (index >= connectionOrder.length - 1) return;
+                    
                     const el = document.querySelector(selector);
                     if (!el) return;
                     
-                    const delayMs = (distanceSegments[index] / exactTotalLength) * 10000;
-                    setTimeout(() => el.classList.add('node-pulse'), delayMs);
+                    const fullDelayMs = (distanceSegments[index] / exactTotalLength) * 10000;
+
+                    setTimeout(() => {
+                        // 1. תמיד מדליקים את התווית של התחנה הנוכחית
+                        const label = document.querySelector(labelMap[selector]);
+                        if (label) label.classList.add('visible');
+
+                        // 2. בדיקה: האם אנחנו בתחנה שלפני האחרונה?
+                        if (index === connectionOrder.length - 2) {
+                            // אם כן, מדליקים גם את התווית של התחנה הבאה (האחרונה במערך)
+                            const nextSelector = connectionOrder[index + 1];
+                            const nextLabel = document.querySelector(labelMap[nextSelector]);
+                            if (nextLabel) nextLabel.classList.add('visible');
+                        }
+
+                        // פעימת התחנה הנוכחית
+                        el.classList.add('node-pulse');
+                    }, fullDelayMs);
                 });
 
                 setTimeout(() => {
@@ -141,6 +168,10 @@ function cleanRoadmap(){
     if (roadmapCanvas) {
         roadmapCanvas.innerHTML = '';
     }
+
+    document.querySelectorAll('.station-label').forEach(label => {
+        label.classList.remove('visible');
+    });
 
     const handshake = document.querySelector('.lee-handshake-svg');
     if (handshake) {
