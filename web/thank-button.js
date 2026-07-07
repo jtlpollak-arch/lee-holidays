@@ -3,8 +3,7 @@ function initThankButton() {
     const container = document.createElement('div');
     container.className = 'thank-fab-container';
     container.innerHTML = `
-        <span>❤️</span>
-        <span class="thank-label">תודה אישית ללי</span>
+        <span class="thank-label">חזרו אליי</span>
     `;
 
     document.body.appendChild(container);
@@ -16,8 +15,8 @@ function initThankButton() {
 
     container.addEventListener('click', () => {
         // הטקסט עצמו מקודד (כפי שעשית), וזה מעולה
-        const message = `לי,היי! רק רציתי לומר תודה רבה!! חיממת לי את הלב.`;
-        const phone = "972533386345";
+        const message = `היי, מעוניין בפרטים בנושא ברכות בתצורה אישית.`;
+        const phone = "972545324964";
         
         // יצירת הלינק המלא עם הקידוד
         const whatsappUrl = `whatsapp://send?phone=${phone}&text=${encodeURIComponent(message)}`;
